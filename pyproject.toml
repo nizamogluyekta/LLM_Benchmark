@@ -45,6 +45,7 @@ pytest-mock = ">=3.12"
 # Code quality
 ruff = ">=0.1"
 mypy = ">=1.8"
+types-pyyaml = ">=6.0"
 pre-commit = ">=3.6"
 
 # Additional dev tools

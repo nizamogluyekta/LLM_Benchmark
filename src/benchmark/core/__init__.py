@@ -10,6 +10,19 @@ from .base import (
     ServiceShutdownError,
     ServiceStatus,
 )
+from .config import (
+    BenchmarkConfig,
+    DatasetConfig,
+    EvaluationConfig,
+    ExperimentConfig,
+    ModelConfig,
+    create_api_model_config,
+    create_local_dataset_config,
+    create_mlx_model_config,
+    create_standard_evaluation_config,
+    load_config_from_file,
+    save_config_to_file,
+)
 from .exceptions import (
     BenchmarkError,
     ConfigurationError,
@@ -73,6 +86,18 @@ __all__ = [
     "api_key_missing_error",
     "evaluation_timeout_error",
     "service_timeout_error",
+    # Configuration models
+    "BenchmarkConfig",
+    "ExperimentConfig",
+    "DatasetConfig",
+    "ModelConfig",
+    "EvaluationConfig",
+    "create_local_dataset_config",
+    "create_mlx_model_config",
+    "create_api_model_config",
+    "create_standard_evaluation_config",
+    "load_config_from_file",
+    "save_config_to_file",
     # Logging utilities
     "get_logger",
     "get_data_logger",

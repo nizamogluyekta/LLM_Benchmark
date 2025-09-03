@@ -99,17 +99,17 @@ class HealthCheck:
 
 class BaseService(ABC):
     """Base interface for all services"""
-    
+
     @abstractmethod
     async def initialize(self) -> ServiceResponse:
         """Initialize service resources"""
         pass
-    
+
     @abstractmethod
     async def health_check(self) -> HealthCheck:
         """Check service health status"""
         pass
-    
+
     @abstractmethod
     async def shutdown(self) -> ServiceResponse:
         """Graceful shutdown"""
@@ -122,22 +122,22 @@ class BaseService(ABC):
 ```python
 class IDataService(BaseService):
     """Data Service Interface"""
-    
+
     @abstractmethod
     async def load_dataset(self, dataset_id: str, config: Dict) -> ServiceResponse:
         """Load and preprocess dataset"""
         pass
-    
+
     @abstractmethod
     async def get_dataset_info(self, dataset_id: str) -> ServiceResponse:
         """Get dataset metadata and statistics"""
         pass
-    
+
     @abstractmethod
     async def create_data_split(self, dataset_id: str, split_config: Dict) -> ServiceResponse:
         """Create train/test/validation splits"""
         pass
-    
+
     @abstractmethod
     async def get_batch(self, dataset_id: str, batch_size: int, offset: int) -> ServiceResponse:
         """Get data batch for processing"""
@@ -148,22 +148,22 @@ class IDataService(BaseService):
 ```python
 class IModelService(BaseService):
     """Model Service Interface"""
-    
+
     @abstractmethod
     async def load_model(self, model_id: str, config: Dict) -> ServiceResponse:
         """Load model plugin"""
         pass
-    
+
     @abstractmethod
     async def predict_batch(self, model_id: str, samples: List[str]) -> ServiceResponse:
         """Generate predictions for batch"""
         pass
-    
+
     @abstractmethod
     async def explain_prediction(self, model_id: str, sample: str) -> ServiceResponse:
         """Generate explanation for single prediction"""
         pass
-    
+
     @abstractmethod
     async def get_model_info(self, model_id: str) -> ServiceResponse:
         """Get model metadata and capabilities"""
@@ -174,17 +174,17 @@ class IModelService(BaseService):
 ```python
 class IEvaluationService(BaseService):
     """Evaluation Service Interface"""
-    
+
     @abstractmethod
     async def evaluate_predictions(self, evaluation_config: Dict) -> ServiceResponse:
         """Run evaluation metrics on predictions"""
         pass
-    
+
     @abstractmethod
     async def get_available_metrics(self) -> ServiceResponse:
         """List available evaluation metrics"""
         pass
-    
+
     @abstractmethod
     async def calculate_metric(self, metric_name: str, predictions: List, ground_truth: List) -> ServiceResponse:
         """Calculate specific metric"""
@@ -243,7 +243,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    cd llm_cybersec_benchmark
    poetry init
    poetry add python="^3.11"
-   
+
    # Create directory structure
    mkdir -p src/benchmark/{core,services,interfaces,utils}
    mkdir -p {configs,data,results,tests,scripts,docs}
@@ -254,11 +254,11 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # src/benchmark/core/base.py
    class BaseService(ABC):
        """Foundation for all services"""
-   
+
    # src/benchmark/core/exceptions.py
    class BenchmarkError(Exception):
        """Base exception for all benchmark errors"""
-   
+
    # src/benchmark/core/logging.py
    def setup_logging(level: str = "INFO") -> None:
        """Configure structured logging"""
@@ -268,7 +268,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/core/config.py
    from pydantic import BaseModel
-   
+
    class BaseConfig(BaseModel):
        """Base configuration with validation"""
    ```
@@ -279,7 +279,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    @pytest.fixture
    def sample_config():
        """Shared test configuration"""
-   
+
    # tests/unit/test_base.py
    def test_service_interface():
        """Test base service functionality"""
@@ -311,19 +311,19 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/services/config_service.py
    from pydantic import BaseModel, Field, validator
-   
+
    class DatasetConfig(BaseModel):
        name: str
        source: str
        path: str
        max_samples: Optional[int] = None
-       
+
    class ModelConfig(BaseModel):
        name: str
        type: ModelType
        path: str
        config: Dict[str, Any] = Field(default_factory=dict)
-       
+
    class ExperimentConfig(BaseModel):
        name: str
        datasets: List[DatasetConfig]
@@ -336,7 +336,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ConfigurationService(BaseService):
        async def load_experiment_config(self, path: str) -> ExperimentConfig:
            """Load and validate experiment configuration"""
-           
+
        async def resolve_secrets(self, config: ExperimentConfig) -> ExperimentConfig:
            """Resolve environment variables and secrets"""
    ```
@@ -346,7 +346,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # tests/unit/test_config_service.py
    async def test_config_loading():
        """Test configuration loading and validation"""
-       
+
    async def test_secret_resolution():
        """Test environment variable resolution"""
    ```
@@ -380,10 +380,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
        def __init__(self):
            self.loaders = {}  # Plugin registry
            self.cache = {}    # Data cache
-           
+
        async def register_loader(self, source: str, loader: DataLoader):
            """Register data loader plugin"""
-           
+
        async def load_dataset(self, dataset_config: DatasetConfig) -> Dataset:
            """Load dataset using appropriate loader"""
    ```
@@ -394,7 +394,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class KaggleDataLoader(DataLoader):
        async def load(self, config: Dict) -> Dict[str, Any]:
            """Load dataset from Kaggle"""
-           
+
    # src/benchmark/data/loaders/huggingface.py
    class HuggingFaceDataLoader(DataLoader):
        async def load(self, config: Dict) -> Dict[str, Any]:
@@ -407,7 +407,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class NetworkLogPreprocessor(DataPreprocessor):
        async def process(self, raw_data: List[Dict]) -> List[Dict]:
            """Preprocess network log data"""
-           
+
    # src/benchmark/data/preprocessors/email_content.py
    class EmailContentPreprocessor(DataPreprocessor):
        async def process(self, raw_data: List[Dict]) -> List[Dict]:
@@ -419,10 +419,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class DataCache:
        def __init__(self, cache_dir: Path):
            self.cache_dir = cache_dir
-           
+
        async def get_cached_dataset(self, dataset_id: str) -> Optional[Dataset]:
            """Retrieve cached dataset"""
-           
+
        async def cache_dataset(self, dataset_id: str, dataset: Dataset):
            """Cache processed dataset"""
    ```
@@ -456,10 +456,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
        def __init__(self):
            self.models = {}     # Loaded models
            self.plugins = {}    # Model plugins
-           
+
        async def load_model(self, model_config: ModelConfig) -> str:
            """Load model and return model_id"""
-           
+
        async def predict_batch(self, model_id: str, samples: List[str]) -> List[Prediction]:
            """Generate predictions for batch of samples"""
    ```
@@ -468,13 +468,13 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/models/plugins/mlx_local.py
    from mlx_lm import load, generate
-   
+
    class MLXModelPlugin(ModelPlugin):
        async def load_model(self, config: Dict) -> Model:
            """Load MLX model optimized for Apple Silicon"""
            model, tokenizer = load(config['path'])
            return MLXModel(model, tokenizer)
-           
+
        async def predict(self, model: MLXModel, samples: List[str]) -> List[Dict]:
            """Generate predictions using MLX framework"""
    ```
@@ -486,7 +486,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
        def __init__(self, api_key: str):
            self.client = OpenAI(api_key=api_key)
            self.rate_limiter = RateLimiter(requests_per_minute=60)
-           
+
        async def predict(self, model_name: str, samples: List[str]) -> List[Dict]:
            """Generate predictions using OpenAI API"""
    ```
@@ -496,18 +496,18 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ModelPerformanceMonitor:
        def __init__(self):
            self.metrics = defaultdict(list)
-           
+
        async def measure_inference(self, model_id: str, func: Callable) -> Tuple[Any, Dict]:
            """Measure inference performance"""
            start_time = time.time()
            result = await func()
            inference_time = time.time() - start_time
-           
+
            self.metrics[model_id].append({
                'inference_time': inference_time,
                'timestamp': datetime.now()
            })
-           
+
            return result, {'inference_time_ms': inference_time * 1000}
    ```
 
@@ -539,8 +539,8 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class EvaluationService(BaseService):
        def __init__(self):
            self.evaluators = {}  # Metric evaluators registry
-           
-       async def evaluate_predictions(self, predictions: List[Prediction], 
+
+       async def evaluate_predictions(self, predictions: List[Prediction],
                                     ground_truth: List[Truth]) -> EvaluationResult:
            """Run all registered evaluators"""
    ```
@@ -549,18 +549,18 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/evaluation/metrics/accuracy.py
    from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
-   
+
    class AccuracyEvaluator(MetricEvaluator):
-       async def evaluate(self, predictions: List[Dict], 
+       async def evaluate(self, predictions: List[Dict],
                          ground_truth: List[Dict]) -> Dict[str, float]:
            """Calculate accuracy metrics"""
            pred_labels = [p['prediction'] for p in predictions]
            true_labels = [gt['label'] for gt in ground_truth]
-           
+
            precision, recall, f1, _ = precision_recall_fscore_support(
                true_labels, pred_labels, average='weighted'
            )
-           
+
            return {
                'precision': precision,
                'recall': recall,
@@ -576,7 +576,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
        def __init__(self, db_path: str):
            self.db_path = db_path
            self.engine = create_engine(f"sqlite:///{db_path}")
-           
+
        async def store_evaluation_result(self, result: EvaluationResult):
            """Store evaluation results in database"""
    ```
@@ -617,7 +617,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
                'model': model_service,
                'evaluation': evaluation_service
            }
-           
+
        async def run_experiment(self, experiment_config: ExperimentConfig) -> ExperimentResult:
            """Orchestrate complete experiment execution"""
    ```
@@ -627,10 +627,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class WorkflowEngine:
        async def execute_workflow(self, workflow: Workflow) -> WorkflowResult:
            """Execute workflow with dependency management"""
-           
+
        async def execute_step(self, step: WorkflowStep) -> StepResult:
            """Execute individual workflow step"""
-           
+
        async def handle_step_failure(self, step: WorkflowStep, error: Exception):
            """Handle step failures with retry logic"""
    ```
@@ -640,13 +640,13 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ProgressMonitor:
        def __init__(self):
            self.experiment_status = {}
-           
+
        async def start_experiment(self, experiment_id: str, total_steps: int):
            """Initialize experiment progress tracking"""
-           
+
        async def update_progress(self, experiment_id: str, completed_steps: int):
            """Update experiment progress"""
-           
+
        async def get_progress(self, experiment_id: str) -> ProgressStatus:
            """Get current progress status"""
    ```
@@ -679,13 +679,13 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ExplainabilityEvaluator(MetricEvaluator):
        def __init__(self, judge_model: str = "gpt-4o-mini"):
            self.judge_model = judge_model
-           
-       async def evaluate(self, predictions: List[Dict], 
+
+       async def evaluate(self, predictions: List[Dict],
                          ground_truth: List[Dict]) -> Dict[str, float]:
            """Evaluate explanation quality using LLM-as-judge"""
-           
-       async def judge_explanation(self, explanation: str, 
-                                  input_sample: str, 
+
+       async def judge_explanation(self, explanation: str,
+                                  input_sample: str,
                                   correct_label: str) -> float:
            """Use LLM to judge explanation quality"""
    ```
@@ -696,9 +696,9 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class PerformanceEvaluator(MetricEvaluator):
        async def evaluate(self, performance_data: List[Dict]) -> Dict[str, float]:
            """Calculate performance metrics from timing data"""
-           
+
            latencies = [p['inference_time_ms'] for p in performance_data]
-           
+
            return {
                'avg_latency_ms': np.mean(latencies),
                'p95_latency_ms': np.percentile(latencies, 95),
@@ -710,11 +710,11 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/evaluation/metrics/false_positive.py
    class FalsePositiveRateEvaluator(MetricEvaluator):
-       async def evaluate(self, predictions: List[Dict], 
+       async def evaluate(self, predictions: List[Dict],
                          ground_truth: List[Dict]) -> Dict[str, float]:
            """Analyze false positive rates and operational impact"""
-           
-       async def calculate_alert_fatigue_score(self, fpr: float, 
+
+       async def calculate_alert_fatigue_score(self, fpr: float,
                                               volume: int) -> float:
            """Calculate alert fatigue based on FPR and volume"""
    ```
@@ -724,9 +724,9 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class MetricAggregator:
        async def aggregate_cross_model_metrics(self, results: List[EvaluationResult]) -> Dict:
            """Aggregate metrics across multiple models"""
-           
-       async def calculate_statistical_significance(self, 
-                                                   results_a: List[float], 
+
+       async def calculate_statistical_significance(self,
+                                                   results_a: List[float],
                                                    results_b: List[float]) -> Dict:
            """Calculate statistical significance between model results"""
    ```
@@ -759,13 +759,13 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ResultsService(BaseService):
        def __init__(self, db_connection: DatabaseConnection):
            self.db = db_connection
-           
+
        async def store_experiment_result(self, result: ExperimentResult):
            """Store complete experiment results"""
-           
+
        async def query_results(self, query: ResultQuery) -> List[ExperimentResult]:
            """Query results with filtering and pagination"""
-           
+
        async def compare_experiments(self, experiment_ids: List[str]) -> ComparisonResult:
            """Compare results across experiments"""
    ```
@@ -775,12 +775,12 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class ResultQueryEngine:
        async def filter_by_model(self, model_names: List[str]) -> QueryBuilder:
            """Filter results by model names"""
-           
+
        async def filter_by_dataset(self, dataset_names: List[str]) -> QueryBuilder:
            """Filter results by dataset names"""
-           
-       async def filter_by_metric_range(self, metric: str, 
-                                       min_val: float, 
+
+       async def filter_by_metric_range(self, metric: str,
+                                       min_val: float,
                                        max_val: float) -> QueryBuilder:
            """Filter by metric value range"""
    ```
@@ -788,14 +788,14 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
 3. **Export Functionality** (Day 8-10)
    ```python
    class ResultExporter:
-       async def export_to_json(self, results: List[ExperimentResult], 
+       async def export_to_json(self, results: List[ExperimentResult],
                                output_path: str):
            """Export results to JSON format"""
-           
-       async def export_to_csv(self, results: List[ExperimentResult], 
+
+       async def export_to_csv(self, results: List[ExperimentResult],
                               output_path: str):
            """Export results to CSV for analysis"""
-           
+
        async def export_for_paper(self, results: List[ExperimentResult]) -> LaTeXTable:
            """Export results formatted for academic papers"""
    ```
@@ -827,14 +827,14 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # src/benchmark/api/gateway.py
    from fastapi import FastAPI, Depends, HTTPException
    from fastapi.security import HTTPBearer
-   
+
    app = FastAPI(title="LLM Cybersecurity Benchmark API")
-   
+
    @app.post("/experiments", response_model=ExperimentResponse)
-   async def create_experiment(request: ExperimentRequest, 
+   async def create_experiment(request: ExperimentRequest,
                               background_tasks: BackgroundTasks):
        """Create and start new experiment"""
-       
+
    @app.get("/experiments/{experiment_id}/status")
    async def get_experiment_status(experiment_id: str):
        """Get experiment status and progress"""
@@ -844,14 +844,14 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```python
    # src/benchmark/api/models.py
    from pydantic import BaseModel
-   
+
    class ExperimentRequest(BaseModel):
        name: str
        description: Optional[str] = None
        models: List[str]
        datasets: List[str]
        metrics: List[str]
-       
+
    class ExperimentResponse(BaseModel):
        experiment_id: str
        status: str
@@ -864,7 +864,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class APIKeyManager:
        async def validate_api_key(self, api_key: str) -> bool:
            """Validate API key"""
-           
+
    class RateLimiter:
        async def check_rate_limit(self, client_id: str) -> bool:
            """Check if client is within rate limits"""
@@ -898,14 +898,14 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    import click
    from rich.console import Console
    from rich.table import Table
-   
+
    console = Console()
-   
+
    @click.group()
    def cli():
        """LLM Cybersecurity Benchmark CLI"""
        pass
-   
+
    @cli.command()
    @click.option('--config', '-c', required=True)
    def run(config: str):
@@ -917,11 +917,11 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # src/benchmark/cli/interactive.py
    from rich.progress import Progress, TaskID
    from rich.live import Live
-   
+
    class InteractiveCLI:
        async def run_experiment_with_progress(self, experiment_id: str):
            """Run experiment with real-time progress updates"""
-           
+
        async def display_results_table(self, results: List[ExperimentResult]):
            """Display results in formatted table"""
    ```
@@ -931,11 +931,11 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    @cli.command()
    def list_models():
        """List available model plugins"""
-       
+
    @cli.command()
    def list_datasets():
        """List available datasets"""
-       
+
    @cli.command()
    @click.option('--output', '-o', default='experiment.yaml')
    def generate_config(output: str):
@@ -971,10 +971,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
        def __init__(self, results_service: ResultsService):
            self.results_service = results_service
            self.template_engine = Jinja2Environment()
-           
+
        async def generate_html_report(self, experiment_ids: List[str]) -> str:
            """Generate comprehensive HTML report"""
-           
+
        async def generate_academic_report(self, experiment_ids: List[str]) -> str:
            """Generate LaTeX formatted academic report"""
    ```
@@ -984,11 +984,11 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # src/benchmark/reporting/visualizations.py
    import plotly.graph_objects as go
    from plotly.subplots import make_subplots
-   
+
    class VisualizationEngine:
        async def create_accuracy_comparison_chart(self, results: List[Result]) -> go.Figure:
            """Create model accuracy comparison chart"""
-           
+
        async def create_performance_heatmap(self, results: List[Result]) -> go.Figure:
            """Create performance heatmap across models and datasets"""
    ```
@@ -1040,10 +1040,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    # tests/integration/test_full_system.py
    async def test_complete_benchmark_pipeline():
        """Test complete pipeline from config to report"""
-       
+
    async def test_multi_model_evaluation():
        """Test evaluation of multiple models simultaneously"""
-       
+
    async def test_large_dataset_handling():
        """Test system with large datasets"""
    ```
@@ -1054,7 +1054,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    class PerformanceOptimizer:
        async def optimize_memory_usage(self):
            """Optimize memory usage for large experiments"""
-           
+
        async def optimize_concurrent_processing(self):
            """Optimize parallel processing"""
    ```
@@ -1063,10 +1063,10 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
    ```markdown
    # docs/installation.md
    # Complete installation guide
-   
+
    # docs/usage.md
    # Comprehensive usage examples
-   
+
    # docs/api_reference.md
    # Complete API documentation
    ```
@@ -1098,7 +1098,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
                   /E2E\        End-to-End Tests
                  /     \       (5% - Full System)
                 /_______\
-               /Integration\    Integration Tests  
+               /Integration\    Integration Tests
               /             \   (15% - Service Interactions)
              /_______________\
             /                 \  Unit Tests
@@ -1124,7 +1124,7 @@ Phase 12: Integration (Week 16-20) ░░░░░░░░░░░░░░░
 # Automated validation pipeline
 async def validate_phase_completion(phase: int) -> ValidationResult:
     """Validate that phase requirements are met"""
-    
+
     validators = {
         1: validate_foundation,
         2: validate_configuration,
@@ -1132,7 +1132,7 @@ async def validate_phase_completion(phase: int) -> ValidationResult:
         4: validate_model_service,
         # ... etc
     }
-    
+
     return await validators[phase]()
 ```
 
@@ -1186,11 +1186,11 @@ CMD ["python", "-m", "benchmark.services.data_service"]
 
 This modular structure and development plan provides:
 
-✅ **Clear Phase-by-Phase Development** - Each phase builds on the previous  
-✅ **Early Validation** - Regular testing and validation points  
-✅ **AI-Friendly Architecture** - Clear interfaces for AI assistance  
-✅ **Production Ready** - Scalable, maintainable, and deployable  
-✅ **Academic Focus** - Optimized for research and publication  
-✅ **Apple Silicon Optimized** - Efficient on MacBook Pro M4 Pro  
+✅ **Clear Phase-by-Phase Development** - Each phase builds on the previous
+✅ **Early Validation** - Regular testing and validation points
+✅ **AI-Friendly Architecture** - Clear interfaces for AI assistance
+✅ **Production Ready** - Scalable, maintainable, and deployable
+✅ **Academic Focus** - Optimized for research and publication
+✅ **Apple Silicon Optimized** - Efficient on MacBook Pro M4 Pro
 
 The plan allows for 4-5 months of development with regular milestones and validation points. Each phase can be developed with AI assistance due to the clear interfaces and modular structure.

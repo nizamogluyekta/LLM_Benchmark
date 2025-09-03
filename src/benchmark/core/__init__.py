@@ -25,6 +25,28 @@ from .exceptions import (
     model_memory_error,
     service_timeout_error,
 )
+from .logging import (
+    PerformanceTimer,
+    configure_logging,
+    generate_correlation_id,
+    get_config_logger,
+    get_correlation_id,
+    get_data_logger,
+    get_evaluation_logger,
+    get_logger,
+    get_model_logger,
+    get_performance_logger,
+    get_service_logger,
+    log_dataset_load,
+    log_evaluation_metrics,
+    log_experiment_end,
+    log_experiment_start,
+    log_function_call,
+    log_model_load,
+    set_correlation_id,
+    timed_operation,
+    with_correlation_id,
+)
 
 __all__ = [
     # Base service classes
@@ -44,11 +66,32 @@ __all__ = [
     "ModelLoadingError",
     "EvaluationError",
     "ServiceUnavailableError",
-    # Convenience functions
+    # Exception convenience functions
     "config_validation_error",
     "dataset_not_found_error",
     "model_memory_error",
     "api_key_missing_error",
     "evaluation_timeout_error",
     "service_timeout_error",
+    # Logging utilities
+    "get_logger",
+    "get_data_logger",
+    "get_model_logger",
+    "get_evaluation_logger",
+    "get_config_logger",
+    "get_service_logger",
+    "get_performance_logger",
+    "configure_logging",
+    "set_correlation_id",
+    "get_correlation_id",
+    "generate_correlation_id",
+    "with_correlation_id",
+    "timed_operation",
+    "log_function_call",
+    "PerformanceTimer",
+    "log_experiment_start",
+    "log_experiment_end",
+    "log_model_load",
+    "log_dataset_load",
+    "log_evaluation_metrics",
 ]

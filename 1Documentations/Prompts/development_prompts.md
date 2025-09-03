@@ -26,7 +26,7 @@ Each prompt is designed to be used with Claude Code or similar AI assistants. Th
 
 📁 **Files**: Create project root with all directories
 
-🔧 **Task**: 
+🔧 **Task**:
 Create a new project called `llm_cybersec_benchmark` with Poetry package manager. Set up the complete directory structure as specified in the architectural plan. Initialize git repository with appropriate `.gitignore`.
 
 Requirements:
@@ -35,11 +35,11 @@ Requirements:
 - Git repository with initial commit
 - .gitignore for Python projects with additional ignores for data/, results/, .env
 
-✅ **Tests**: 
+✅ **Tests**:
 - Create `tests/conftest.py` with basic pytest configuration
 - Verify directory structure exists and is readable
 
-🏁 **Validation**: 
+🏁 **Validation**:
 - `poetry install` works without errors
 - All directories are created
 - Git repository is initialized
@@ -84,7 +84,7 @@ class BaseService(ABC):
     @abstractmethod
     async def initialize(self) -> ServiceResponse
     @abstractmethod
-    async def health_check(self) -> HealthCheck  
+    async def health_check(self) -> HealthCheck
     @abstractmethod
     async def shutdown(self) -> ServiceResponse
 
@@ -94,7 +94,7 @@ class BaseService(ABC):
 - ServiceStatus enum (HEALTHY, DEGRADED, UNHEALTHY)
 ```
 
-✅ **Tests**: 
+✅ **Tests**:
 Create `tests/unit/test_base_service.py`:
 - Test ServiceResponse creation and serialization
 - Test HealthCheck data structure
@@ -272,7 +272,7 @@ Create test fixtures in `tests/fixtures/`:
 #### Prompt 1.2.3: Create Sample Configuration Files
 🎯 **Goal**: Create sample configuration files for testing and examples
 
-📁 **Files**: 
+📁 **Files**:
 - `configs/experiments/basic_evaluation.yaml`
 - `configs/experiments/model_comparison.yaml`
 - `configs/models/local_models.yaml`
@@ -318,7 +318,7 @@ Create SQLAlchemy models for the complete database schema using the design from 
 
 Tables to create:
 - `experiments` (id, name, description, config_hash, created_at, completed_at, status)
-- `datasets` (id, name, source, version, samples_count, metadata, created_at)  
+- `datasets` (id, name, source, version, samples_count, metadata, created_at)
 - `models` (id, name, type, version, parameters_count, config, created_at)
 - `evaluations` (id, experiment_id, model_id, dataset_id, started_at, completed_at, status, error_message)
 - `evaluation_results` (id, evaluation_id, metric_type, metric_name, value, metadata, created_at)
@@ -368,7 +368,7 @@ class DatabaseManager:
     async def get_session(self) -> AsyncSession
     async def health_check(self) -> bool
     async def close(self) -> None
-    
+
     @asynccontextmanager
     async def session_scope(self) -> AsyncSession
 ```
@@ -616,7 +616,7 @@ def env_variables():
 #### Prompt 2.1.3: Add Configuration Schema Validation
 🎯 **Goal**: Add comprehensive validation for configuration consistency and best practices
 
-📁 **Files**: 
+📁 **Files**:
 - `src/benchmark/services/configuration_service.py` (enhance existing)
 - `src/benchmark/core/config_validators.py` (new)
 
@@ -634,7 +634,7 @@ Create specialized validators:
 ```python
 class ConfigurationValidator:
     async def validate_model_configs(self, models: List[ModelConfig]) -> List[ValidationWarning]
-    async def validate_dataset_configs(self, datasets: List[DatasetConfig]) -> List[ValidationWarning] 
+    async def validate_dataset_configs(self, datasets: List[DatasetConfig]) -> List[ValidationWarning]
     async def validate_resource_requirements(self, config: ExperimentConfig) -> List[ValidationWarning]
     async def validate_performance_settings(self, config: ExperimentConfig) -> List[ValidationWarning]
     async def check_api_key_availability(self, models: List[ModelConfig]) -> List[ValidationWarning]
@@ -736,7 +736,7 @@ def config():
 def validate(config_file: str):
     """Validate configuration file"""
 
-@config.command() 
+@config.command()
 @click.option('--output', '-o', default='config.yaml')
 @click.option('--interactive', '-i', is_flag=True)
 def generate(output: str, interactive: bool):
@@ -766,7 +766,7 @@ Create `tests/unit/test_config_cli.py`:
 #### Prompt 2.2.3: Performance Optimization for Configuration Service
 🎯 **Goal**: Optimize configuration service for performance and memory usage
 
-📁 **Files**: 
+📁 **Files**:
 - Modify `src/benchmark/services/configuration_service.py`
 - Create `tests/performance/test_config_performance.py`
 
@@ -823,7 +823,7 @@ Create `tests/unit/test_config_caching.py`:
 #### Prompt 3.1.1: Create Data Service Base Class
 🎯 **Goal**: Create the data service foundation with plugin architecture
 
-📁 **Files**: 
+📁 **Files**:
 - `src/benchmark/services/data_service.py`
 - `src/benchmark/interfaces/data_interfaces.py`
 
@@ -843,7 +843,7 @@ Requirements:
 class DataLoader(ABC):
     @abstractmethod
     async def load(self, config: DatasetConfig) -> Dict[str, Any]
-    @abstractmethod  
+    @abstractmethod
     async def validate_source(self, config: DatasetConfig) -> bool
     @abstractmethod
     def get_supported_formats(self) -> List[str]
@@ -853,7 +853,7 @@ class DataService(BaseService):
     def __init__(self):
         self.loaders: Dict[str, DataLoader] = {}
         self.cache: DataCache = DataCache()
-        
+
     async def register_loader(self, source_type: str, loader: DataLoader)
     async def load_dataset(self, config: DatasetConfig) -> Dataset
     async def get_dataset_info(self, dataset_id: str) -> DatasetInfo
@@ -910,12 +910,12 @@ class Dataset(BaseModel):
     info: DatasetInfo
     samples: List[DatasetSample]
     splits: Optional[DataSplits] = None
-    
+
 class DataSplits(BaseModel):
     train: List[DatasetSample]
     test: List[DatasetSample]
     validation: Optional[List[DatasetSample]] = None
-    
+
 class DataBatch(BaseModel):
     samples: List[DatasetSample]
     batch_id: str
@@ -960,13 +960,13 @@ class DataCache:
         self.cache_dir = cache_dir
         self.memory_cache: Dict[str, Dataset] = {}
         self.max_memory_mb = max_memory_mb
-        
+
     async def get_cached_dataset(self, dataset_id: str, config_hash: str) -> Optional[Dataset]
     async def cache_dataset(self, dataset_id: str, config_hash: str, dataset: Dataset) -> None
     async def invalidate_cache(self, dataset_id: str) -> None
     async def cleanup_old_cache(self, max_age_days: int = 7) -> None
     async def get_cache_stats(self) -> CacheStats
-    
+
     def _generate_cache_key(self, dataset_id: str, config_hash: str) -> str
     def _compress_dataset(self, dataset: Dataset) -> bytes
     def _decompress_dataset(self, data: bytes) -> Dataset
@@ -1014,17 +1014,17 @@ Requirements:
 class LocalFileDataLoader(DataLoader):
     async def load(self, config: DatasetConfig) -> Dict[str, Any]:
         """Load dataset from local file"""
-        
+
     async def validate_source(self, config: DatasetConfig) -> bool:
         """Validate that local file exists and is readable"""
-        
+
     def get_supported_formats(self) -> List[str]:
         return ['json', 'csv', 'parquet']
-        
+
     async def _load_json(self, file_path: Path) -> List[Dict[str, Any]]
     async def _load_csv(self, file_path: Path, config: Dict[str, Any]) -> List[Dict[str, Any]]
     async def _load_parquet(self, file_path: Path) -> List[Dict[str, Any]]
-    
+
     def _map_fields(self, raw_data: List[Dict], field_mapping: Dict[str, str]) -> List[DatasetSample]
     def _detect_format(self, file_path: Path) -> str
 ```
@@ -1071,22 +1071,22 @@ Add kaggle dependency to pyproject.toml: `kaggle>=1.5.16`
 class KaggleDataLoader(DataLoader):
     def __init__(self):
         self.api = None  # Initialize in async method
-        
+
     async def load(self, config: DatasetConfig) -> Dict[str, Any]:
         """Load dataset from Kaggle"""
-        
+
     async def validate_source(self, config: DatasetConfig) -> bool:
         """Validate Kaggle dataset exists and is accessible"""
-        
+
     async def _initialize_api(self) -> None:
         """Initialize Kaggle API with authentication"""
-        
+
     async def _download_dataset(self, dataset_path: str, download_dir: Path) -> Path:
         """Download dataset from Kaggle"""
-        
+
     async def _extract_files(self, archive_path: Path, extract_dir: Path) -> List[Path]:
         """Extract compressed dataset files"""
-        
+
     def _find_data_files(self, extract_dir: Path) -> List[Path]:
         """Find actual data files in extracted directory"""
 ```
@@ -1132,19 +1132,19 @@ Add dependency to pyproject.toml: `datasets>=2.16.0`
 class HuggingFaceDataLoader(DataLoader):
     async def load(self, config: DatasetConfig) -> Dict[str, Any]:
         """Load dataset from HuggingFace"""
-        
+
     async def validate_source(self, config: DatasetConfig) -> bool:
         """Validate HuggingFace dataset exists"""
-        
+
     async def _load_dataset_streaming(self, dataset_path: str, config: DatasetConfig) -> IterableDataset:
         """Load dataset in streaming mode for large datasets"""
-        
+
     async def _load_dataset_full(self, dataset_path: str, config: DatasetConfig) -> Dataset:
         """Load full dataset into memory"""
-        
+
     def _map_huggingface_fields(self, hf_dataset: Dataset, field_mapping: Dict[str, str]) -> List[DatasetSample]:
         """Map HuggingFace dataset fields to our format"""
-        
+
     async def _get_dataset_info(self, dataset_path: str) -> Dict[str, Any]:
         """Get information about HuggingFace dataset"""
 ```
@@ -1173,7 +1173,7 @@ Create `tests/integration/test_huggingface_integration.py`:
 #### Prompt 3.3.1: Create Base Preprocessor Interface
 🎯 **Goal**: Create preprocessing interface and common preprocessing utilities
 
-📁 **Files**: 
+📁 **Files**:
 - `src/benchmark/data/preprocessors/base.py`
 - `src/benchmark/data/preprocessors/common.py`
 
@@ -1193,10 +1193,10 @@ Requirements:
 class DataPreprocessor(ABC):
     @abstractmethod
     async def process(self, samples: List[DatasetSample], config: Dict[str, Any]) -> List[DatasetSample]
-    
+
     @abstractmethod
     def get_required_fields(self) -> List[str]
-    
+
     @abstractmethod
     def validate_config(self, config: Dict[str, Any]) -> List[str]  # warnings
 
@@ -1205,25 +1205,25 @@ class PreprocessingUtilities:
     @staticmethod
     def clean_text(text: str) -> str:
         """Clean and normalize text content"""
-        
+
     @staticmethod
     def normalize_timestamp(timestamp_str: str, formats: List[str]) -> Optional[datetime]:
         """Parse timestamp from various formats"""
-        
+
     @staticmethod
     def extract_ip_addresses(text: str) -> List[str]:
         """Extract IP addresses from text"""
-        
+
     @staticmethod
     def extract_urls(text: str) -> List[str]:
         """Extract URLs from text"""
-        
+
     @staticmethod
     def normalize_attack_labels(label: str) -> str:
         """Normalize attack type labels to standard format"""
-        
-    async def process_batch(self, 
-                          samples: List[DatasetSample], 
+
+    async def process_batch(self,
+                          samples: List[DatasetSample],
                           processor_func: Callable,
                           batch_size: int = 100) -> List[DatasetSample]:
         """Process samples in batches with progress reporting"""
@@ -1263,22 +1263,22 @@ Requirements:
 class NetworkLogPreprocessor(DataPreprocessor):
     async def process(self, samples: List[DatasetSample], config: Dict[str, Any]) -> List[DatasetSample]:
         """Process network log samples"""
-        
+
     def get_required_fields(self) -> List[str]:
         return ['input_text', 'label']
-        
+
     async def _parse_log_entry(self, log_text: str) -> Dict[str, Any]:
         """Parse individual log entry and extract features"""
-        
+
     def _extract_network_features(self, log_text: str) -> Dict[str, Any]:
         """Extract network-specific features"""
-        
+
     def _identify_attack_indicators(self, log_text: str, features: Dict[str, Any]) -> List[str]:
         """Identify potential attack indicators in log"""
-        
+
     def _normalize_protocol(self, protocol: str) -> str:
         """Normalize protocol names to standard format"""
-        
+
     def _extract_connection_info(self, log_text: str) -> Dict[str, Any]:
         """Extract source/destination IP, ports, etc."""
 ```
@@ -1320,22 +1320,22 @@ Requirements:
 class EmailContentPreprocessor(DataPreprocessor):
     async def process(self, samples: List[DatasetSample], config: Dict[str, Any]) -> List[DatasetSample]:
         """Process email content samples"""
-        
+
     def _clean_html_content(self, html_content: str) -> str:
         """Clean HTML and extract plain text"""
-        
+
     def _extract_email_features(self, email_text: str) -> Dict[str, Any]:
         """Extract email-specific features"""
-        
+
     def _identify_suspicious_urls(self, email_text: str) -> List[str]:
         """Identify potentially suspicious URLs"""
-        
+
     def _extract_header_info(self, email_text: str) -> Dict[str, str]:
         """Extract email headers if present"""
-        
+
     def _analyze_linguistic_features(self, text: str) -> Dict[str, Any]:
         """Analyze linguistic features relevant to phishing"""
-        
+
     def _normalize_email_addresses(self, email_text: str) -> str:
         """Normalize email addresses in content"""
 ```
@@ -1387,7 +1387,7 @@ async def initialize(self) -> ServiceResponse:
 async def _register_default_loaders(self) -> None:
     """Register all available data loaders"""
     self.register_loader("local", LocalFileDataLoader())
-    self.register_loader("kaggle", KaggleDataLoader()) 
+    self.register_loader("kaggle", KaggleDataLoader())
     self.register_loader("huggingface", HuggingFaceDataLoader())
 
 async def list_available_datasets(self, source: Optional[str] = None) -> List[DatasetInfo]:
@@ -1425,7 +1425,7 @@ Create `tests/integration/test_data_service_integration.py`:
 #### Prompt 3.4.2: Create Data Service Performance Optimization
 🎯 **Goal**: Optimize data service for memory usage and performance
 
-📁 **Files**: 
+📁 **Files**:
 - Modify `src/benchmark/services/data_service.py`
 - Create `tests/performance/test_data_service_performance.py`
 
@@ -1433,7 +1433,7 @@ Create `tests/integration/test_data_service_integration.py`:
 Optimize the data service for better performance, especially when handling large datasets on MacBook Pro M4 Pro.
 
 Requirements:
-- Implement streaming data loading for large datasets  
+- Implement streaming data loading for large datasets
 - Add memory usage monitoring and limits
 - Implement lazy loading of dataset sections
 - Add data compression for cached datasets
@@ -1445,15 +1445,15 @@ Performance features to add:
 class StreamingDataLoader:
     """Memory-efficient streaming loader for large datasets"""
     async def stream_batches(self, dataset_config: DatasetConfig, batch_size: int) -> AsyncIterator[DataBatch]
-    
+
 class MemoryManager:
     """Monitor and manage memory usage"""
     def __init__(self, max_memory_gb: float = 8.0):  # Conservative for M4 Pro
         self.max_memory_gb = max_memory_gb
-        
+
     async def check_memory_usage(self) -> MemoryStatus
     async def cleanup_unused_datasets(self) -> None
-    
+
 class DataServiceOptimizer:
     """Optimize data service performance"""
     async def optimize_for_hardware(self, hardware_info: Dict[str, Any]) -> None
@@ -1495,19 +1495,19 @@ Test scenarios:
 class TestDataServiceE2E:
     async def test_complete_dataset_pipeline(self, data_service, config_service):
         """Test complete pipeline: config -> load -> preprocess -> cache"""
-        
+
     async def test_multi_source_dataset_loading(self, data_service):
         """Test loading datasets from multiple sources simultaneously"""
-        
+
     async def test_large_dataset_handling(self, data_service):
         """Test with large datasets approaching memory limits"""
-        
+
     async def test_error_recovery_scenarios(self, data_service):
         """Test recovery from various error conditions"""
-        
+
     async def test_data_service_under_load(self, data_service):
         """Test data service performance under high load"""
-        
+
     async def test_realistic_cybersecurity_workflows(self, data_service):
         """Test with realistic cybersecurity dataset workflows"""
 ```
@@ -1537,7 +1537,7 @@ Include realistic test scenarios:
 #### Prompt 4.1.1: Create Model Service Base Structure
 🎯 **Goal**: Create model service with plugin architecture for different model types
 
-📁 **Files**: 
+📁 **Files**:
 - `src/benchmark/services/model_service.py`
 - `src/benchmark/interfaces/model_interfaces.py`
 
@@ -1557,16 +1557,16 @@ Requirements:
 class ModelPlugin(ABC):
     @abstractmethod
     async def initialize(self, config: ModelConfig) -> ServiceResponse
-    
+
     @abstractmethod
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]
-    
+
     @abstractmethod
     async def explain(self, sample: str) -> str
-    
+
     @abstractmethod
     async def get_model_info(self) -> Dict[str, Any]
-    
+
     @abstractmethod
     async def cleanup(self) -> None
 
@@ -1586,7 +1586,7 @@ class ModelService(BaseService):
         self.plugins: Dict[str, ModelPlugin] = {}
         self.loaded_models: Dict[str, LoadedModel] = {}
         self.performance_monitor = ModelPerformanceMonitor()
-        
+
     async def register_plugin(self, model_type: str, plugin: ModelPlugin)
     async def load_model(self, model_config: ModelConfig) -> str  # returns model_id
     async def predict_batch(self, model_id: str, samples: List[str]) -> List[Prediction]
@@ -1631,16 +1631,16 @@ class ModelPerformanceMonitor:
     def __init__(self):
         self.metrics: Dict[str, List[InferenceMetric]] = defaultdict(list)
         self.resource_tracker = ResourceTracker()
-        
+
     async def start_inference_measurement(self, model_id: str, request_id: str) -> InferenceContext:
         """Start measuring inference performance"""
-        
+
     async def end_inference_measurement(self, context: InferenceContext, result: Any) -> InferenceMetric:
         """End measurement and record metrics"""
-        
+
     async def get_performance_summary(self, model_id: str, time_range: Optional[TimeRange] = None) -> PerformanceSummary:
         """Get performance summary for model"""
-        
+
     async def detect_performance_issues(self, model_id: str) -> List[PerformanceIssue]:
         """Detect potential performance problems"""
 
@@ -1701,19 +1701,19 @@ Requirements:
 class ModelValidator:
     def __init__(self, hardware_info: HardwareInfo):
         self.hardware_info = hardware_info
-        
+
     async def validate_model_config(self, config: ModelConfig) -> ValidationResult:
         """Validate individual model configuration"""
-        
+
     async def validate_model_compatibility(self, configs: List[ModelConfig]) -> CompatibilityReport:
         """Check if models can be run together"""
-        
+
     async def check_hardware_requirements(self, config: ModelConfig) -> HardwareCompatibility:
         """Check if model fits hardware constraints"""
-        
+
     async def validate_api_access(self, config: ModelConfig) -> bool:
         """Validate API access for cloud models"""
-        
+
     async def recommend_model_settings(self, config: ModelConfig) -> ModelRecommendations:
         """Provide optimized settings for model"""
 
@@ -1723,7 +1723,7 @@ class HardwareInfo(BaseModel):
     gpu_memory_gb: Optional[float]
     neural_engine_available: bool
     apple_silicon: bool
-    
+
 class ValidationResult(BaseModel):
     valid: bool
     issues: List[str]
@@ -1763,7 +1763,7 @@ Create MLX plugin optimized for Apple Silicon M4 Pro that can load and run quant
 
 Requirements:
 - Load MLX-compatible models (Llama, Qwen, Mistral formats)
-- Support 4-bit and 8-bit quantization  
+- Support 4-bit and 8-bit quantization
 - Optimize for Apple Silicon unified memory
 - Implement efficient batch processing
 - Generate cybersecurity-focused prompts
@@ -1777,7 +1777,7 @@ class MLXModelPlugin(ModelPlugin):
         self.model = None
         self.tokenizer = None
         self.model_config = None
-        
+
     async def initialize(self, config: ModelConfig) -> ServiceResponse:
         """Load MLX model with optimizations for M4 Pro"""
         try:
@@ -1787,25 +1787,25 @@ class MLXModelPlugin(ModelPlugin):
             return ServiceResponse(success=True, data={"model_loaded": config.path})
         except Exception as e:
             return ServiceResponse(success=False, error=str(e))
-    
+
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions using MLX with cybersecurity prompting"""
         predictions = []
         for i, sample in enumerate(samples):
             start_time = time.time()
             prompt = self._format_cybersecurity_prompt(sample)
-            
+
             response = generate(
                 self.model,
-                self.tokenizer, 
+                self.tokenizer,
                 prompt=prompt,
                 max_tokens=self.model_config.max_tokens,
                 temperature=self.model_config.temperature
             )
-            
+
             inference_time = time.time() - start_time
             parsed_response = self._parse_response(response)
-            
+
             predictions.append({
                 'sample_id': str(i),
                 'input_text': sample,
@@ -1816,9 +1816,9 @@ class MLXModelPlugin(ModelPlugin):
                 'inference_time_ms': inference_time * 1000,
                 'model_response': response
             })
-            
+
         return predictions
-    
+
     def _format_cybersecurity_prompt(self, sample: str) -> str:
         """Format sample for cybersecurity analysis"""
         return f"""
@@ -1832,9 +1832,9 @@ class MLXModelPlugin(ModelPlugin):
         Attack_Type: [malware, intrusion, dos, phishing, or N/A if benign]
         Explanation: [Brief explanation of your reasoning]
         IOCs: [List any indicators of compromise found]
-        
+
         Analysis:"""
-    
+
     def _parse_response(self, response: str) -> Dict[str, Any]:
         """Parse structured response from model"""
         # Implementation to parse the formatted response
@@ -1888,28 +1888,28 @@ class OllamaModelPlugin(ModelPlugin):
         self.client = None
         self.model_name = None
         self.model_config = None
-        
+
     async def initialize(self, config: ModelConfig) -> ServiceResponse:
         """Initialize Ollama client and ensure model is available"""
         try:
             self.client = Client()
             self.model_name = config.path  # e.g., "llama2:7b", "codellama:13b"
-            
+
             # Check if model is available, pull if necessary
             await self._ensure_model_available()
-            
+
             self.model_config = config
             return ServiceResponse(success=True, data={"model": self.model_name})
         except Exception as e:
             return ServiceResponse(success=False, error=str(e))
-    
+
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions using Ollama"""
         predictions = []
         for i, sample in enumerate(samples):
             start_time = time.time()
             prompt = self._format_cybersecurity_prompt(sample)
-            
+
             try:
                 response = self.client.chat(
                     model=self.model_name,
@@ -1919,10 +1919,10 @@ class OllamaModelPlugin(ModelPlugin):
                         'num_predict': self.model_config.max_tokens,
                     }
                 )
-                
+
                 inference_time = time.time() - start_time
                 parsed_response = self._parse_response(response['message']['content'])
-                
+
                 predictions.append({
                     'sample_id': str(i),
                     'input_text': sample,
@@ -1943,15 +1943,15 @@ class OllamaModelPlugin(ModelPlugin):
                     'error': str(e),
                     'inference_time_ms': 0
                 })
-                
+
         return predictions
-    
+
     async def _ensure_model_available(self) -> None:
         """Check if model is available, pull if necessary"""
         try:
             models = self.client.list()
             model_names = [model['name'] for model in models['models']]
-            
+
             if self.model_name not in model_names:
                 print(f"Pulling model {self.model_name}...")
                 self.client.pull(self.model_name)
@@ -2011,37 +2011,37 @@ class OpenAIModelPlugin(ModelPlugin):
         self.model_name = None
         self.rate_limiter = APIRateLimiter(requests_per_minute=60)  # Conservative
         self.cost_tracker = CostTracker()
-        
+
     async def initialize(self, config: ModelConfig) -> ServiceResponse:
         """Initialize OpenAI client"""
         try:
             api_key = os.getenv('OPENAI_API_KEY')
             if not api_key:
                 return ServiceResponse(success=False, error="OPENAI_API_KEY not found")
-                
+
             self.client = OpenAI(api_key=api_key)
             self.model_name = config.path  # e.g., "gpt-4o-mini"
             self.model_config = config
-            
+
             # Test API access
             await self._test_api_access()
-            
+
             return ServiceResponse(success=True, data={"model": self.model_name})
         except Exception as e:
             return ServiceResponse(success=False, error=str(e))
-    
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions with rate limiting and retries"""
         predictions = []
-        
+
         for i, sample in enumerate(samples):
             # Rate limiting
             await self.rate_limiter.acquire()
-            
+
             start_time = time.time()
             prompt = self._format_cybersecurity_prompt(sample)
-            
+
             try:
                 response = self.client.chat.completions.create(
                     model=self.model_name,
@@ -2052,18 +2052,18 @@ class OpenAIModelPlugin(ModelPlugin):
                     max_tokens=self.model_config.max_tokens,
                     temperature=self.model_config.temperature
                 )
-                
+
                 inference_time = time.time() - start_time
                 content = response.choices[0].message.content
                 parsed_response = self._parse_response(content)
-                
+
                 # Track costs
                 self.cost_tracker.add_request(
                     model=self.model_name,
                     input_tokens=response.usage.prompt_tokens,
                     output_tokens=response.usage.completion_tokens
                 )
-                
+
                 predictions.append({
                     'sample_id': str(i),
                     'input_text': sample,
@@ -2075,7 +2075,7 @@ class OpenAIModelPlugin(ModelPlugin):
                     'tokens_used': response.usage.total_tokens,
                     'model_response': content
                 })
-                
+
             except Exception as e:
                 predictions.append({
                     'sample_id': str(i),
@@ -2085,26 +2085,26 @@ class OpenAIModelPlugin(ModelPlugin):
                     'error': str(e),
                     'inference_time_ms': 0
                 })
-                
+
         return predictions
 
 class APIRateLimiter:
     def __init__(self, requests_per_minute: int):
         self.requests_per_minute = requests_per_minute
         self.requests = []
-        
+
     async def acquire(self):
         """Acquire permission to make API request"""
         now = datetime.now()
         # Remove requests older than 1 minute
-        self.requests = [req_time for req_time in self.requests 
+        self.requests = [req_time for req_time in self.requests
                         if now - req_time < timedelta(minutes=1)]
-        
+
         if len(self.requests) >= self.requests_per_minute:
             sleep_time = 60 - (now - self.requests[0]).total_seconds()
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
-        
+
         self.requests.append(now)
 
 class CostTracker:
@@ -2115,7 +2115,7 @@ class CostTracker:
             "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},  # per 1K tokens
             "gpt-4o": {"input": 0.005, "output": 0.015}
         }
-    
+
     def add_request(self, model: str, input_tokens: int, output_tokens: int):
         """Track cost of API request"""
         if model in self.pricing:
@@ -2130,7 +2130,7 @@ class CostTracker:
                 'output_tokens': output_tokens,
                 'cost_usd': cost
             })
-    
+
     def get_total_cost(self) -> float:
         """Get total cost of all requests"""
         return sum(request['cost_usd'] for request in self.costs)
@@ -2178,33 +2178,33 @@ class AnthropicModelPlugin(ModelPlugin):
         self.model_name = None
         self.rate_limiter = APIRateLimiter(requests_per_minute=50)  # Conservative for Anthropic
         self.cost_tracker = AnthropicCostTracker()
-        
+
     async def initialize(self, config: ModelConfig) -> ServiceResponse:
         """Initialize Anthropic client"""
         try:
             api_key = os.getenv('ANTHROPIC_API_KEY')
             if not api_key:
                 return ServiceResponse(success=False, error="ANTHROPIC_API_KEY not found")
-                
+
             self.client = Anthropic(api_key=api_key)
             self.model_name = config.path  # e.g., "claude-3-haiku-20240307"
             self.model_config = config
-            
+
             return ServiceResponse(success=True, data={"model": self.model_name})
         except Exception as e:
             return ServiceResponse(success=False, error=str(e))
-    
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions using Claude API"""
         predictions = []
-        
+
         for i, sample in enumerate(samples):
             await self.rate_limiter.acquire()
-            
+
             start_time = time.time()
             prompt = self._format_cybersecurity_prompt(sample)
-            
+
             try:
                 message = self.client.messages.create(
                     model=self.model_name,
@@ -2212,23 +2212,23 @@ class AnthropicModelPlugin(ModelPlugin):
                     temperature=self.model_config.temperature,
                     messages=[
                         {
-                            "role": "user", 
+                            "role": "user",
                             "content": prompt
                         }
                     ]
                 )
-                
+
                 inference_time = time.time() - start_time
                 content = message.content[0].text
                 parsed_response = self._parse_response(content)
-                
+
                 # Track usage
                 self.cost_tracker.add_request(
                     model=self.model_name,
                     input_tokens=message.usage.input_tokens,
                     output_tokens=message.usage.output_tokens
                 )
-                
+
                 predictions.append({
                     'sample_id': str(i),
                     'input_text': sample,
@@ -2240,7 +2240,7 @@ class AnthropicModelPlugin(ModelPlugin):
                     'tokens_used': message.usage.input_tokens + message.usage.output_tokens,
                     'model_response': content
                 })
-                
+
             except Exception as e:
                 predictions.append({
                     'sample_id': str(i),
@@ -2250,7 +2250,7 @@ class AnthropicModelPlugin(ModelPlugin):
                     'error': str(e),
                     'inference_time_ms': 0
                 })
-                
+
         return predictions
 
 class AnthropicCostTracker:
@@ -2261,7 +2261,7 @@ class AnthropicCostTracker:
             "claude-3-haiku-20240307": {"input": 0.00025, "output": 0.00125},
             "claude-3-5-sonnet-20241022": {"input": 0.003, "output": 0.015}
         }
-    
+
     def add_request(self, model: str, input_tokens: int, output_tokens: int):
         """Track cost of Anthropic request"""
         if model in self.pricing:
@@ -2280,7 +2280,7 @@ class AnthropicCostTracker:
 
 ✅ **Tests**:
 Create `tests/unit/test_anthropic_plugin.py`:
-- Mock Anthropic API responses  
+- Mock Anthropic API responses
 - Test message format handling
 - Test cost tracking for Anthropic models
 - Test error handling specific to Anthropic API
@@ -2304,7 +2304,7 @@ Integrate all created model plugins with the model service and add comprehensive
 
 Requirements:
 - Auto-register all available model plugins
-- Model discovery and listing functionality  
+- Model discovery and listing functionality
 - Unified interface for all model types
 - Model performance comparison utilities
 - Resource optimization across different model types
@@ -2322,21 +2322,21 @@ async def _register_default_plugins(self):
     # Local plugins
     self.register_plugin("mlx_local", MLXModelPlugin())
     self.register_plugin("ollama", OllamaModelPlugin())
-    
-    # API plugins  
+
+    # API plugins
     self.register_plugin("openai_api", OpenAIModelPlugin())
     self.register_plugin("anthropic_api", AnthropicModelPlugin())
 
 async def list_available_models(self) -> List[ModelInfo]:
     """List all available models from all plugins"""
-    
+
 async def compare_model_performance(self, model_ids: List[str]) -> PerformanceComparison:
     """Compare performance metrics across models"""
-    
+
 async def optimize_model_loading(self, configs: List[ModelConfig]) -> LoadingStrategy:
     """Optimize model loading order and resource usage"""
-    
-async def get_cost_estimates(self, model_configs: List[ModelConfig], 
+
+async def get_cost_estimates(self, model_configs: List[ModelConfig],
                            estimated_samples: int) -> CostEstimate:
     """Estimate costs for running evaluation with given models"""
 
@@ -2393,22 +2393,22 @@ Test scenarios:
 class TestModelServicePerformance:
     async def test_single_model_inference_performance(self, model_service):
         """Test inference performance for individual models"""
-        
+
     async def test_concurrent_model_inference(self, model_service):
         """Test performance with multiple models running concurrently"""
-        
+
     async def test_memory_usage_multiple_models(self, model_service):
         """Test memory usage when loading multiple models"""
-        
+
     async def test_batch_processing_efficiency(self, model_service):
         """Test efficiency of batch processing vs individual requests"""
-        
+
     async def test_api_rate_limiting_performance(self, model_service):
         """Test that rate limiting doesn't significantly impact performance"""
-        
+
     async def test_model_loading_optimization(self, model_service):
         """Test optimized model loading strategies"""
-        
+
     async def benchmark_realistic_workloads(self, model_service):
         """Benchmark with realistic cybersecurity evaluation workloads"""
 ```
@@ -2447,19 +2447,19 @@ Test scenarios:
 class TestModelServiceE2E:
     async def test_complete_model_lifecycle(self, model_service, config_service):
         """Test complete model lifecycle with real configurations"""
-        
+
     async def test_multi_model_comparison_workflow(self, model_service):
         """Test comparing multiple models on same dataset"""
-        
+
     async def test_model_service_resilience(self, model_service):
         """Test recovery from various failure scenarios"""
-        
+
     async def test_realistic_cybersecurity_evaluation(self, model_service, data_service):
         """Test with realistic cybersecurity datasets and workflows"""
-        
+
     async def test_cost_tracking_accuracy(self, model_service):
         """Test accuracy of cost tracking across different models"""
-        
+
     async def test_performance_monitoring_integration(self, model_service):
         """Test that performance monitoring works end-to-end"""
 ```
@@ -2491,7 +2491,7 @@ Include realistic test scenarios with:
 
 1. **Specific and actionable** - Can be completed in 1-2 hours
 2. **AI-assistant friendly** - Clear requirements and context
-3. **Test-focused** - Includes appropriate testing at each step  
+3. **Test-focused** - Includes appropriate testing at each step
 4. **Incremental** - Builds on previous work without breaking it
 5. **Validated** - Clear success criteria for each step
 

@@ -2,9 +2,9 @@
 
 ## Document Overview
 
-**Project**: LLM Cybersecurity Attack Detection Benchmarking System  
-**Target Platform**: MacBook Pro M4 Pro with macOS  
-**Primary Use Case**: Academic research and model evaluation  
+**Project**: LLM Cybersecurity Attack Detection Benchmarking System
+**Target Platform**: MacBook Pro M4 Pro with macOS
+**Primary Use Case**: Academic research and model evaluation
 **Last Updated**: January 2025
 
 ## Table of Contents
@@ -47,12 +47,12 @@ Build a comprehensive, automated benchmarking system to evaluate Large Language 
 
 ### Decision 1: Modular Plugin Architecture
 
-**Status**: ACCEPTED  
-**Context**: Need to support multiple model types, datasets, and evaluation metrics  
-**Decision**: Use plugin-based architecture with standardized interfaces  
-**Rationale**: 
+**Status**: ACCEPTED
+**Context**: Need to support multiple model types, datasets, and evaluation metrics
+**Decision**: Use plugin-based architecture with standardized interfaces
+**Rationale**:
 - Easy to add new models without changing core system
-- Different evaluation metrics can be added independently  
+- Different evaluation metrics can be added independently
 - Facilitates testing and maintenance
 - Allows parallel development of components
 
@@ -61,19 +61,19 @@ Build a comprehensive, automated benchmarking system to evaluate Large Language 
 class ModelPlugin:
     def load_model(self, config: ModelConfig) -> Model:
         pass
-    
+
     def predict(self, input_data: List[str]) -> List[Prediction]:
         pass
-    
+
     def get_explanation(self, input_data: str) -> str:
         pass
 ```
 
 ### Decision 2: Local-First with API Fallback
 
-**Status**: ACCEPTED  
-**Context**: M4 Pro has limited resources but we need to test various model sizes  
-**Decision**: Prioritize local models (MLX) with API fallback for large models  
+**Status**: ACCEPTED
+**Context**: M4 Pro has limited resources but we need to test various model sizes
+**Decision**: Prioritize local models (MLX) with API fallback for large models
 **Rationale**:
 - Cost control for large model evaluation
 - Privacy for sensitive datasets
@@ -82,9 +82,9 @@ class ModelPlugin:
 
 ### Decision 3: SQLite for Data Storage
 
-**Status**: ACCEPTED  
-**Context**: Need structured storage for results, metadata, and configurations  
-**Decision**: Use SQLite as primary database with JSON for complex objects  
+**Status**: ACCEPTED
+**Context**: Need structured storage for results, metadata, and configurations
+**Decision**: Use SQLite as primary database with JSON for complex objects
 **Rationale**:
 - No external dependencies or server setup
 - ACID compliance for reliable results storage
@@ -94,9 +94,9 @@ class ModelPlugin:
 
 ### Decision 4: Configuration-Driven Evaluation
 
-**Status**: ACCEPTED  
-**Context**: Need flexible experiment configuration and reproducibility  
-**Decision**: YAML-based configuration with Pydantic validation  
+**Status**: ACCEPTED
+**Context**: Need flexible experiment configuration and reproducibility
+**Decision**: YAML-based configuration with Pydantic validation
 **Rationale**:
 - Human-readable experiment definitions
 - Type safety and validation
@@ -105,9 +105,9 @@ class ModelPlugin:
 
 ### Decision 5: Async Processing Pipeline
 
-**Status**: ACCEPTED  
-**Context**: Model inference can be I/O bound, especially for API calls  
-**Decision**: Use asyncio for concurrent model evaluation  
+**Status**: ACCEPTED
+**Context**: Model inference can be I/O bound, especially for API calls
+**Decision**: Use asyncio for concurrent model evaluation
 **Rationale**:
 - Better resource utilization
 - Faster evaluation of multiple models
@@ -176,23 +176,23 @@ graph TD
     B --> C[Configuration Manager]
     B --> D[Dataset Manager]
     B --> E[Model Manager]
-    
+
     D --> F[Data Loader]
     D --> G[Data Preprocessor]
-    
+
     E --> H[Local Model Plugin]
     E --> I[API Model Plugin]
-    
+
     B --> J[Evaluation Engine]
     J --> K[Accuracy Evaluator]
     J --> L[Explainability Evaluator]
     J --> M[Performance Evaluator]
     J --> N[FPR Evaluator]
-    
+
     J --> O[Results Manager]
     O --> P[Database]
     O --> Q[Report Generator]
-    
+
     Q --> R[HTML Reports]
     Q --> S[JSON Exports]
     Q --> T[Research Papers]
@@ -263,22 +263,22 @@ from typing import List, Dict, Any
 
 class ModelPlugin(ABC):
     """Base interface for all model plugins"""
-    
+
     @abstractmethod
     def initialize(self, config: Dict[str, Any]) -> None:
         """Initialize the model with configuration"""
         pass
-    
+
     @abstractmethod
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions for input samples"""
         pass
-    
+
     @abstractmethod
     async def explain(self, sample: str) -> str:
         """Generate explanation for a single sample"""
         pass
-    
+
     @abstractmethod
     def cleanup(self) -> None:
         """Clean up resources"""
@@ -286,12 +286,12 @@ class ModelPlugin(ABC):
 
 class DatasetPlugin(ABC):
     """Base interface for dataset plugins"""
-    
+
     @abstractmethod
     def load(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Load and return dataset"""
         pass
-    
+
     @abstractmethod
     def preprocess(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Preprocess the dataset"""
@@ -299,7 +299,7 @@ class DatasetPlugin(ABC):
 
 class EvaluatorPlugin(ABC):
     """Base interface for evaluator plugins"""
-    
+
     @abstractmethod
     async def evaluate(self, predictions: List[Dict], ground_truth: List[Dict]) -> Dict[str, float]:
         """Evaluate predictions against ground truth"""
@@ -392,21 +392,21 @@ flowchart LR
     A[Raw Datasets] --> B[Data Loader]
     B --> C[Preprocessor]
     C --> D[Dataset Cache]
-    
+
     D --> E[Batch Generator]
     E --> F[Model Plugin]
     F --> G[Prediction Store]
-    
+
     G --> H[Accuracy Evaluator]
     G --> I[Explainability Evaluator]
     G --> J[Performance Evaluator]
     G --> K[FPR Evaluator]
-    
+
     H --> L[Results Database]
     I --> L
     J --> L
     K --> L
-    
+
     L --> M[Report Generator]
     M --> N[Final Reports]
 ```
@@ -428,10 +428,10 @@ datasets:
     test_split: 0.2
     validation_split: 0.1
     max_samples: 50000
-    
+
   phishing_emails:
     name: "Phishing Email Dataset"
-    source: "huggingface" 
+    source: "huggingface"
     path: "ealvaradob/phishing-email-detection"
     type: "email_content"
     preprocessing:
@@ -451,50 +451,50 @@ datasets:
 # Core pipeline components
 class EvaluationPipeline:
     """Main evaluation pipeline orchestrator"""
-    
+
     def __init__(self, config: BenchmarkConfig):
         self.config = config
         self.dataset_manager = DatasetManager()
         self.model_manager = ModelManager()
         self.evaluators = self._initialize_evaluators()
         self.results_manager = ResultsManager()
-    
+
     async def run_evaluation(self, experiment_id: str) -> ExperimentResults:
         """Run complete evaluation pipeline"""
-        
+
         # 1. Load datasets
         datasets = await self._load_datasets()
-        
+
         # 2. Initialize models
         models = await self._initialize_models()
-        
+
         # 3. Run evaluations
         results = []
         for model in models:
             for dataset in datasets:
                 result = await self._evaluate_model_on_dataset(model, dataset)
                 results.append(result)
-                
+
         # 4. Aggregate and store results
         final_results = await self._aggregate_results(results)
         await self.results_manager.store_results(experiment_id, final_results)
-        
+
         return final_results
-    
+
     async def _evaluate_model_on_dataset(self, model: ModelPlugin, dataset: Dict) -> EvaluationResult:
         """Evaluate single model on single dataset"""
-        
+
         # Generate predictions
         predictions = await model.predict(dataset['test_samples'])
-        
+
         # Run all evaluators in parallel
         evaluation_tasks = []
         for evaluator in self.evaluators:
             task = evaluator.evaluate(predictions, dataset['ground_truth'])
             evaluation_tasks.append(task)
-            
+
         evaluation_results = await asyncio.gather(*evaluation_tasks)
-        
+
         return EvaluationResult(
             model_id=model.id,
             dataset_id=dataset['id'],
@@ -509,40 +509,40 @@ class EvaluationPipeline:
 # Example MLX model plugin
 class MLXModelPlugin(ModelPlugin):
     """Plugin for local MLX models"""
-    
+
     def __init__(self, model_path: str):
         self.model_path = model_path
         self.model = None
         self.tokenizer = None
-        
+
     async def initialize(self, config: Dict[str, Any]) -> None:
         """Load MLX model"""
         from mlx_lm import load
-        
+
         self.model, self.tokenizer = load(self.model_path)
-        
+
     async def predict(self, samples: List[str]) -> List[Dict[str, Any]]:
         """Generate predictions using MLX"""
         predictions = []
-        
+
         for sample in samples:
             # Format prompt for cybersecurity analysis
             prompt = self._format_security_prompt(sample)
-            
+
             # Measure inference time
             start_time = time.time()
             response = generate(
-                self.model, 
-                self.tokenizer, 
+                self.model,
+                self.tokenizer,
                 prompt=prompt,
                 max_tokens=512,
                 temperature=0.1
             )
             inference_time = time.time() - start_time
-            
+
             # Parse response
             prediction = self._parse_security_response(response)
-            
+
             predictions.append({
                 'prediction': prediction['classification'],
                 'confidence': prediction['confidence'],
@@ -550,23 +550,23 @@ class MLXModelPlugin(ModelPlugin):
                 'inference_time_ms': inference_time * 1000,
                 'model_response': response
             })
-            
+
         return predictions
-    
+
     def _format_security_prompt(self, sample: str) -> str:
         """Format input for cybersecurity analysis"""
         return f"""
         Analyze the following network log entry for potential security threats:
-        
+
         Log Entry: {sample}
-        
+
         Please provide:
         1. Classification: ATTACK or BENIGN
         2. Confidence: 0.0 to 1.0
         3. Explanation: Brief explanation of your reasoning
         4. Attack Type: If attack, specify the type (malware, intrusion, dos, etc.)
         5. IoCs: List any indicators of compromise found
-        
+
         Response format:
         Classification: [ATTACK/BENIGN]
         Confidence: [0.0-1.0]
@@ -582,23 +582,23 @@ class MLXModelPlugin(ModelPlugin):
 # Accuracy evaluator
 class AccuracyEvaluator(EvaluatorPlugin):
     """Evaluates classification accuracy metrics"""
-    
+
     async def evaluate(self, predictions: List[Dict], ground_truth: List[Dict]) -> Dict[str, float]:
         """Calculate accuracy metrics"""
         from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
-        
+
         # Extract predictions and ground truth labels
         pred_labels = [p['prediction'] for p in predictions]
         true_labels = [gt['label'] for gt in ground_truth]
         pred_confidences = [p['confidence'] for p in predictions]
-        
+
         # Calculate metrics
         precision, recall, f1, _ = precision_recall_fscore_support(
             true_labels, pred_labels, average='weighted'
         )
-        
+
         auc_roc = roc_auc_score(true_labels, pred_confidences)
-        
+
         return {
             'precision': precision,
             'recall': recall,
@@ -609,20 +609,20 @@ class AccuracyEvaluator(EvaluatorPlugin):
 # Explainability evaluator using LLM-as-judge
 class ExplainabilityEvaluator(EvaluatorPlugin):
     """Evaluates explanation quality using automated methods"""
-    
+
     def __init__(self, judge_model: str = "gpt-4o-mini"):
         self.judge_model = judge_model
-        
+
     async def evaluate(self, predictions: List[Dict], ground_truth: List[Dict]) -> Dict[str, float]:
         """Evaluate explanation quality"""
-        
+
         explanation_scores = []
-        
+
         for pred, gt in zip(predictions, ground_truth):
             if 'explanation' not in pred or not pred['explanation']:
                 explanation_scores.append(0.0)
                 continue
-                
+
             # Use LLM-as-judge for explanation quality
             judge_prompt = self._create_judge_prompt(
                 input_sample=gt['input'],
@@ -630,38 +630,38 @@ class ExplainabilityEvaluator(EvaluatorPlugin):
                 correct_label=gt['label'],
                 predicted_label=pred['prediction']
             )
-            
+
             # Call judge model (API or local)
             judge_response = await self._call_judge_model(judge_prompt)
             score = self._parse_judge_score(judge_response)
-            
+
             explanation_scores.append(score)
-        
+
         # Calculate aggregate metrics
         avg_explanation_quality = sum(explanation_scores) / len(explanation_scores)
-        
+
         return {
             'avg_explanation_quality': avg_explanation_quality,
             'explanation_consistency': self._calculate_consistency(predictions)
         }
-    
-    def _create_judge_prompt(self, input_sample: str, explanation: str, 
+
+    def _create_judge_prompt(self, input_sample: str, explanation: str,
                            correct_label: str, predicted_label: str) -> str:
         """Create prompt for LLM judge evaluation"""
         return f"""
         Evaluate the quality of this cybersecurity analysis explanation:
-        
+
         Input: {input_sample}
         Predicted Label: {predicted_label}
         Correct Label: {correct_label}
         Explanation: {explanation}
-        
+
         Rate the explanation on a scale of 0-10 based on:
         1. Technical accuracy of cybersecurity concepts
         2. Logical consistency with the prediction
         3. Completeness of analysis
         4. Clarity and understandability
-        
+
         Respond with just a number from 0-10.
         """
 ```
@@ -707,13 +707,13 @@ class EvaluationResult(BaseModel):
 async def create_experiment(request: ExperimentRequest, background_tasks: BackgroundTasks):
     """Create and start a new evaluation experiment"""
     experiment_id = generate_experiment_id()
-    
+
     # Validate configuration
     config = validate_experiment_config(request)
-    
+
     # Start evaluation in background
     background_tasks.add_task(run_evaluation_pipeline, experiment_id, config)
-    
+
     return ExperimentResponse(
         experiment_id=experiment_id,
         status="started",
@@ -763,29 +763,29 @@ def cli():
 @click.option('--verbose', '-v', is_flag=True, help='Verbose output')
 def run(config: str, output: str, verbose: bool):
     """Run a benchmarking experiment"""
-    
+
     console.print(f"[green]Loading experiment configuration from {config}[/green]")
-    
+
     try:
         # Load and validate configuration
         experiment_config = load_experiment_config(config)
-        
+
         # Create experiment
         experiment_id = create_experiment(experiment_config)
-        
+
         console.print(f"[blue]Started experiment: {experiment_id}[/blue]")
-        
+
         # Run with progress tracking
         with Progress() as progress:
             task = progress.add_task("Running evaluation...", total=100)
-            
+
             results = run_experiment_with_progress(experiment_id, progress, task)
-            
+
         console.print(f"[green]Experiment completed successfully![/green]")
-        
+
         # Display summary results
         display_results_summary(results)
-        
+
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")
 
@@ -793,13 +793,13 @@ def run(config: str, output: str, verbose: bool):
 def list_models():
     """List available model plugins"""
     models = discover_models()
-    
+
     table = Table(title="Available Models")
     table.add_column("Name", style="cyan")
     table.add_column("Type", style="magenta")
     table.add_column("Parameters", style="green")
     table.add_column("Status", style="yellow")
-    
+
     for model in models:
         table.add_row(
             model['name'],
@@ -807,20 +807,20 @@ def list_models():
             model['parameters'],
             model['status']
         )
-    
+
     console.print(table)
 
 @cli.command()
 def list_datasets():
     """List available datasets"""
     datasets = discover_datasets()
-    
+
     table = Table(title="Available Datasets")
     table.add_column("Name", style="cyan")
     table.add_column("Source", style="magenta")
     table.add_column("Samples", style="green")
     table.add_column("Type", style="yellow")
-    
+
     for dataset in datasets:
         table.add_row(
             dataset['name'],
@@ -828,7 +828,7 @@ def list_datasets():
             str(dataset['samples']),
             dataset['type']
         )
-    
+
     console.print(table)
 ```
 
@@ -845,7 +845,7 @@ llm_cybersec_benchmark/
 ├── .env.example                   # Environment variables template
 ├── .gitignore
 ├── .pre-commit-config.yaml       # Pre-commit hooks
-├── 
+├──
 ├── src/
 │   └── benchmark/
 │       ├── __init__.py
@@ -995,12 +995,12 @@ experiment:
   name: "Basic LLM Cybersecurity Evaluation"
   description: "Evaluate multiple models on public cybersecurity datasets"
   output_dir: "./results/basic_evaluation"
-  
+
 datasets:
   - name: "unsw_nb15"
     max_samples: 10000
     test_split: 0.2
-  - name: "phishing_emails" 
+  - name: "phishing_emails"
     max_samples: 5000
     test_split: 0.3
 
@@ -1018,22 +1018,22 @@ models:
 evaluation:
   metrics:
     - accuracy
-    - explainability 
+    - explainability
     - performance
     - false_positive_rate
-  
+
   parallel_jobs: 4
   timeout_minutes: 120
-  
+
   accuracy:
     calculate_per_class: true
     confidence_thresholds: [0.5, 0.7, 0.9]
-  
+
   explainability:
     judge_model: "gpt-4o-mini"
     reference_explanations: true
     automated_metrics: ["bleu", "rouge", "bertscore"]
-  
+
   performance:
     measure_memory: true
     measure_gpu_usage: true
@@ -1073,7 +1073,7 @@ class DatasetConfig(BaseModel):
     test_split: float = Field(0.2, ge=0.0, le=1.0)
     validation_split: float = Field(0.1, ge=0.0, le=1.0)
     preprocessing: List[str] = Field(default_factory=list)
-    
+
     @validator('test_split')
     def validate_splits(cls, v, values):
         val_split = values.get('validation_split', 0.0)
@@ -1095,7 +1095,7 @@ class EvaluationConfig(BaseModel):
     parallel_jobs: int = Field(1, ge=1, le=8)
     timeout_minutes: int = Field(60, gt=0)
     batch_size: int = Field(32, gt=0)
-    
+
 class ExperimentConfig(BaseModel):
     name: str
     description: Optional[str] = None
@@ -1103,7 +1103,7 @@ class ExperimentConfig(BaseModel):
     datasets: List[DatasetConfig]
     models: List[ModelConfig]
     evaluation: EvaluationConfig
-    
+
     class Config:
         extra = "forbid"  # Prevent typos in configuration
 ```
@@ -1120,36 +1120,36 @@ from functools import lru_cache
 
 class ConfigurationManager:
     """Manages configuration loading, validation, and environment variable resolution"""
-    
+
     def __init__(self, config_dir: Path = Path("configs")):
         self.config_dir = config_dir
         self.environment_vars = self._load_environment_variables()
-    
+
     def load_experiment_config(self, config_path: str) -> ExperimentConfig:
         """Load and validate experiment configuration"""
-        
+
         # Load YAML file
         config_file = Path(config_path)
         if not config_file.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        
+
         with open(config_file, 'r') as f:
             raw_config = yaml.safe_load(f)
-        
+
         # Resolve environment variables
         resolved_config = self._resolve_environment_variables(raw_config)
-        
+
         # Validate against schema
         try:
             config = ExperimentConfig(**resolved_config)
         except ValidationError as e:
             raise ConfigurationError(f"Invalid configuration: {e}")
-        
+
         return config
-    
+
     def _resolve_environment_variables(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Recursively resolve environment variables in configuration"""
-        
+
         if isinstance(config, dict):
             return {k: self._resolve_environment_variables(v) for k, v in config.items()}
         elif isinstance(config, list):
@@ -1159,18 +1159,18 @@ class ConfigurationManager:
             import re
             pattern = r'\$\{([^}]+)\}'
             matches = re.findall(pattern, config)
-            
+
             result = config
             for match in matches:
                 env_value = os.getenv(match)
                 if env_value is None:
                     raise ConfigurationError(f"Environment variable not found: {match}")
                 result = result.replace(f"${{{match}}}", env_value)
-            
+
             return result
         else:
             return config
-    
+
     @lru_cache(maxsize=1)
     def _load_environment_variables(self) -> Dict[str, str]:
         """Load environment variables from .env file if present"""
@@ -1178,30 +1178,30 @@ class ConfigurationManager:
         if env_file.exists():
             from dotenv import load_dotenv
             load_dotenv(env_file)
-        
+
         return dict(os.environ)
-    
+
     def validate_configuration(self, config: ExperimentConfig) -> List[str]:
         """Validate configuration and return list of warnings/issues"""
         warnings = []
-        
+
         # Check if output directory is writable
         output_path = Path(config.output_dir)
         try:
             output_path.mkdir(parents=True, exist_ok=True)
         except PermissionError:
             warnings.append(f"Output directory not writable: {config.output_dir}")
-        
+
         # Validate model configurations
         for model in config.models:
             if model.type == ModelType.OPENAI_API and not os.getenv("OPENAI_API_KEY"):
                 warnings.append(f"OpenAI API key not found for model: {model.name}")
-        
+
         # Check dataset availability
         for dataset in config.datasets:
             if dataset.source == "kaggle" and not os.getenv("KAGGLE_KEY"):
                 warnings.append(f"Kaggle API key not found for dataset: {dataset.name}")
-        
+
         return warnings
 ```
 
@@ -1378,98 +1378,98 @@ on:
 jobs:
   test:
     runs-on: macos-latest  # Use macOS for Apple Silicon compatibility
-    
+
     strategy:
       matrix:
         python-version: [3.11, 3.12]
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: 1.7.1
         virtualenvs-create: true
         virtualenvs-in-project: true
-    
+
     - name: Load cached venv
       id: cached-poetry-dependencies
       uses: actions/cache@v3
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-    
+
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --with dev,test
-    
+
     - name: Run linting
       run: |
         poetry run ruff check .
         poetry run ruff format --check .
-    
+
     - name: Run type checking
       run: poetry run mypy src/
-    
+
     - name: Run tests
       run: |
         poetry run pytest tests/unit/ -v --cov=src/benchmark --cov-report=xml
-    
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
-  
+
   integration-test:
     runs-on: macos-latest
     needs: test
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: 3.11
-    
+
     - name: Install dependencies
       run: |
         pip install poetry
         poetry install
-    
+
     - name: Run integration tests
       run: poetry run pytest tests/integration/ -v
       env:
         TEST_API_KEYS: ${{ secrets.TEST_API_KEYS }}
-  
+
   build-docs:
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: 3.11
-    
+
     - name: Install docs dependencies
       run: |
         pip install poetry
         poetry install --with docs
-    
+
     - name: Build documentation
       run: poetry run mkdocs build
-    
+
     - name: Deploy to GitHub Pages
       if: github.ref == 'refs/heads/main'
       uses: peaceiris/actions-gh-pages@v3

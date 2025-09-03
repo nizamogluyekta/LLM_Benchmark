@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Cybersecurity Benchmark Architecture Visualizations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .diagram-section {
+            margin: 50px 0;
+            padding: 30px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border-left: 5px solid #4299e1;
+        }
+        
+        .diagram-section h2 {
+            color: #2d3748;
+            margin: 0 0 20px 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        
+        .diagram-section p {
+            color: #4a5568;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+        
+        .mermaid {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .ascii-diagram {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 30px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 2px solid #4a5568;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .tech-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-top: 4px solid #4299e1;
+        }
+        
+        .tech-card h3 {
+            margin: 0 0 10px 0;
+            color: #2d3748;
+            font-size: 1.2em;
+        }
+        
+        .tech-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .tech-card li {
+            padding: 5px 0;
+            color: #4a5568;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tech-card li:last-child {
+            border-bottom: none;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .metric-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.5em;
+        }
+        
+        .metric-card p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .workflow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .step {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .step::after {
+            content: '→';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+            color: #4299e1;
+        }
+        
+        .step:last-child::after {
+            display: none;
+        }
+        
+        .step-number {
+            background: #4299e1;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 LLM Cybersecurity Benchmark</h1>
+            <p>Architecture Visualizations & System Design</p>
+        </div>
+        
+        <div class="content">
+            <!-- High-Level System Architecture -->
+            <div class="diagram-section">
+                <h2>🏗️ High-Level System Architecture</h2>
+                <p>Overview of the main system components and their interactions, optimized for MacBook Pro M4 Pro.</p>
+                
+                <div class="mermaid">
+                    graph TB
+                        subgraph "User Interface Layer"
+                            CLI[🖥️ CLI Interface<br/>Rich, Interactive]
+                            API[🌐 REST API<br/>FastAPI]
+                        end
+                        
+                        subgraph "Core Orchestration Layer"
+                            EM[🎯 Experiment Manager<br/>Async Coordination]
+                            CM[⚙️ Config Manager<br/>YAML + Pydantic]
+                            LM[📊 Logging Manager<br/>Structured Logs]
+                        end
+                        
+                        subgraph "Data Management Layer"
+                            DM[📁 Dataset Manager<br/>Multi-source Loading]
+                            DP[🔄 Data Processors<br/>Async Pipeline]
+                            DC[💾 Data Cache<br/>SQLite + Files]
+                        end
+                        
+                        subgraph "Model Management Layer"
+                            MM[🤖 Model Manager<br/>Plugin Architecture]
+                            MLX[🍎 MLX Local<br/>Apple Silicon]
+                            APIS[☁️ API Models<br/>OpenAI, Anthropic]
+                            OLAMA[🦙 Ollama<br/>Local Server]
+                        end
+                        
+                        subgraph "Evaluation Engine"
+                            EE[⚡ Evaluation Engine<br/>Parallel Processing]
+                            ACC[📊 Accuracy<br/>Precision, Recall, F1]
+                            EXP[💡 Explainability<br/>LLM-as-Judge]
+                            PERF[⚡ Performance<br/>Latency, Throughput]
+                            FPR[❌ False Positives<br/>Cost Analysis]
+                        end
+                        
+                        subgraph "Results & Reporting"
+                            RM[📈 Results Manager<br/>SQLite Storage]
+                            RG[📋 Report Generator<br/>HTML, JSON, PDF]
+                            VIZ[📊 Visualizations<br/>Interactive Charts]
+                        end
+                        
+                        CLI --> EM
+                        API --> EM
+                        EM --> CM
+                        EM --> DM
+                        EM --> MM
+                        EM --> EE
+                        
+                        DM --> DP
+                        DP --> DC
+                        
+                        MM --> MLX
+                        MM --> APIS
+                        MM --> OLAMA
+                        
+                        EE --> ACC
+                        EE --> EXP
+                        EE --> PERF
+                        EE --> FPR
+                        
+                        EE --> RM
+                        RM --> RG
+                        RG --> VIZ
+                        
+                        style CLI fill:#e1f5fe
+                        style MLX fill:#c8e6c9
+                        style EE fill:#fff3e0
+                        style RM fill:#fce4ec
+                </div>
+            </div>
+            
+            <!-- Data Flow Architecture -->
+            <div class="diagram-section">
+                <h2>🔄 Data Flow Architecture</h2>
+                <p>How data flows through the system from raw datasets to final benchmark reports.</p>
+                
+                <div class="mermaid">
+                    flowchart TD
+                        subgraph "Data Sources"
+                            K[📊 Kaggle<br/>UNSW-NB15, Phishing]
+                            HF[🤗 HuggingFace<br/>Cybersecurity Datasets]
+                            L[💻 Local Files<br/>Custom Datasets]
+                        end
+                        
+                        subgraph "Data Processing Pipeline"
+                            DL[📥 Data Loader<br/>Async Loading]
+                            V[✅ Validator<br/>Schema Validation]
+                            P[🔧 Preprocessor<br/>Normalization]
+                            S[✂️ Splitter<br/>Train/Test/Val]
+                            C[💾 Cache<br/>Processed Data]
+                        end
+                        
+                        subgraph "Model Inference Pipeline"
+                            B[📦 Batch Generator<br/>Configurable Size]
+                            MP[🤖 Model Plugins<br/>Parallel Processing]
+                            T[⏱️ Timing<br/>Performance Metrics]
+                            R[📋 Response Parser<br/>Structured Output]
+                        end
+                        
+                        subgraph "Evaluation Pipeline"
+                            A[🎯 Accuracy Calc<br/>Precision/Recall]
+                            E[💡 Explanation Eval<br/>BLEU/Judge]
+                            PT[⚡ Performance Test<br/>Latency/Throughput]
+                            F[❌ FPR Analysis<br/>Cost Modeling]
+                        end
+                        
+                        subgraph "Results Storage"
+                            DB[🗄️ SQLite DB<br/>Structured Results]
+                            FS[📁 File Storage<br/>Raw Predictions]
+                            M[📊 Metadata<br/>Experiment Info]
+                        end
+                        
+                        subgraph "Report Generation"
+                            AG[📈 Aggregator<br/>Cross-model Stats]
+                            VG[📊 Viz Generator<br/>Charts & Graphs]
+                            RG[📋 Report Builder<br/>HTML/JSON/PDF]
+                        end
+                        
+                        K --> DL
+                        HF --> DL
+                        L --> DL
+                        
+                        DL --> V --> P --> S --> C
+                        
+                        C --> B --> MP --> T --> R
+                        
+                        R --> A
+                        R --> E
+                        R --> PT
+                        R --> F
+                        
+                        A --> DB
+                        E --> DB
+                        PT --> DB
+                        F --> DB
+                        R --> FS
+                        DB --> M
+                        
+                        DB --> AG --> VG --> RG
+                        
+                        style K fill:#ff9800
+                        style DL fill:#4caf50
+                        style MP fill:#2196f3
+                        style DB fill:#9c27b0
+                        style RG fill:#e91e63
+                </div>
+            </div>
+            
+            <!-- Plugin Architecture -->
+            <div class="diagram-section">
+                <h2>🔌 Plugin Architecture</h2>
+                <p>Modular plugin system allowing easy extension of models, datasets, and evaluation metrics.</p>
+                
+                <div class="mermaid">
+                    classDiagram
+                        class PluginManager {
+                            +discover_plugins()
+                            +register_plugin()
+                            +load_plugin()
+                            +validate_plugin()
+                        }
+                        
+                        class ModelPlugin {
+                            <<interface>>
+                            +initialize(config)
+                            +predict(samples)
+                            +explain(sample)
+                            +cleanup()
+                        }
+                        
+                        class DatasetPlugin {
+                            <<interface>>
+                            +load(config)
+                            +preprocess(data)
+                            +validate_schema()
+                        }
+                        
+                        class EvaluatorPlugin {
+                            <<interface>>
+                            +evaluate(predictions, truth)
+                            +get_metrics()
+                            +export_results()
+                        }
+                        
+                        class MLXModelPlugin {
+                            +model: MLXModel
+                            +tokenizer: MLXTokenizer
+                            +load_model()
+                            +quantize_model()
+                        }
+                        
+                        class OpenAIModelPlugin {
+                            +client: OpenAI
+                            +api_key: str
+                            +rate_limiter: RateLimiter
+                        }
+                        
+                        class KaggleDatasetPlugin {
+                            +api: KaggleAPI
+                            +download_dataset()
+                            +extract_files()
+                        }
+                        
+                        class AccuracyEvaluator {
+                            +sklearn_metrics: dict
+                            +calculate_precision()
+                            +calculate_recall()
+                            +calculate_f1()
+                        }
+                        
+                        class ExplainabilityEvaluator {
+                            +judge_model: LLM
+                            +bleu_scorer: BLEUScorer
+                            +evaluate_explanation()
+                        }
+                        
+                        PluginManager --> ModelPlugin
+                        PluginManager --> DatasetPlugin
+                        PluginManager --> EvaluatorPlugin
+                        
+                        ModelPlugin <|-- MLXModelPlugin
+                        ModelPlugin <|-- OpenAIModelPlugin
+                        DatasetPlugin <|-- KaggleDatasetPlugin
+                        EvaluatorPlugin <|-- AccuracyEvaluator
+                        EvaluatorPlugin <|-- ExplainabilityEvaluator
+                </div>
+            </div>
+            
+            <!-- Technology Stack -->
+            <div class="diagram-section">
+                <h2>🛠️ Technology Stack</h2>
+                <p>Complete technology stack optimized for Apple Silicon M4 Pro development and deployment.</p>
+                
+                <div class="tech-stack">
+                    <div class="tech-card">
+                        <h3>🍎 Apple Silicon</h3>
+                        <ul>
+                            <li>MLX Framework</li>
+                            <li>Metal Performance</li>
+                            <li>Unified Memory</li>
+                            <li>Neural Engine</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h3>🐍 Python Ecosystem</h3>
+                        <ul>
+                            <li>Python 3.11+</li>
+                            <li>Poetry Package Manager</li>
+                            <li>Pydantic Validation</li>
+                            <li>AsyncIO Concurrency</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h3>🤖 ML Frameworks</h3>
+                        <ul>
+                            <li>MLX (Apple Silicon)</li>
+                            <li>Transformers (HF)</li>
+                            <li>scikit-learn</li>
+                            <li>Ollama Server</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h3>💾 Data & Storage</h3>
+                        <ul>
+                            <li>SQLite Database</li>
+                            <li>SQLAlchemy ORM</li>
+                            <li>Pandas Processing</li>
+                            <li>HuggingFace Datasets</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h3>🔧 Development</h3>
+                        <ul>
+                            <li>pytest Testing</li>
+                            <li>Ruff Linting</li>
+                            <li>MyPy Type Checking</li>
+                            <li>Pre-commit Hooks</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tech-card">
+                        <h3>📊 Visualization</h3>
+                        <ul>
+                            <li>Matplotlib Plotting</li>
+                            <li>Plotly Interactive</li>
+                            <li>Rich CLI Output</li>
+                            <li>MkDocs Documentation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Evaluation Metrics -->
+            <div class="diagram-section">
+                <h2>📊 Evaluation Metrics Framework</h2>
+                <p>Comprehensive evaluation across four key dimensions of cybersecurity LLM performance.</p>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>🎯 Accuracy</h3>
+                        <p>Precision, Recall, F1-Score<br/>AUC-ROC, Per-class Metrics</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>💡 Explainability</h3>
+                        <p>LLM-as-Judge Evaluation<br/>BLEU, ROUGE, BERTScore</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>⚡ Performance</h3>
+                        <p>Latency, Throughput<br/>Memory Usage, GPU Utilization</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>❌ False Positives</h3>
+                        <p>FPR Analysis<br/>Alert Fatigue Modeling</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Database Schema -->
+            <div class="diagram-section">
+                <h2>🗄️ Database Schema</h2>
+                <p>SQLite database schema for storing experiment results, predictions, and metadata.</p>
+                
+                <div class="mermaid">
+                    erDiagram
+                        EXPERIMENTS ||--o{ EVALUATIONS : "has many"
+                        MODELS ||--o{ EVALUATIONS : "evaluated by"
+                        DATASETS ||--o{ EVALUATIONS : "evaluated on"
+                        EVALUATIONS ||--o{ EVALUATION_RESULTS : "produces"
+                        EVALUATIONS ||--o{ PREDICTIONS : "generates"
+                        
+                        EXPERIMENTS {
+                            string id PK
+                            string name
+                            string description
+                            string config_hash
+                            timestamp created_at
+                            timestamp completed_at
+                            string status
+                        }
+                        
+                        MODELS {
+                            string id PK
+                            string name
+                            string type
+                            string version
+                            bigint parameters_count
+                            json config
+                            timestamp created_at
+                        }
+                        
+                        DATASETS {
+                            string id PK
+                            string name
+                            string source
+                            string version
+                            integer samples_count
+                            json metadata
+                            timestamp created_at
+                        }
+                        
+                        EVALUATIONS {
+                            string id PK
+                            string experiment_id FK
+                            string model_id FK
+                            string dataset_id FK
+                            timestamp started_at
+                            timestamp completed_at
+                            string status
+                            string error_message
+                        }
+                        
+                        EVALUATION_RESULTS {
+                            string id PK
+                            string evaluation_id FK
+                            string metric_type
+                            string metric_name
+                            real value
+                            json metadata
+                            timestamp created_at
+                        }
+                        
+                        PREDICTIONS {
+                            string id PK
+                            string evaluation_id FK
+                            string sample_id
+                            text input_text
+                            text prediction
+                            real confidence
+                            text explanation
+                            text ground_truth
+                            integer processing_time_ms
+                            timestamp created_at
+                        }
+                </div>
+            </div>
+            
+            <!-- File Organization -->
+            <div class="diagram-section">
+                <h2>📁 Project File Organization</h2>
+                <p>Structured project layout following Python best practices with clear separation of concerns.</p>
+                
+                <div class="ascii-diagram">
+llm_cybersec_benchmark/
+├── 📄 README.md
+├── ⚙️ pyproject.toml                 # Poetry dependencies
+├── 🔒 .env.example                   # Environment template
+├── 📋 .gitignore
+├── 🪝 .pre-commit-config.yaml       # Code quality hooks
+│
+├── 📦 src/
+│   └── benchmark/
+│       ├── 🎮 cli/                   # Command-line interface
+│       │   ├── main.py              # Main CLI entry point
+│       │   ├── commands/            # Individual commands
+│       │   │   ├── run.py
+│       │   │   ├── list_models.py
+│       │   │   └── analyze.py
+│       │   └── utils.py
+│       │
+│       ├── ⚙️ core/                  # Core system components
+│       │   ├── config.py            # Configuration management
+│       │   ├── experiment.py        # Experiment orchestration
+│       │   ├── database.py          # Database models
+│       │   ├── logging.py           # Logging configuration
+│       │   └── exceptions.py        # Custom exceptions
+│       │
+│       ├── 📊 data/                  # Data management
+│       │   ├── manager.py           # Dataset manager
+│       │   ├── loaders/             # Dataset loading plugins
+│       │   │   ├── kaggle.py        # Kaggle integration
+│       │   │   ├── huggingface.py   # HF datasets
+│       │   │   └── local.py         # Local files
+│       │   └── preprocessors/       # Data preprocessing
+│       │
+│       ├── 🤖 models/                # Model management
+│       │   ├── manager.py           # Model manager
+│       │   ├── plugins/             # Model plugins
+│       │   │   ├── mlx_local.py     # Local MLX models
+│       │   │   ├── openai_api.py    # OpenAI API
+│       │   │   └── ollama_local.py  # Ollama server
+│       │   └── utils.py
+│       │
+│       ├── 📊 evaluation/            # Evaluation framework
+│       │   ├── engine.py            # Main evaluation engine
+│       │   ├── metrics/             # Metric evaluators
+│       │   │   ├── accuracy.py      # Accuracy metrics
+│       │   │   ├── explainability.py # Explanation eval
+│       │   │   ├── performance.py   # Performance metrics
+│       │   │   └── false_positive.py # FPR analysis
+│       │   └── utils.py
+│       │
+│       ├── 📋 reporting/             # Results and reporting
+│       │   ├── generator.py         # Report generator
+│       │   ├── templates/           # Report templates
+│       │   │   ├── html/           # HTML reports
+│       │   │   └── latex/          # LaTeX papers
+│       │   ├── visualizations.py   # Chart generation
+│       │   └── exports.py          # Data exports
+│       │
+│       └── 🛠️ utils/                # Shared utilities
+│           ├── async_utils.py       # Async helpers
+│           ├── file_utils.py        # File operations
+│           └── time_utils.py        # Time utilities
+│
+├── ⚙️ configs/                      # Configuration files
+│   ├── experiments/                # Experiment configs
+│   │   ├── basic_evaluation.yaml
+│   │   └── model_comparison.yaml
+│   ├── models/                     # Model configurations
+│   └── datasets/                   # Dataset configurations
+│
+├── 📊 data/                        # Data directory
+│   ├── raw/                       # Raw datasets (gitignored)
+│   ├── processed/                 # Processed data
+│   └── cache/                     # Cached data
+│
+├── 📈 results/                     # Results (gitignored)
+│   ├── experiments/               # Experiment results
+│   ├── reports/                   # Generated reports
+│   └── exports/                   # Exported data
+│
+├── 🧪 tests/                       # Test suite
+│   ├── unit/                      # Unit tests
+│   ├── integration/               # Integration tests
+│   └── fixtures/                  # Test fixtures
+│
+├── 📜 scripts/                     # Utility scripts
+│   ├── setup_environment.py      # Environment setup
+│   ├── download_datasets.py      # Dataset downloader
+│   └── install_models.py         # Model installer
+│
+├── 📚 docs/                        # Documentation
+│   ├── installation.md
+│   ├── usage.md
+│   └── api/                       # API docs
+│
+└── 📓 notebooks/                   # Jupyter notebooks
+    ├── exploratory_analysis.ipynb
+    └── result_analysis.ipynb
+                </div>
+            </div>
+            
+            <!-- Development Workflow -->
+            <div class="diagram-section">
+                <h2>🔄 Development Workflow</h2>
+                <p>Step-by-step development process from setup to deployment, optimized for AI-assisted development.</p>
+                
+                <div class="workflow-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>🏗️ Setup</h3>
+                        <p>Environment setup, dependencies installation, and initial configuration</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>📊 Data</h3>
+                        <p>Dataset loading, preprocessing, and validation pipeline implementation</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>🤖 Models</h3>
+                        <p>Model plugin development for MLX, API, and local model integration</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>📊 Evaluation</h3>
+                        <p>Metric evaluators implementation with automated assessment</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <h3>🎮 Interface</h3>
+                        <p>CLI and API development for user-friendly interaction</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">6</div>
+                        <h3>📋 Reports</h3>
+                        <p>Report generation and visualization for research publication</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Performance -->
+            <div class="diagram-section">
+                <h2>⚡ System Performance Characteristics</h2>
+                <p>Expected performance characteristics on MacBook Pro M4 Pro hardware.</p>
+                
+                <div class="mermaid">
+                    pie title Model Inference Distribution
+                        "Local MLX (7B)" : 40
+                        "Local MLX (3B)" : 35
+                        "API Calls" : 20
+                        "Cached Results" : 5
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        <h4>🚀 Local Performance</h4>
+                        <ul style="color: #0c4a6e;">
+                            <li><strong>3B Models:</strong> ~15-20 tokens/sec</li>
+                            <li><strong>7B Models:</strong> ~8-12 tokens/sec</li>
+                            <li><strong>Memory Usage:</strong> ~12GB for 7B model</li>
+                            <li><strong>Concurrent Models:</strong> 2-3 models simultaneously</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #16a34a;">
+                        <h4>📊 Evaluation Throughput</h4>
+                        <ul style="color: #14532d;">
+                            <li><strong>Dataset Processing:</strong> ~1000 samples/hour</li>
+                            <li><strong>Multi-model Eval:</strong> ~500 samples/hour</li>
+                            <li><strong>Full Benchmark:</strong> ~12-24 hours</li>
+                            <li><strong>Report Generation:</strong> ~5-10 minutes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                curve: 'basis',
+                htmlLabels: true,
+                useMaxWidth: true
+            },
+            pie: {
+                textPosition: 0.75
+            },
+            er: {
+                diagramPadding: 20,
+                layoutDirection: 'TB',
+                minEntityWidth: 100,
+                minEntityHeight: 75,
+                entityPadding: 15,
+                stroke: '#333',
+                fill: '#f9f9f9'
+            },
+            classDiagram: {
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

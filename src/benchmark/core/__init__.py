@@ -32,6 +32,19 @@ from .config_loader import (
     load_experiment_config,
     resolve_environment_variables,
 )
+from .database import (
+    Base,
+    Dataset,
+    Evaluation,
+    EvaluationResult,
+    Experiment,
+    Model,
+    Prediction,
+    create_database_engine,
+    create_database_tables,
+    create_session_factory,
+    get_database_schema_info,
+)
 from .exceptions import (
     BenchmarkError,
     ConfigurationError,
@@ -115,6 +128,18 @@ __all__ = [
     "resolve_environment_variables",
     "clear_config_cache",
     "get_config_cache_stats",
+    # Database models and utilities
+    "Base",
+    "Experiment",
+    "Dataset",
+    "Model",
+    "Evaluation",
+    "EvaluationResult",
+    "Prediction",
+    "create_database_engine",
+    "create_database_tables",
+    "create_session_factory",
+    "get_database_schema_info",
     # Logging utilities
     "get_logger",
     "get_data_logger",

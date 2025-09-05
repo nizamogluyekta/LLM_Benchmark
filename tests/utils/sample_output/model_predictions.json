@@ -1,0 +1,422 @@
+[
+  {
+    "class_probabilities": {
+      "ATTACK": 0.15462028628823177,
+      "BENIGN": 0.8453797137117682
+    },
+    "confidence": 0.8454,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 302.77,
+    "is_correct": true,
+    "model_version": "v2.7.7",
+    "prediction": "BENIGN",
+    "sample_id": "5d23f597-cd96-4a25-9959-77f4697698ed",
+    "timestamp": "2025-09-05 16:19:56"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.792360171153544,
+      "BENIGN": 0.20763982884645604
+    },
+    "confidence": 0.7924,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 246.72,
+    "is_correct": true,
+    "model_version": "v2.4.0",
+    "prediction": "ATTACK",
+    "sample_id": "8066ee3c-6a5d-44f1-b0ac-d5d266cce108",
+    "timestamp": "2025-09-05 13:20:49"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7448136628126208,
+      "BENIGN": 0.25518633718737915
+    },
+    "confidence": 0.7448,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 268.57,
+    "is_correct": true,
+    "model_version": "v2.8.8",
+    "prediction": "ATTACK",
+    "sample_id": "afcbf7d0-05cc-49d8-bd88-09b221e7fd42",
+    "timestamp": "2025-09-05 19:19:13"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.22505095152124743,
+      "BENIGN": 0.7749490484787526
+    },
+    "confidence": 0.7749,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 219.46,
+    "is_correct": true,
+    "model_version": "v2.3.2",
+    "prediction": "BENIGN",
+    "sample_id": "80858b9c-4e65-4040-8b1c-464e8c595334",
+    "timestamp": "2025-09-05 19:31:33"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7070462940506722,
+      "BENIGN": 0.2929537059493278
+    },
+    "confidence": 0.707,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 294.27,
+    "is_correct": true,
+    "model_version": "v4.8.2",
+    "prediction": "ATTACK",
+    "sample_id": "5b676191-c669-4a2a-b5b3-1dc1ac0708bc",
+    "timestamp": "2025-09-05 16:12:44"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8236130288601191,
+      "BENIGN": 0.1763869711398809
+    },
+    "confidence": 0.8236,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 187.35,
+    "is_correct": true,
+    "model_version": "v4.8.7",
+    "prediction": "ATTACK",
+    "sample_id": "b12cdf75-b385-4a00-918d-6428346d8e94",
+    "timestamp": "2025-09-05 11:56:44"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.08792057079826288,
+      "BENIGN": 0.9120794292017371
+    },
+    "confidence": 0.9121,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 431.3,
+    "is_correct": true,
+    "model_version": "v1.8.4",
+    "prediction": "BENIGN",
+    "sample_id": "bb5cf1e6-301e-4a13-9d0e-5d9068c2ab7c",
+    "timestamp": "2025-09-05 21:16:20"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8153258730319781,
+      "BENIGN": 0.18467412696802188
+    },
+    "confidence": 0.8153,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 431.63,
+    "is_correct": true,
+    "model_version": "v5.8.7",
+    "prediction": "ATTACK",
+    "sample_id": "d0eac1f5-e596-4aa0-8a78-d396d72cdd93",
+    "timestamp": "2025-09-05 21:14:56"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7420783597122937,
+      "BENIGN": 0.25792164028770626
+    },
+    "confidence": 0.7421,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 139.6,
+    "is_correct": true,
+    "model_version": "v5.5.2",
+    "prediction": "ATTACK",
+    "sample_id": "c1cff75f-576b-42ec-8785-3ce407907bd2",
+    "timestamp": "2025-09-05 00:42:21"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.16136642298774817,
+      "BENIGN": 0.8386335770122518
+    },
+    "confidence": 0.8386,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 451.64,
+    "is_correct": true,
+    "model_version": "v1.6.0",
+    "prediction": "BENIGN",
+    "sample_id": "e0c396eb-feb2-472a-a8ab-d48d55d48d19",
+    "timestamp": "2025-09-05 16:44:33"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7171926094757047,
+      "BENIGN": 0.28280739052429527
+    },
+    "confidence": 0.7172,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 93.61,
+    "is_correct": true,
+    "model_version": "v2.9.0",
+    "prediction": "ATTACK",
+    "sample_id": "b9db6362-e6fa-45af-9223-e2497530c365",
+    "timestamp": "2025-09-05 09:12:44"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7211646886947519,
+      "BENIGN": 0.2788353113052481
+    },
+    "confidence": 0.7212,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 388.72,
+    "is_correct": true,
+    "model_version": "v1.5.5",
+    "prediction": "ATTACK",
+    "sample_id": "e271eaa5-d367-4088-908a-49678fea2486",
+    "timestamp": "2025-09-05 19:16:20"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.08238069416464111,
+      "BENIGN": 0.9176193058353589
+    },
+    "confidence": 0.9176,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 428.52,
+    "is_correct": true,
+    "model_version": "v2.7.7",
+    "prediction": "BENIGN",
+    "sample_id": "9822c386-891c-4148-99f5-e9b98bb958c4",
+    "timestamp": "2025-09-05 01:00:42"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.9604728891013536,
+      "BENIGN": 0.039527110898646356
+    },
+    "confidence": 0.9605,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 465.42,
+    "is_correct": true,
+    "model_version": "v3.4.1",
+    "prediction": "ATTACK",
+    "sample_id": "d634bcdd-b327-4f10-91ec-7d9da3ad8073",
+    "timestamp": "2025-09-05 02:47:46"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8934805000667541,
+      "BENIGN": 0.10651949993324594
+    },
+    "confidence": 0.8935,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 54.89,
+    "is_correct": true,
+    "model_version": "v4.3.7",
+    "prediction": "ATTACK",
+    "sample_id": "bc14fe7d-255f-4e61-b068-ff520f12c215",
+    "timestamp": "2025-09-05 18:15:14"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.034843252742205344,
+      "BENIGN": 0.9651567472577947
+    },
+    "confidence": 0.9652,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 250.82,
+    "is_correct": true,
+    "model_version": "v2.2.6",
+    "prediction": "BENIGN",
+    "sample_id": "221c6f9b-6216-4c6e-adc6-6897af2f1eb0",
+    "timestamp": "2025-09-05 09:00:15"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8085225698756809,
+      "BENIGN": 0.19147743012431906
+    },
+    "confidence": 0.8085,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 65.03,
+    "is_correct": true,
+    "model_version": "v1.4.1",
+    "prediction": "ATTACK",
+    "sample_id": "d155d569-86b5-4e0a-baea-a62691ed0339",
+    "timestamp": "2025-09-05 13:04:08"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7833415628793012,
+      "BENIGN": 0.21665843712069877
+    },
+    "confidence": 0.7833,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 347.6,
+    "is_correct": true,
+    "model_version": "v4.2.8",
+    "prediction": "ATTACK",
+    "sample_id": "a17366dc-d521-4900-9131-6033aef06d27",
+    "timestamp": "2025-09-05 13:54:21"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.050284219949611186,
+      "BENIGN": 0.9497157800503888
+    },
+    "confidence": 0.9497,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 485.73,
+    "is_correct": true,
+    "model_version": "v3.4.6",
+    "prediction": "BENIGN",
+    "sample_id": "ccb683ad-fcbc-4f4c-a215-96d44f0f1984",
+    "timestamp": "2025-09-05 16:50:52"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.9566753971304038,
+      "BENIGN": 0.04332460286959616
+    },
+    "confidence": 0.9567,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 473.28,
+    "is_correct": true,
+    "model_version": "v3.2.7",
+    "prediction": "ATTACK",
+    "sample_id": "f498eeb0-09b8-4a02-b497-63dbe13959fb",
+    "timestamp": "2025-09-05 12:58:05"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8029036111073509,
+      "BENIGN": 0.19709638889264913
+    },
+    "confidence": 0.8029,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 297.15,
+    "is_correct": true,
+    "model_version": "v2.9.4",
+    "prediction": "ATTACK",
+    "sample_id": "68de1e20-049d-49a9-b85b-270d46f75865",
+    "timestamp": "2025-09-05 19:18:15"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.14263651118181764,
+      "BENIGN": 0.8573634888181824
+    },
+    "confidence": 0.8574,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 380.52,
+    "is_correct": true,
+    "model_version": "v5.6.7",
+    "prediction": "BENIGN",
+    "sample_id": "c8c1f270-6114-4036-b1c4-1d46f019af91",
+    "timestamp": "2025-09-05 12:30:24"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.8382883022391066,
+      "BENIGN": 0.16171169776089345
+    },
+    "confidence": 0.8383,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 180.08,
+    "is_correct": true,
+    "model_version": "v3.5.3",
+    "prediction": "ATTACK",
+    "sample_id": "f793911d-42cc-4e9d-9a51-22e9b5d265f1",
+    "timestamp": "2025-09-05 05:00:13"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7930777501802955,
+      "BENIGN": 0.20692224981970453
+    },
+    "confidence": 0.7931,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 247.68,
+    "is_correct": true,
+    "model_version": "v2.2.4",
+    "prediction": "ATTACK",
+    "sample_id": "84b35191-5fe3-43b9-8dc0-e71780f33f2f",
+    "timestamp": "2025-09-05 03:32:13"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.17030037095016892,
+      "BENIGN": 0.8296996290498311
+    },
+    "confidence": 0.8297,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 410.56,
+    "is_correct": true,
+    "model_version": "v3.9.9",
+    "prediction": "BENIGN",
+    "sample_id": "b7f2c7a9-2af7-4e57-9560-39ceae17e009",
+    "timestamp": "2025-09-05 03:37:46"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7687296951963412,
+      "BENIGN": 0.23127030480365884
+    },
+    "confidence": 0.7687,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 119.62,
+    "is_correct": true,
+    "model_version": "v3.7.9",
+    "prediction": "ATTACK",
+    "sample_id": "80971475-3dd7-4605-94da-61eb3a2d366c",
+    "timestamp": "2025-09-05 09:11:33"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.7745199097348255,
+      "BENIGN": 0.22548009026517446
+    },
+    "confidence": 0.7745,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 163.59,
+    "is_correct": true,
+    "model_version": "v5.2.7",
+    "prediction": "ATTACK",
+    "sample_id": "17586b58-93ae-43e4-b967-0403dc769dbf",
+    "timestamp": "2025-09-05 16:46:10"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.19910693184292594,
+      "BENIGN": 0.8008930681570741
+    },
+    "confidence": 0.8009,
+    "ground_truth": "BENIGN",
+    "inference_time_ms": 163.93,
+    "is_correct": true,
+    "model_version": "v3.8.4",
+    "prediction": "BENIGN",
+    "sample_id": "352f86c7-a548-4206-a235-a00db34b302b",
+    "timestamp": "2025-09-05 10:46:34"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.971879728721899,
+      "BENIGN": 0.028120271278101017
+    },
+    "confidence": 0.9719,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 187.34,
+    "is_correct": true,
+    "model_version": "v3.8.4",
+    "prediction": "ATTACK",
+    "sample_id": "e5780083-eab4-4993-9d11-1fd5d413d6bd",
+    "timestamp": "2025-09-05 22:36:55"
+  },
+  {
+    "class_probabilities": {
+      "ATTACK": 0.782465879733624,
+      "BENIGN": 0.21753412026637597
+    },
+    "confidence": 0.7825,
+    "ground_truth": "ATTACK",
+    "inference_time_ms": 96.14,
+    "is_correct": true,
+    "model_version": "v3.6.2",
+    "prediction": "ATTACK",
+    "sample_id": "29eee5a0-63ca-4373-8ade-903fb35fb0f2",
+    "timestamp": "2025-09-05 06:44:56"
+  }
+]

@@ -1,0 +1,597 @@
+[
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "vishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.818361737045451,
+    "label": "ATTACK",
+    "message_id": "<47e6d5a3-b1a6-494e-92cb-494ad8be1bc0@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Urgent: Your account will be suspended",
+    "text": "Email from secure-bank-update.com: Urgent: Your account will be suspended",
+    "timestamp": "2025-09-04 08:00:38"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "spear_phishing",
+    "attack_type": "phishing",
+    "body": "Your account security has been compromised. Immediate action required to secure your account.\n\nVerify now: https://secure-verify.malicious-site.com/login\n\nThank you.",
+    "confidence": 0.8467267162642735,
+    "label": "ATTACK",
+    "message_id": "<407ac491-f14b-4f5f-a65e-1d693c26e135@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Urgent: Your account will be suspended",
+    "text": "Email from secure-bank-update.com: Urgent: Your account will be suspended",
+    "timestamp": "2025-09-05 21:17:58"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 2,
+      "sender_domain": "paypal-security.net",
+      "suspicious_urls": [
+        "http://paypal-security.net/verify",
+        "https://paypal-security.net/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "smishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.8326009212457933,
+    "label": "ATTACK",
+    "message_id": "<c9ec17df-adf5-4923-82e8-fb0a6599e43c@paypal-security.net>",
+    "recipient": "user@company.com",
+    "sender": "security@paypal-security.net",
+    "subject": "Bank Alert: Suspicious activity on your account",
+    "text": "Email from paypal-security.net: Bank Alert: Suspicious activity on your account",
+    "timestamp": "2025-09-05 23:39:41"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "vishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.8411033002107074,
+    "label": "ATTACK",
+    "message_id": "<0dbf5c08-d8e1-4e28-89d1-08d3b1bc4282@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Urgent: Your account will be suspended",
+    "text": "Email from secure-bank-update.com: Urgent: Your account will be suspended",
+    "timestamp": "2025-09-05 23:01:09"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "sender_domain": "paypal-security.net",
+      "suspicious_urls": [
+        "http://paypal-security.net/verify",
+        "https://paypal-security.net/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "smishing",
+    "attack_type": "phishing",
+    "body": "Your account security has been compromised. Immediate action required to secure your account.\n\nVerify now: https://secure-verify.malicious-site.com/login\n\nThank you.",
+    "confidence": 0.9406781584817718,
+    "label": "ATTACK",
+    "message_id": "<a2f12628-3b8f-4762-80b7-1a22f309c785@paypal-security.net>",
+    "recipient": "user@company.com",
+    "sender": "security@paypal-security.net",
+    "subject": "Win $1000 - Click here to claim your prize",
+    "text": "Email from paypal-security.net: Win $1000 - Click here to claim your prize",
+    "timestamp": "2025-08-30 04:22:29"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 2,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "spear_phishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.8376562710452344,
+    "label": "ATTACK",
+    "message_id": "<0df252aa-ba46-41b6-a184-3957e144e8e0@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Security Alert: Unusual activity detected",
+    "text": "Email from secure-bank-update.com: Security Alert: Unusual activity detected",
+    "timestamp": "2025-08-30 22:29:54"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 2,
+      "sender_domain": "microsoft-support.org",
+      "suspicious_urls": [
+        "http://microsoft-support.org/verify",
+        "https://microsoft-support.org/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "spear_phishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.7670389714318703,
+    "label": "ATTACK",
+    "message_id": "<5adafc44-159a-46c4-a7f9-d4b4624480cc@microsoft-support.org>",
+    "recipient": "user@company.com",
+    "sender": "security@microsoft-support.org",
+    "subject": "Urgent: Your account will be suspended",
+    "text": "Email from microsoft-support.org: Urgent: Your account will be suspended",
+    "timestamp": "2025-09-02 13:06:34"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 2,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "smishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.8973463501930716,
+    "label": "ATTACK",
+    "message_id": "<57754bea-8562-4487-9846-0f9bbc6aca17@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Bank Alert: Suspicious activity on your account",
+    "text": "Email from secure-bank-update.com: Bank Alert: Suspicious activity on your account",
+    "timestamp": "2025-08-30 14:46:24"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "sender_domain": "amazon-verification.info",
+      "suspicious_urls": [
+        "http://amazon-verification.info/verify",
+        "https://amazon-verification.info/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "vishing",
+    "attack_type": "phishing",
+    "body": "Dear Customer,\n\nWe've detected unusual activity on your account. Please verify your identity immediately to prevent suspension.\n\nClick here to verify: https://secure-verify.malicious-site.com/login\n\nSecurity Team",
+    "confidence": 0.8024007664545244,
+    "label": "ATTACK",
+    "message_id": "<621799a7-4067-4994-b412-985e036077df@amazon-verification.info>",
+    "recipient": "user@company.com",
+    "sender": "security@amazon-verification.info",
+    "subject": "Security Alert: Unusual activity detected",
+    "text": "Email from amazon-verification.info: Security Alert: Unusual activity detected",
+    "timestamp": "2025-09-01 12:49:10"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "sender_domain": "secure-bank-update.com",
+      "suspicious_urls": [
+        "http://secure-bank-update.com/verify",
+        "https://secure-bank-update.com/login"
+      ],
+      "urgency_keywords": [
+        "urgent",
+        "immediate",
+        "suspend",
+        "verify",
+        "action required"
+      ]
+    },
+    "attack_subtype": "smishing",
+    "attack_type": "phishing",
+    "body": "Your account security has been compromised. Immediate action required to secure your account.\n\nVerify now: https://secure-verify.malicious-site.com/login\n\nThank you.",
+    "confidence": 0.7622806421238745,
+    "label": "ATTACK",
+    "message_id": "<c30d6876-ad29-409d-960d-66ae234a27a7@secure-bank-update.com>",
+    "recipient": "user@company.com",
+    "sender": "security@secure-bank-update.com",
+    "subject": "Bank Alert: Suspicious activity on your account",
+    "text": "Email from secure-bank-update.com: Bank Alert: Suspicious activity on your account",
+    "timestamp": "2025-08-31 22:39:16"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Welcome to our service",
+    "confidence": 0.8850933319076223,
+    "label": "BENIGN",
+    "message_id": "<c056fd79-606e-46d3-a87b-fde49a4c147e@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Welcome to our service",
+    "text": "Legitimate email from notification.bank.com: Welcome to our service",
+    "timestamp": "2025-08-16 07:14:02"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9009013684790885,
+    "label": "BENIGN",
+    "message_id": "<2deb787e-d93f-4b33-8d3a-fb52cfd0f1b5@company.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@company.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from company.com: Account statement ready for download",
+    "timestamp": "2025-09-01 15:44:01"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Meeting reminder: Team standup tomorrow",
+    "confidence": 0.9054325641627029,
+    "label": "BENIGN",
+    "message_id": "<1823525f-3882-4d85-b294-7eabf14aebc7@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Meeting reminder: Team standup tomorrow",
+    "text": "Legitimate email from newsletter.service.com: Meeting reminder: Team standup tomorrow",
+    "timestamp": "2025-08-14 13:44:06"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9624511399544262,
+    "label": "BENIGN",
+    "message_id": "<ec7660e4-b05c-4362-912c-8b03d5f3c6a9@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from notification.bank.com: Account statement ready for download",
+    "timestamp": "2025-08-12 12:04:10"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9593378313292142,
+    "label": "BENIGN",
+    "message_id": "<4e1fa9b1-4405-4cfe-a7b2-823d3c46a208@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from newsletter.service.com: Account statement ready for download",
+    "timestamp": "2025-08-12 13:25:07"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Meeting reminder: Team standup tomorrow",
+    "confidence": 0.8502615410794168,
+    "label": "BENIGN",
+    "message_id": "<4fe1a59b-62c0-4773-82c4-9eb46b72b390@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Meeting reminder: Team standup tomorrow",
+    "text": "Legitimate email from newsletter.service.com: Meeting reminder: Team standup tomorrow",
+    "timestamp": "2025-08-30 04:44:52"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Welcome to our service",
+    "confidence": 0.9890065496808921,
+    "label": "BENIGN",
+    "message_id": "<3e9ee1ae-758f-46c2-8a15-9e223ba24a26@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Welcome to our service",
+    "text": "Legitimate email from newsletter.service.com: Welcome to our service",
+    "timestamp": "2025-08-13 07:34:29"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Welcome to our service",
+    "confidence": 0.9257184706995861,
+    "label": "BENIGN",
+    "message_id": "<804e9630-75e5-470a-970e-4878c06d5e2f@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Welcome to our service",
+    "text": "Legitimate email from notification.bank.com: Welcome to our service",
+    "timestamp": "2025-09-03 17:19:44"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.948513391919712,
+    "label": "BENIGN",
+    "message_id": "<dbd27515-5d8c-40cc-89b5-771b35677d2f@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from newsletter.service.com: Account statement ready for download",
+    "timestamp": "2025-08-10 10:38:25"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9161589909738755,
+    "label": "BENIGN",
+    "message_id": "<5d8c75ed-253b-4c54-aa67-749b5ecc755b@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from notification.bank.com: Account statement ready for download",
+    "timestamp": "2025-08-27 02:14:51"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.883449024617944,
+    "label": "BENIGN",
+    "message_id": "<410a4034-92a2-4d96-8b85-722f3c4394a9@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from notification.bank.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-09-05 19:59:49"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Software update notification",
+    "confidence": 0.8662307864052551,
+    "label": "BENIGN",
+    "message_id": "<792547f9-5e9e-48a0-90b5-5579c39e0c13@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Software update notification",
+    "text": "Legitimate email from newsletter.service.com: Software update notification",
+    "timestamp": "2025-08-21 18:30:27"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Meeting reminder: Team standup tomorrow",
+    "confidence": 0.9062999418512949,
+    "label": "BENIGN",
+    "message_id": "<00b3686e-8992-4df9-be7c-8780274e93e7@company.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@company.com",
+    "subject": "Meeting reminder: Team standup tomorrow",
+    "text": "Legitimate email from company.com: Meeting reminder: Team standup tomorrow",
+    "timestamp": "2025-09-04 19:18:21"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Software update notification",
+    "confidence": 0.8719759344559967,
+    "label": "BENIGN",
+    "message_id": "<8fa92132-0628-4ca2-be34-ced5b7515b38@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Software update notification",
+    "text": "Legitimate email from newsletter.service.com: Software update notification",
+    "timestamp": "2025-08-21 20:44:44"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Meeting reminder: Team standup tomorrow",
+    "confidence": 0.9353823378058864,
+    "label": "BENIGN",
+    "message_id": "<60240ad2-50d3-4128-b716-29e4977e5909@company.com>",
+    "recipient": "user@company.com",
+    "sender": "noreply@company.com",
+    "subject": "Meeting reminder: Team standup tomorrow",
+    "text": "Legitimate email from company.com: Meeting reminder: Team standup tomorrow",
+    "timestamp": "2025-08-09 13:31:36"
+  }
+]

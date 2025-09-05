@@ -319,6 +319,35 @@ def clean_env() -> Generator[None, None, None]:
     os.environ.update(original_env)
 
 
+# Data generator fixtures
+@pytest.fixture
+def cybersec_data_generator():
+    """Cybersecurity data generator for creating realistic test data."""
+    from tests.utils.data_generators import CybersecurityDataGenerator
+
+    return CybersecurityDataGenerator(seed=42)
+
+
+@pytest.fixture
+def sample_attack_logs(cybersec_data_generator):
+    """Generate sample attack logs for testing."""
+    return cybersec_data_generator.generate_batch_samples(
+        num_samples=20, attack_ratio=0.6, attack_types=["malware", "intrusion", "phishing"]
+    )
+
+
+@pytest.fixture
+def sample_model_predictions(cybersec_data_generator):
+    """Generate sample model predictions for testing."""
+    predictions = []
+    for label in ["ATTACK", "BENIGN"]:
+        for _ in range(5):
+            predictions.append(
+                cybersec_data_generator.generate_model_prediction(label, accuracy=0.85)
+            )
+    return predictions
+
+
 # Test markers
 def pytest_configure(config: pytest.Config) -> None:
     """Configure pytest markers."""

@@ -1,0 +1,1004 @@
+[
+  {
+    "additional_data": {
+      "failed_login_attempts": 21,
+      "target_service": "Telnet",
+      "username_attempts": [
+        "admin",
+        "administrator"
+      ]
+    },
+    "attack_subtype": "privilege_escalation",
+    "attack_type": "intrusion",
+    "bytes_received": 501,
+    "bytes_sent": 1331,
+    "confidence": 0.8819393280316011,
+    "dst_ip": "192.168.202.143",
+    "dst_port": 23,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "1",
+    "severity": "HIGH",
+    "src_ip": "154.188.250.169",
+    "src_port": 59112,
+    "text": "privilege_escalation attempt detected from 154.188.250.169 targeting 192.168.202.143",
+    "timestamp": "2025-08-11 18:23:37"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.8991357485700495,
+    "label": "BENIGN",
+    "message_id": "<14b133b1-5012-4913-827c-152a6e6d89be@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "2",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from newsletter.service.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-08-12 09:07:45"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 913,
+    "bytes_sent": 656,
+    "confidence": 0.9100119672581137,
+    "dst_ip": "172.27.237.64",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "3",
+    "severity": "LOW",
+    "src_ip": "44.224.209.153",
+    "src_port": 34648,
+    "text": "Regular email synchronization",
+    "timestamp": "2025-08-12 00:07:18"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3421,
+    "bytes_sent": 1117,
+    "confidence": 0.9561378143731902,
+    "dst_ip": "192.168.86.136",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "4",
+    "severity": "LOW",
+    "src_ip": "199.68.227.231",
+    "src_port": 54018,
+    "text": "API authentication request",
+    "timestamp": "2025-08-22 22:54:17"
+  },
+  {
+    "additional_data": {
+      "file_hash": "99666395c876ba76af3241c83bccb6d69eca182bba209b96d24fa399bf949ced",
+      "suspicious_domain": "botnet-command.io",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "ransomware",
+    "attack_type": "malware",
+    "bytes_received": 2014,
+    "bytes_sent": 9106,
+    "confidence": 0.9628615194524882,
+    "dst_ip": "192.168.43.151",
+    "dst_port": 8080,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "5",
+    "severity": "CRITICAL",
+    "src_ip": "19.53.64.64",
+    "src_port": 63076,
+    "text": "Suspicious ransomware communication detected from 19.53.64.64 to crypto-miner.xyz",
+    "timestamp": "2025-09-04 18:10:12"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3023,
+    "bytes_sent": 1009,
+    "confidence": 0.9473699008618393,
+    "dst_ip": "10.221.150.253",
+    "dst_port": 143,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "6",
+    "severity": "LOW",
+    "src_ip": "104.214.208.3",
+    "src_port": 60137,
+    "text": "Health check ping",
+    "timestamp": "2025-08-18 04:19:31"
+  },
+  {
+    "additional_data": {
+      "failed_login_attempts": 38,
+      "target_service": "SSH",
+      "username_attempts": [
+        "guest",
+        "administrator"
+      ]
+    },
+    "attack_subtype": "unauthorized_access",
+    "attack_type": "intrusion",
+    "bytes_received": 651,
+    "bytes_sent": 1069,
+    "confidence": 0.7890040499107432,
+    "dst_ip": "192.168.186.222",
+    "dst_port": 22,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "7",
+    "severity": "HIGH",
+    "src_ip": "209.255.81.21",
+    "src_port": 39819,
+    "text": "unauthorized_access attempt detected from 209.255.81.21 targeting 192.168.186.222",
+    "timestamp": "2025-08-31 10:59:04"
+  },
+  {
+    "additional_data": {
+      "file_hash": "b1eb610f904d684ca5d03a7d1d02b575376aca681ad5dc4536123dd3577df43a",
+      "suspicious_domain": "crypto-miner.xyz",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "rootkit",
+    "attack_type": "malware",
+    "bytes_received": 646,
+    "bytes_sent": 6232,
+    "confidence": 0.8094798447404399,
+    "dst_ip": "192.168.99.243",
+    "dst_port": 53,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "8",
+    "severity": "CRITICAL",
+    "src_ip": "57.241.124.134",
+    "src_port": 50056,
+    "text": "Suspicious rootkit communication detected from 57.241.124.134 to c2-server.org",
+    "timestamp": "2025-08-08 15:08:19"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 2201,
+    "bytes_sent": 1497,
+    "confidence": 0.9816418901637757,
+    "dst_ip": "172.23.1.162",
+    "dst_port": 80,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "9",
+    "severity": "LOW",
+    "src_ip": "215.79.19.44",
+    "src_port": 44371,
+    "text": "Software update download",
+    "timestamp": "2025-08-20 05:38:46"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.9276803109104917,
+    "label": "BENIGN",
+    "message_id": "<b7932078-975c-4f55-b928-0e5a8088c8d1@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "10",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from newsletter.service.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-08-21 08:23:03"
+  },
+  {
+    "additional_data": {
+      "file_hash": "ba2cde186bdd9d6d87bffa611cefc09a2107a509aecdb803e817807df2f76900",
+      "suspicious_domain": "c2-server.org",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "virus",
+    "attack_type": "malware",
+    "bytes_received": 4103,
+    "bytes_sent": 8092,
+    "confidence": 0.9652158216621212,
+    "dst_ip": "10.49.8.122",
+    "dst_port": 8080,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "11",
+    "severity": "HIGH",
+    "src_ip": "133.224.108.195",
+    "src_port": 56862,
+    "text": "Suspicious virus communication detected from 133.224.108.195 to malicious-cdn.com",
+    "timestamp": "2025-08-15 20:07:36"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3591,
+    "bytes_sent": 1715,
+    "confidence": 0.9338284800541872,
+    "dst_ip": "172.21.221.157",
+    "dst_port": 143,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "12",
+    "severity": "LOW",
+    "src_ip": "23.183.105.192",
+    "src_port": 63094,
+    "text": "System backup data transfer",
+    "timestamp": "2025-08-24 16:49:07"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 2358,
+    "bytes_sent": 570,
+    "confidence": 0.9310190296311509,
+    "dst_ip": "192.168.119.166",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "13",
+    "severity": "LOW",
+    "src_ip": "176.252.136.211",
+    "src_port": 41941,
+    "text": "Software update download",
+    "timestamp": "2025-08-30 04:39:13"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 895,
+    "bytes_sent": 1506,
+    "confidence": 0.9419765213063898,
+    "dst_ip": "10.238.11.47",
+    "dst_port": 143,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "14",
+    "severity": "LOW",
+    "src_ip": "212.177.93.128",
+    "src_port": 49267,
+    "text": "Health check ping",
+    "timestamp": "2025-09-05 23:21:49"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.8630196652264054,
+    "label": "BENIGN",
+    "message_id": "<eb1d25a2-027a-4f17-9499-7a46f0e29459@company.com>",
+    "recipient": "user@company.com",
+    "sample_id": "15",
+    "sender": "noreply@company.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from company.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-09-05 09:11:14"
+  },
+  {
+    "additional_data": {
+      "failed_login_attempts": 20,
+      "target_service": "RDP",
+      "username_attempts": [
+        "guest",
+        "root",
+        "user",
+        "administrator"
+      ]
+    },
+    "attack_subtype": "unauthorized_access",
+    "attack_type": "intrusion",
+    "bytes_received": 651,
+    "bytes_sent": 1161,
+    "confidence": 0.7992474879163862,
+    "dst_ip": "192.168.226.221",
+    "dst_port": 5985,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "16",
+    "severity": "HIGH",
+    "src_ip": "106.161.246.87",
+    "src_port": 49665,
+    "text": "unauthorized_access attempt detected from 106.161.246.87 targeting 192.168.226.221",
+    "timestamp": "2025-08-20 15:52:18"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 678,
+    "bytes_sent": 1442,
+    "confidence": 0.9844614320881389,
+    "dst_ip": "192.168.97.130",
+    "dst_port": 25,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "17",
+    "severity": "LOW",
+    "src_ip": "54.172.253.85",
+    "src_port": 45189,
+    "text": "Successful database connection",
+    "timestamp": "2025-09-04 05:45:04"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 1989,
+    "bytes_sent": 2022,
+    "confidence": 0.9587390672625685,
+    "dst_ip": "10.71.98.8",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "18",
+    "severity": "LOW",
+    "src_ip": "200.131.211.1",
+    "src_port": 57508,
+    "text": "Normal HTTP request to web server",
+    "timestamp": "2025-08-08 21:06:02"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3589,
+    "bytes_sent": 657,
+    "confidence": 0.9321536765168235,
+    "dst_ip": "10.176.51.89",
+    "dst_port": 443,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "19",
+    "severity": "LOW",
+    "src_ip": "100.223.80.138",
+    "src_port": 57996,
+    "text": "API authentication request",
+    "timestamp": "2025-08-13 23:19:26"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3253,
+    "bytes_sent": 1931,
+    "confidence": 0.9131209744063551,
+    "dst_ip": "172.22.255.205",
+    "dst_port": 143,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "20",
+    "severity": "LOW",
+    "src_ip": "84.143.159.136",
+    "src_port": 47891,
+    "text": "Software update download",
+    "timestamp": "2025-08-28 08:03:55"
+  },
+  {
+    "additional_data": {
+      "file_hash": "4853dec32bdedc152e6394986dd99952a7f554b6f0c016199b7352ac6d59d38c",
+      "suspicious_domain": "c2-server.org",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "backdoor",
+    "attack_type": "malware",
+    "bytes_received": 2565,
+    "bytes_sent": 4239,
+    "confidence": 0.8464458304030794,
+    "dst_ip": "192.168.0.191",
+    "dst_port": 443,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "21",
+    "severity": "HIGH",
+    "src_ip": "11.45.45.94",
+    "src_port": 43979,
+    "text": "Suspicious backdoor communication detected from 11.45.45.94 to c2-server.org",
+    "timestamp": "2025-08-27 08:49:27"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 331,
+    "bytes_sent": 1078,
+    "confidence": 0.9877985112579405,
+    "dst_ip": "172.27.198.172",
+    "dst_port": 143,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "22",
+    "severity": "LOW",
+    "src_ip": "142.225.32.208",
+    "src_port": 59606,
+    "text": "Successful database connection",
+    "timestamp": "2025-08-26 04:21:25"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Software update notification",
+    "confidence": 0.916666044354681,
+    "label": "BENIGN",
+    "message_id": "<dc0f7a20-4095-42e3-8324-be87ffed25c5@company.com>",
+    "recipient": "user@company.com",
+    "sample_id": "23",
+    "sender": "noreply@company.com",
+    "subject": "Software update notification",
+    "text": "Legitimate email from company.com: Software update notification",
+    "timestamp": "2025-08-12 11:00:36"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 2142,
+    "bytes_sent": 1573,
+    "confidence": 0.9790276923074537,
+    "dst_ip": "172.21.229.116",
+    "dst_port": 80,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "24",
+    "severity": "LOW",
+    "src_ip": "5.51.148.64",
+    "src_port": 41755,
+    "text": "System backup data transfer",
+    "timestamp": "2025-08-11 05:54:54"
+  },
+  {
+    "additional_data": {
+      "failed_login_attempts": 18,
+      "target_service": "WinRM",
+      "username_attempts": [
+        "root",
+        "administrator",
+        "user"
+      ]
+    },
+    "attack_subtype": "unauthorized_access",
+    "attack_type": "intrusion",
+    "bytes_received": 881,
+    "bytes_sent": 1090,
+    "confidence": 0.9212534981962548,
+    "dst_ip": "10.140.79.229",
+    "dst_port": 22,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "25",
+    "severity": "HIGH",
+    "src_ip": "135.198.97.18",
+    "src_port": 44377,
+    "text": "unauthorized_access attempt detected from 135.198.97.18 targeting 10.140.79.229",
+    "timestamp": "2025-08-10 00:15:56"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3544,
+    "bytes_sent": 1114,
+    "confidence": 0.9771457713952586,
+    "dst_ip": "172.22.68.124",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "26",
+    "severity": "LOW",
+    "src_ip": "34.81.105.30",
+    "src_port": 49192,
+    "text": "Normal HTTP request to web server",
+    "timestamp": "2025-09-01 01:17:09"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 714,
+    "bytes_sent": 1463,
+    "confidence": 0.9267940320279325,
+    "dst_ip": "172.26.85.55",
+    "dst_port": 22,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "27",
+    "severity": "LOW",
+    "src_ip": "174.174.186.187",
+    "src_port": 61930,
+    "text": "Regular email synchronization",
+    "timestamp": "2025-08-17 17:34:42"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9821156836668525,
+    "label": "BENIGN",
+    "message_id": "<72da0f82-39f2-4d7f-b05a-bfbc12208068@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sample_id": "28",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from notification.bank.com: Account statement ready for download",
+    "timestamp": "2025-08-13 17:20:56"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9654383383164916,
+    "label": "BENIGN",
+    "message_id": "<92627d69-bf71-4f49-abf2-08d9c4673e20@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "29",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from newsletter.service.com: Account statement ready for download",
+    "timestamp": "2025-09-05 14:07:34"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 2551,
+    "bytes_sent": 1402,
+    "confidence": 0.9283763950698146,
+    "dst_ip": "192.168.236.185",
+    "dst_port": 110,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "30",
+    "severity": "LOW",
+    "src_ip": "38.141.154.196",
+    "src_port": 34787,
+    "text": "System backup data transfer",
+    "timestamp": "2025-08-13 22:31:25"
+  },
+  {
+    "additional_data": {
+      "file_hash": "1a21b11a7837abdb717f72a250b9c806c9af76d2a3fd4ddbc7dfb4c4dd0f8a14",
+      "suspicious_domain": "evil-payload.net",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "trojan",
+    "attack_type": "malware",
+    "bytes_received": 1697,
+    "bytes_sent": 7380,
+    "confidence": 0.9003040254291436,
+    "dst_ip": "192.168.98.247",
+    "dst_port": 443,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "31",
+    "severity": "CRITICAL",
+    "src_ip": "213.130.133.254",
+    "src_port": 36167,
+    "text": "Suspicious trojan communication detected from 213.130.133.254 to malicious-cdn.com",
+    "timestamp": "2025-08-09 21:19:28"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Software update notification",
+    "confidence": 0.9187168477957239,
+    "label": "BENIGN",
+    "message_id": "<1656aa8c-192e-41ff-8400-c26f712802ad@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sample_id": "32",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Software update notification",
+    "text": "Legitimate email from notification.bank.com: Software update notification",
+    "timestamp": "2025-09-04 03:29:37"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 1048,
+    "bytes_sent": 636,
+    "confidence": 0.92592656320669,
+    "dst_ip": "172.19.200.162",
+    "dst_port": 80,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "33",
+    "severity": "LOW",
+    "src_ip": "135.156.124.81",
+    "src_port": 41047,
+    "text": "Software update download",
+    "timestamp": "2025-08-23 01:52:53"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 474,
+    "bytes_sent": 1928,
+    "confidence": 0.9872293541330742,
+    "dst_ip": "192.168.152.43",
+    "dst_port": 80,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "34",
+    "severity": "LOW",
+    "src_ip": "92.107.254.253",
+    "src_port": 44143,
+    "text": "System backup data transfer",
+    "timestamp": "2025-09-02 10:40:01"
+  },
+  {
+    "additional_data": {
+      "file_hash": "630189c874232062da3b500b9f1094f3df207066a404a7931001ad212cc67de1",
+      "suspicious_domain": "malicious-cdn.com",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "backdoor",
+    "attack_type": "malware",
+    "bytes_received": 4357,
+    "bytes_sent": 3743,
+    "confidence": 0.9352891990001553,
+    "dst_ip": "192.168.252.139",
+    "dst_port": 443,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "35",
+    "severity": "HIGH",
+    "src_ip": "170.79.177.7",
+    "src_port": 41258,
+    "text": "Suspicious backdoor communication detected from 170.79.177.7 to botnet-command.io",
+    "timestamp": "2025-08-20 20:51:06"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 2824,
+    "bytes_sent": 734,
+    "confidence": 0.917116730504609,
+    "dst_ip": "10.186.159.248",
+    "dst_port": 22,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "36",
+    "severity": "LOW",
+    "src_ip": "210.162.244.195",
+    "src_port": 51156,
+    "text": "Health check ping",
+    "timestamp": "2025-08-19 08:04:48"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Welcome to our service",
+    "confidence": 0.8923362149174913,
+    "label": "BENIGN",
+    "message_id": "<70230b76-6681-46e8-9dac-abdeb7a4585e@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sample_id": "37",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Welcome to our service",
+    "text": "Legitimate email from notification.bank.com: Welcome to our service",
+    "timestamp": "2025-08-08 22:09:29"
+  },
+  {
+    "additional_data": {
+      "file_hash": "5d33e42866aa93f23389b753a6c8fdf911b0eba1a47cf82d67400dcad40cbe63",
+      "suspicious_domain": "malicious-cdn.com",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "rootkit",
+    "attack_type": "malware",
+    "bytes_received": 2008,
+    "bytes_sent": 10186,
+    "confidence": 0.9740209696367278,
+    "dst_ip": "172.23.74.94",
+    "dst_port": 443,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "38",
+    "severity": "HIGH",
+    "src_ip": "214.128.186.86",
+    "src_port": 46486,
+    "text": "Suspicious rootkit communication detected from 214.128.186.86 to botnet-command.io",
+    "timestamp": "2025-08-12 07:10:11"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9594327654597372,
+    "label": "BENIGN",
+    "message_id": "<33c141d6-6604-4bb4-b28b-676f12ba8b56@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "39",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from newsletter.service.com: Account statement ready for download",
+    "timestamp": "2025-09-05 06:17:26"
+  },
+  {
+    "additional_data": {
+      "file_hash": "8e66a6e2eab594ec8a030ca3fccf303c3bfe7dcffad91a5f473fd79003e46840",
+      "suspicious_domain": "evil-payload.net",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    },
+    "attack_subtype": "virus",
+    "attack_type": "malware",
+    "bytes_received": 637,
+    "bytes_sent": 5367,
+    "confidence": 0.8481031487542197,
+    "dst_ip": "10.248.144.117",
+    "dst_port": 8080,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "40",
+    "severity": "CRITICAL",
+    "src_ip": "150.14.3.146",
+    "src_port": 62973,
+    "text": "Suspicious virus communication detected from 150.14.3.146 to evil-payload.net",
+    "timestamp": "2025-08-13 16:50:28"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9316781060430939,
+    "label": "BENIGN",
+    "message_id": "<66497dcf-853a-4f31-a09b-e21e46f21576@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sample_id": "41",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from notification.bank.com: Account statement ready for download",
+    "timestamp": "2025-08-12 09:51:02"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.9409443266082606,
+    "label": "BENIGN",
+    "message_id": "<130c8478-06e2-47b8-ab75-bce7db813566@company.com>",
+    "recipient": "user@company.com",
+    "sample_id": "42",
+    "sender": "noreply@company.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from company.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-09-04 10:46:05"
+  },
+  {
+    "additional_data": {
+      "failed_login_attempts": 9,
+      "target_service": "Telnet",
+      "username_attempts": [
+        "root",
+        "user",
+        "administrator"
+      ]
+    },
+    "attack_subtype": "privilege_escalation",
+    "attack_type": "intrusion",
+    "bytes_received": 936,
+    "bytes_sent": 1185,
+    "confidence": 0.8757457511507649,
+    "dst_ip": "172.24.141.251",
+    "dst_port": 22,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "43",
+    "severity": "HIGH",
+    "src_ip": "74.197.19.222",
+    "src_port": 55409,
+    "text": "privilege_escalation attempt detected from 74.197.19.222 targeting 172.24.141.251",
+    "timestamp": "2025-08-26 21:50:23"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Meeting reminder: Team standup tomorrow",
+    "confidence": 0.8991387401048301,
+    "label": "BENIGN",
+    "message_id": "<e33884ae-792f-4ed1-a580-ce950d141c09@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "44",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Meeting reminder: Team standup tomorrow",
+    "text": "Legitimate email from newsletter.service.com: Meeting reminder: Team standup tomorrow",
+    "timestamp": "2025-08-07 03:29:32"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "company.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Account statement ready for download",
+    "confidence": 0.9545784790643133,
+    "label": "BENIGN",
+    "message_id": "<0ab88645-7714-4b77-8f28-b3a009b25922@company.com>",
+    "recipient": "user@company.com",
+    "sample_id": "45",
+    "sender": "noreply@company.com",
+    "subject": "Account statement ready for download",
+    "text": "Legitimate email from company.com: Account statement ready for download",
+    "timestamp": "2025-09-03 09:37:39"
+  },
+  {
+    "additional_data": {
+      "file_hash": "f058f4f2d01ba525782494346857a0875ec91e5821891b32ebf762996e3dd163",
+      "suspicious_domain": "evil-payload.net",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+    },
+    "attack_subtype": "rootkit",
+    "attack_type": "malware",
+    "bytes_received": 3120,
+    "bytes_sent": 9815,
+    "confidence": 0.9188131508725874,
+    "dst_ip": "192.168.120.154",
+    "dst_port": 53,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "46",
+    "severity": "CRITICAL",
+    "src_ip": "196.239.186.231",
+    "src_port": 59137,
+    "text": "Suspicious rootkit communication detected from 196.239.186.231 to crypto-miner.xyz",
+    "timestamp": "2025-08-31 09:36:39"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 1,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "newsletter.service.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Welcome to our service",
+    "confidence": 0.9321897390933154,
+    "label": "BENIGN",
+    "message_id": "<bbfa7d48-c08b-4f8e-a7d8-5a34760abac1@newsletter.service.com>",
+    "recipient": "user@company.com",
+    "sample_id": "47",
+    "sender": "noreply@newsletter.service.com",
+    "subject": "Welcome to our service",
+    "text": "Legitimate email from newsletter.service.com: Welcome to our service",
+    "timestamp": "2025-08-26 20:03:35"
+  },
+  {
+    "attack_type": null,
+    "bytes_received": 3323,
+    "bytes_sent": 648,
+    "confidence": 0.9724238140377104,
+    "dst_ip": "10.54.177.153",
+    "dst_port": 22,
+    "label": "BENIGN",
+    "protocol": "TCP",
+    "sample_id": "48",
+    "severity": "LOW",
+    "src_ip": "131.112.28.53",
+    "src_port": 53613,
+    "text": "System backup data transfer",
+    "timestamp": "2025-09-02 06:46:18"
+  },
+  {
+    "additional_data": {
+      "failed_login_attempts": 17,
+      "target_service": "WinRM",
+      "username_attempts": [
+        "root",
+        "guest"
+      ]
+    },
+    "attack_subtype": "privilege_escalation",
+    "attack_type": "intrusion",
+    "bytes_received": 774,
+    "bytes_sent": 1682,
+    "confidence": 0.8466386688704279,
+    "dst_ip": "172.29.168.9",
+    "dst_port": 22,
+    "label": "ATTACK",
+    "protocol": "TCP",
+    "sample_id": "49",
+    "severity": "HIGH",
+    "src_ip": "41.196.224.172",
+    "src_port": 52923,
+    "text": "privilege_escalation attempt detected from 41.196.224.172 targeting 172.29.168.9",
+    "timestamp": "2025-08-28 16:55:44"
+  },
+  {
+    "additional_data": {
+      "attachment_count": 0,
+      "legitimate_indicators": [
+        "proper_spf",
+        "dkim_valid",
+        "known_sender"
+      ],
+      "sender_domain": "notification.bank.com"
+    },
+    "attack_type": null,
+    "body": "This is a legitimate email regarding: Monthly Newsletter - February 2024",
+    "confidence": 0.9536142069739646,
+    "label": "BENIGN",
+    "message_id": "<a7527dfa-1788-40d8-b532-c6eac8da82e3@notification.bank.com>",
+    "recipient": "user@company.com",
+    "sample_id": "50",
+    "sender": "noreply@notification.bank.com",
+    "subject": "Monthly Newsletter - February 2024",
+    "text": "Legitimate email from notification.bank.com: Monthly Newsletter - February 2024",
+    "timestamp": "2025-08-22 04:45:35"
+  }
+]

@@ -1,0 +1,297 @@
+# Public Cybersecurity Datasets Configuration
+# Reusable configurations for publicly available cybersecurity datasets
+#
+# This file demonstrates:
+# - Kaggle dataset integration
+# - HuggingFace datasets integration
+# - Various cybersecurity data types
+# - Data preprocessing pipelines
+# - Multi-source dataset handling
+#
+# Usage:
+#   Use as base configuration with inheritance:
+#   base_config_path: configs/datasets/public_datasets.yaml
+
+# Metadata
+name: "public-cybersecurity-datasets"
+description: "Configuration for publicly available cybersecurity datasets"
+version: "1.0"
+
+# Default experiment settings for dataset testing
+output_dir: "${RESULTS_DIR:./results}/dataset_validation"
+
+# Public Cybersecurity Datasets
+datasets:
+  # Malware Detection Datasets
+  - name: "malware-detection-kaggle"
+    description: "Kaggle malware detection dataset with PE file features"
+    source: "kaggle"
+    path: "${KAGGLE_DATASET:malware-detection/pe-features}"
+    format: "csv"
+
+    # Dataset configuration
+    max_samples: 10000
+    random_seed: 42
+    test_split: 0.2
+    validation_split: 0.1
+    stratify_column: "is_malware"
+
+    # Kaggle-specific settings
+    config:
+      kaggle_username: "${KAGGLE_USERNAME}"
+      kaggle_key: "${KAGGLE_KEY}"
+      download_path: "${DATA_DIR:./data}/kaggle"
+      extract_archive: true
+      cleanup_after_download: false
+
+    # Preprocessing for malware data - list of preprocessing steps
+    preprocessing:
+      - "handle_missing_values"
+      - "normalize_features"
+      - "remove_constant_features"
+      - "encode_categorical"
+      - "feature_selection"
+
+    # Data validation
+    validation:
+      check_data_quality: true
+      min_samples_per_class: 100
+      max_class_imbalance_ratio: 10.0
+      check_feature_distributions: true
+
+  - name: "malware-families-huggingface"
+    description: "HuggingFace dataset with malware family classifications"
+    source: "huggingface"
+    path: "${HF_DATASET:cybersecurity/malware-families}"
+    format: "parquet"
+
+    max_samples: 5000
+    random_seed: 123
+    test_split: 0.25
+    validation_split: 0.15
+    stratify_column: "malware_family"
+
+    config:
+      huggingface_token: "${HF_TOKEN}"
+      cache_dir: "${DATA_DIR:./data}/huggingface"
+      streaming: false  # Download full dataset
+      trust_remote_code: false
+      revision: "main"
+
+    preprocessing:
+      - "clean_text"
+      - "lowercase"
+      - "remove_urls"
+      - "tokenize"
+      - "extract_ngrams"
+
+  # Network Intrusion Detection Datasets
+  - name: "network-intrusion-nsl-kdd"
+    description: "NSL-KDD network intrusion detection dataset"
+    source: "remote"
+    path: "${NSL_KDD_URL:https://raw.githubusercontent.com/defcom17/NSL_KDD/master/KDDTrain%2B.txt}"
+    format: "csv"
+
+    max_samples: 15000
+    random_seed: 456
+    test_split: 0.2
+    validation_split: 0.1
+    stratify_column: "attack_type"
+
+    config:
+      # URL download settings
+      headers:
+        User-Agent: "Cybersec-Benchmark/1.0"
+      timeout: 30
+      verify_ssl: true
+
+      # File processing
+      separator: ","
+      header: null  # No header row
+      column_names: [
+        "duration", "protocol_type", "service", "flag", "src_bytes",
+        "dst_bytes", "land", "wrong_fragment", "urgent", "hot",
+        "num_failed_logins", "logged_in", "num_compromised", "root_shell",
+        "su_attempted", "num_root", "num_file_creations", "num_shells",
+        "num_access_files", "num_outbound_cmds", "is_host_login",
+        "is_guest_login", "count", "srv_count", "serror_rate",
+        "srv_serror_rate", "rerror_rate", "srv_rerror_rate",
+        "same_srv_rate", "diff_srv_rate", "srv_diff_host_rate",
+        "dst_host_count", "dst_host_srv_count", "dst_host_same_srv_rate",
+        "dst_host_diff_srv_rate", "dst_host_same_src_port_rate",
+        "dst_host_srv_diff_host_rate", "dst_host_serror_rate",
+        "dst_host_srv_serror_rate", "dst_host_rerror_rate",
+        "dst_host_srv_rerror_rate", "attack_type", "difficulty_level"
+      ]
+
+    preprocessing:
+      - "normalize_numerical_features"
+      - "handle_categorical_features"
+      - "group_attack_types"
+      - "create_ratio_features"
+
+  # Phishing Detection Dataset
+  - name: "phishing-websites-uci"
+    description: "UCI phishing websites dataset with URL features"
+    source: "remote"
+    path: "${UCI_DATASET:phishing-websites}"
+    format: "arff"
+
+    max_samples: null  # Use full dataset (relatively small)
+    random_seed: 789
+    test_split: 0.3
+    validation_split: 0.1
+    stratify_column: "Result"
+
+    config:
+      # UCI dataset handling
+      dataset_id: "327"  # UCI ML Repository ID
+      download_format: "ARFF"
+      convert_to_csv: true
+
+    preprocessing:
+      - "handle_missing_arff"
+      - "convert_categorical_binary"
+      - "analyze_feature_importance"
+      - "remove_zero_variance"
+
+  # Spam Email Detection
+  - name: "spam-email-detection"
+    description: "Email spam detection dataset with text features"
+    source: "kaggle"
+    path: "${KAGGLE_DATASET:uciml/sms-spam-collection-dataset}"
+    format: "csv"
+
+    max_samples: 8000
+    random_seed: 101
+    test_split: 0.2
+    validation_split: 0.1
+    stratify_column: "label"
+
+    config:
+      kaggle_username: "${KAGGLE_USERNAME}"
+      kaggle_key: "${KAGGLE_KEY}"
+      download_path: "${DATA_DIR:./data}/kaggle/spam"
+
+    preprocessing:
+      - "remove_html_tags"
+      - "remove_urls"
+      - "remove_emails"
+      - "lowercase"
+      - "remove_stopwords"
+      - "stem_words"
+      - "vectorize_text"
+
+  # Log Anomaly Detection
+  - name: "system-logs-anomaly"
+    description: "System log anomaly detection dataset"
+    source: "remote"
+    path: "${GITHUB_DATASET:logpai/loghub/blob/master/HDFS/HDFS_1.log}"
+    format: "log"
+
+    max_samples: 20000
+    random_seed: 202
+    test_split: 0.2
+    validation_split: 0.1
+
+    config:
+      # Log parsing configuration
+      log_format: "<Date> <Time> <Pid> <Level> <Component>: <Content>"
+      regex_pattern: "^(?P<Date>\\d{6}) (?P<Time>\\d{6}) (?P<Pid>\\d+) (?P<Level>\\w+) (?P<Component>\\w+): (?P<Content>.*)"
+
+      # GitHub download
+      raw_url: true
+      branch: "master"
+
+    preprocessing:
+      - "parse_timestamps"
+      - "extract_log_levels"
+      - "anonymize_data"
+      - "extract_log_templates"
+      - "create_sequence_features"
+
+# Common model for dataset testing (lightweight)
+models:
+  - name: "dataset-validator"
+    description: "Lightweight model for dataset validation"
+    type: "openai_api"
+    path: "gpt-3.5-turbo"
+    max_tokens: 256
+    temperature: 0.0
+
+    config:
+      api_key: "${OPENAI_API_KEY}"
+
+    system_prompt: "Analyze the provided cybersecurity data and classify it appropriately."
+
+# Evaluation focused on data quality
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+
+  batch_size: 16
+  parallel_jobs: 1
+  timeout_minutes: 90
+
+# Data quality monitoring
+data_quality:
+  # Checks to perform
+  check_missing_values: true
+  check_duplicates: true
+  check_outliers: true
+  check_class_balance: true
+  check_feature_distributions: true
+
+  # Thresholds
+  max_missing_percentage: 10.0
+  max_duplicate_percentage: 5.0
+  min_samples_per_class: 50
+  max_outlier_percentage: 5.0
+
+  # Actions
+  report_issues: true
+  auto_clean: false  # Manual review recommended
+  save_quality_report: true
+
+# Dataset download and caching
+caching:
+  enabled: true
+  cache_dir: "${DATA_DIR:./data}/cache"
+  expire_after_days: 30
+  compress_cache: true
+
+  # Validation
+  verify_checksums: true
+  redownload_on_error: true
+
+# Documentation for dataset usage
+usage_notes: |
+  Public Dataset Usage Guidelines:
+
+  1. API Keys Required:
+     - Kaggle: Set KAGGLE_USERNAME and KAGGLE_KEY
+     - HuggingFace: Set HF_TOKEN for private datasets
+     - UCI: Usually no authentication required
+
+  2. Preprocessing Options:
+     - Each dataset has optimized preprocessing
+     - Modify based on your specific use case
+     - Consider computational resources
+
+  3. Ethical Considerations:
+     - Respect dataset licenses and terms of use
+     - Consider privacy implications
+     - Follow responsible AI practices
+
+  4. Performance Tips:
+     - Start with smaller max_samples for testing
+     - Use caching to avoid repeated downloads
+     - Monitor data quality metrics
+
+  5. Troubleshooting:
+     - Check internet connection for downloads
+     - Verify API credentials
+     - Review preprocessing logs for errors

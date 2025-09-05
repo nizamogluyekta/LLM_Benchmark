@@ -1,0 +1,216 @@
+# Model Comparison Experiment Configuration
+# Compare multiple LLM models on the same cybersecurity task
+#
+# This configuration demonstrates:
+# - Multiple models (OpenAI, Anthropic, local)
+# - Consistent evaluation conditions
+# - Comprehensive metrics for comparison
+#
+# Usage:
+#   python -m benchmark.cli compare configs/experiments/model_comparison.yaml
+
+# Experiment metadata
+name: "cybersec-model-comparison"
+description: "Compare multiple LLM models on cybersecurity tasks"
+version: "2.0"
+
+# Results configuration
+output_dir: "${RESULTS_DIR:./results}/model_comparison"
+save_intermediate: true
+generate_report: true
+
+# Dataset for comparison - using a single dataset ensures fair comparison
+datasets:
+  - name: "network-intrusion-comparison"
+    description: "Network intrusion detection dataset for model comparison"
+    source: "huggingface"
+    path: "${HF_DATASET:cybersec/network-intrusion-detection}"
+    format: "parquet"
+
+    # Consistent sampling for fair comparison
+    max_samples: 2000
+    random_seed: 123  # Different seed from basic eval
+
+    test_split: 0.25
+    validation_split: 0.15
+    stratify_column: "attack_type"
+
+    # Feature engineering for network data - list of preprocessing steps
+    preprocessing:
+      - "normalize_numerical"
+      - "encode_categorical"
+      - "feature_selection"
+
+# Multiple models for comparison
+models:
+  # OpenAI GPT-4 - Premium model
+  - name: "gpt-4-cybersec"
+    description: "OpenAI GPT-4 - Latest and most capable model"
+    type: "openai_api"
+    path: "gpt-4"
+
+    max_tokens: 1024
+    temperature: 0.0  # Deterministic for fair comparison
+    top_p: 1.0
+
+    config:
+      api_key: "${OPENAI_API_KEY}"
+      api_base: "${OPENAI_API_BASE:https://api.openai.com/v1}"
+      request_timeout: 45
+      max_retries: 5
+
+    system_prompt: |
+      You are an expert cybersecurity analyst specializing in network intrusion detection.
+      Analyze the network traffic data and classify whether it represents normal activity
+      or a security threat. Provide your classification with high confidence.
+
+    rate_limit:
+      requests_per_minute: 30  # Conservative for GPT-4
+      tokens_per_minute: 20000
+
+  # OpenAI GPT-3.5 - Cost-effective alternative
+  - name: "gpt-3.5-cybersec"
+    description: "OpenAI GPT-3.5-turbo - Fast and cost-effective"
+    type: "openai_api"
+    path: "gpt-3.5-turbo"
+
+    max_tokens: 512
+    temperature: 0.0
+    top_p: 1.0
+
+    config:
+      api_key: "${OPENAI_API_KEY}"
+      api_base: "${OPENAI_API_BASE:https://api.openai.com/v1}"
+      request_timeout: 30
+      max_retries: 3
+
+    system_prompt: |
+      You are a cybersecurity analyst. Analyze network traffic data and determine
+      if it shows signs of intrusion or malicious activity. Be accurate and concise.
+
+    rate_limit:
+      requests_per_minute: 100
+      tokens_per_minute: 60000
+
+  # Anthropic Claude - Alternative provider
+  - name: "claude-3-sonnet-cybersec"
+    description: "Anthropic Claude 3 Sonnet - Balanced performance"
+    type: "anthropic_api"
+    path: "claude-3-sonnet-20240229"
+
+    max_tokens: 1024
+    temperature: 0.0
+    top_p: 1.0
+
+    config:
+      api_key: "${ANTHROPIC_API_KEY}"
+      api_base: "${ANTHROPIC_API_BASE:https://api.anthropic.com}"
+      request_timeout: 45
+      max_retries: 3
+
+    system_prompt: |
+      You are a cybersecurity expert analyzing network traffic for signs of intrusion.
+      Examine the provided data carefully and classify it as normal or malicious activity.
+      Base your decision on established cybersecurity principles.
+
+    rate_limit:
+      requests_per_minute: 50
+      tokens_per_minute: 40000
+
+  # Local MLX Model - Privacy-focused option
+  - name: "llama-cybersec-local"
+    description: "Local Llama model fine-tuned for cybersecurity"
+    type: "mlx_local"
+    path: "${MODEL_DIR:./models}/llama-2-7b-cybersec-mlx"
+
+    max_tokens: 512
+    temperature: 0.0
+    top_k: 50
+    top_p: 0.9
+
+    config:
+      device: "${MLX_DEVICE:mps}"  # mps for Apple Silicon, cpu for others
+      precision: "float16"
+      batch_size: 4
+      max_memory_gb: 8
+      context_length: 2048
+
+    system_prompt: |
+      Analyze the network traffic data for cybersecurity threats.
+      Classify as normal or intrusion based on the patterns you observe.
+
+# Comprehensive evaluation for model comparison
+evaluation:
+  # Extended metrics for thorough comparison
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+    - "confusion_matrix"
+    - "detection_rate"
+    - "false_positive_rate"
+
+  # Consistent evaluation settings
+  batch_size: 4              # Smaller batch for memory efficiency with multiple models
+  parallel_jobs: 2           # Can run local and API models in parallel
+  timeout_minutes: 180       # Longer timeout for multiple models
+  save_predictions: true
+
+  # Statistical significance testing
+  significance_tests:
+    enabled: true
+    test_type: "mcnemar"      # McNemar's test for paired model comparison
+    alpha: 0.05               # Significance level
+
+  # Cross-validation for robust comparison
+  cross_validation:
+    enabled: true
+    folds: 5
+    stratified: true
+    random_state: 42
+
+  # Detailed error analysis
+  error_analysis:
+    enabled: true
+    save_failed_cases: true
+    analyze_error_patterns: true
+
+# Enhanced logging for comparison analysis
+logging:
+  level: "INFO"
+  save_logs: true
+  log_file: "${RESULTS_DIR:./results}/model_comparison/comparison.log"
+  separate_model_logs: true   # Create separate log files per model
+
+# Performance tracking
+monitoring:
+  track_memory: true
+  track_time: true
+  track_api_costs: true       # Track API usage costs
+  save_metrics: true
+
+  # Resource monitoring
+  resource_limits:
+    max_memory_gb: 16
+    max_cpu_percent: 80
+    max_gpu_memory_gb: 12
+
+# Comparison-specific settings
+comparison:
+  # Generate comparison report
+  generate_report: true
+  report_format: ["html", "pdf"]
+
+  # Visualization settings
+  create_plots: true
+  plot_formats: ["png", "svg"]
+
+  # Statistical analysis
+  run_statistical_tests: true
+  confidence_interval: 0.95
+
+  # Model ranking
+  ranking_metrics: ["f1_score", "accuracy", "roc_auc"]
+  ranking_weights: [0.4, 0.3, 0.3]  # Weight f1_score higher

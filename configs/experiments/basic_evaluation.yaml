@@ -1,0 +1,110 @@
+# Basic Cybersecurity LLM Evaluation Configuration
+# This is a simple example for getting started with the benchmarking system
+#
+# Usage:
+#   python -m benchmark.cli evaluate configs/experiments/basic_evaluation.yaml
+
+# Experiment identification and metadata
+name: "cybersec-basic-evaluation"
+description: "Basic cybersecurity evaluation with a single model and dataset"
+version: "1.0"
+
+# Output configuration - where results will be stored
+output_dir: "${RESULTS_DIR:./results}/basic_evaluation"
+save_intermediate: true
+
+# Dataset configuration
+datasets:
+  - name: "malware-detection-basic"
+    description: "Basic malware detection dataset for initial testing"
+    source: "local"
+    # Path to your dataset file - supports environment variables
+    path: "${DATA_DIR:./data}/malware_detection.csv"
+    format: "csv"
+
+    # Sampling configuration
+    max_samples: 1000  # Limit for quick testing - remove or increase for full evaluation
+    random_seed: 42    # For reproducible sampling
+
+    # Data splitting
+    test_split: 0.2           # 20% for testing
+    validation_split: 0.1     # 10% for validation
+    stratify_column: "label"  # Ensure balanced splits
+
+    # Data preprocessing (optional) - list of preprocessing steps
+    preprocessing:
+      - "normalize_text"
+      - "remove_duplicates"
+      - "handle_missing_values"
+
+# Model configuration
+models:
+  - name: "gpt-3.5-cybersec"
+    description: "OpenAI GPT-3.5-turbo for cybersecurity evaluation"
+    type: "openai_api"
+    path: "gpt-3.5-turbo"
+
+    # Model parameters
+    max_tokens: 512
+    temperature: 0.1  # Low temperature for more deterministic results
+    top_p: 0.9
+    frequency_penalty: 0.0
+    presence_penalty: 0.0
+
+    # API configuration - uses environment variables for security
+    config:
+      api_key: "${OPENAI_API_KEY}"
+      api_base: "${OPENAI_API_BASE:https://api.openai.com/v1}"
+      request_timeout: 30
+      max_retries: 3
+      retry_delay: 1.0
+
+    # Prompt configuration
+    system_prompt: |
+      You are a cybersecurity expert assistant. Analyze the given data and provide
+      accurate classifications or assessments based on cybersecurity best practices.
+      Be precise and factual in your responses.
+
+    # Rate limiting to avoid API quota issues
+    rate_limit:
+      requests_per_minute: 60
+      tokens_per_minute: 40000
+
+# Evaluation configuration
+evaluation:
+  # Metrics to compute
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "confusion_matrix"
+    - "roc_auc"
+
+  # Evaluation settings
+  batch_size: 8              # Process 8 samples at a time
+  parallel_jobs: 1           # Single threaded for API models
+  timeout_minutes: 60        # Maximum evaluation time
+  save_predictions: true     # Save individual predictions for analysis
+
+  # Cross-validation (optional)
+  cross_validation:
+    enabled: false
+    folds: 5
+    random_state: 42
+
+  # Error handling
+  max_errors: 10            # Stop if too many errors occur
+  continue_on_error: true   # Continue evaluation despite individual failures
+
+# Logging and monitoring
+logging:
+  level: "INFO"
+  save_logs: true
+  log_file: "${RESULTS_DIR:./results}/basic_evaluation/evaluation.log"
+
+# Performance monitoring
+monitoring:
+  track_memory: true
+  track_time: true
+  save_metrics: true

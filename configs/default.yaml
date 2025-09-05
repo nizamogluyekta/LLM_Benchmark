@@ -1,0 +1,384 @@
+# Default System Configuration
+# System-wide default settings for the LLM Cybersecurity Benchmark
+#
+# This file provides:
+# - Sensible defaults for all configuration options
+# - Environment-specific overrides
+# - Resource management settings
+# - Common evaluation patterns
+#
+# Usage:
+#   This file serves as a base configuration that other configs inherit from.
+#   Override specific values in your experiment configurations.
+
+# System Information
+name: "llm-cybersec-benchmark-defaults"
+description: "Default system configuration for LLM cybersecurity benchmarking"
+version: "1.2.0"
+
+# Global Settings
+global_settings:
+  # Environment
+  environment: "${ENVIRONMENT:development}"  # development, staging, production
+  debug_mode: "${DEBUG:false}"
+
+  # Resource Management
+  hardware_optimization: true
+  memory_management: "auto"
+
+  # Caching and Storage
+  result_caching: true
+  intermediate_caching: true
+  cache_compression: true
+
+  # Logging and Monitoring
+  detailed_logging: true
+  performance_monitoring: true
+  error_tracking: true
+
+  # Security and Privacy
+  anonymize_logs: true
+  encrypt_sensitive_data: true
+  audit_api_calls: true
+
+# Default Output Configuration
+output_dir: "${RESULTS_DIR:./results}"
+save_intermediate: true
+backup_results: true
+
+# Default Dataset Configuration Template
+default_dataset:
+  # Basic settings
+  max_samples: null           # null means use full dataset
+  random_seed: 42
+
+  # Data splitting
+  test_split: 0.2             # 20% for testing
+  validation_split: 0.1       # 10% for validation
+
+  # Quality controls
+  min_samples_per_class: 10
+  max_class_imbalance_ratio: 100.0
+
+  # Preprocessing defaults
+  preprocessing:
+    normalize_text: true
+    remove_special_chars: false
+    handle_missing_values: true
+    remove_duplicates: true
+
+    # Text processing
+    max_sequence_length: 512
+    truncation_strategy: "tail"
+    padding: "max_length"
+
+    # Numerical processing
+    normalize_numerical: "standard"
+    handle_outliers: "clip"
+    outlier_std_threshold: 3.0
+
+# Default Model Configuration Template
+default_model:
+  # Generation parameters
+  max_tokens: 512
+  temperature: 0.1            # Conservative for evaluation
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.0
+
+  # API settings (for API models)
+  config:
+    request_timeout: 30
+    max_retries: 3
+    retry_delay: 1.0
+
+    # Rate limiting (requests per minute)
+    rate_limit:
+      requests_per_minute: 60
+      tokens_per_minute: 30000
+
+  # Default system prompt
+  system_prompt: |
+    You are a cybersecurity expert AI assistant. Analyze the provided data
+    and provide accurate, helpful responses based on cybersecurity best practices.
+    Be clear, precise, and explain your reasoning.
+
+# Default Evaluation Configuration
+evaluation:
+  # Standard metrics for cybersecurity tasks
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "confusion_matrix"
+
+  # Processing settings
+  batch_size: 8               # Balance between speed and resource usage
+  parallel_jobs: 2            # Conservative parallelism
+  timeout_minutes: 60         # 1 hour default timeout
+
+  # Output settings
+  save_predictions: true
+  save_probabilities: false
+  generate_report: true
+
+  # Error handling
+  max_errors: 50              # Stop after 50 errors
+  continue_on_error: true
+  retry_failed_samples: true
+  max_retries: 2
+
+  # Quality controls
+  confidence_threshold: 0.5   # Minimum confidence for predictions
+  uncertainty_analysis: false
+  calibration_analysis: false
+
+# Logging Configuration
+logging:
+  # Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "${LOG_LEVEL:INFO}"
+
+  # Output destinations
+  console_output: true
+  file_output: true
+  log_file: "${RESULTS_DIR:./results}/benchmark.log"
+
+  # Log formatting
+  format: "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # Log rotation
+  rotate_logs: true
+  max_log_size_mb: 100
+  backup_count: 5
+
+  # Structured logging
+  json_logs: false
+  include_correlation_id: true
+
+  # Component-specific logging
+  component_levels:
+    config: "INFO"
+    data: "INFO"
+    model: "INFO"
+    evaluation: "INFO"
+    performance: "DEBUG"
+
+# Monitoring and Performance
+monitoring:
+  # Resource tracking
+  track_memory: true
+  track_cpu: true
+  track_gpu: false            # Enable if using GPU models
+  track_network: false        # Enable for API models
+
+  # Performance metrics
+  measure_latency: true
+  measure_throughput: true
+  track_api_costs: true
+
+  # Thresholds and alerts
+  memory_threshold_gb: 16     # Alert if memory usage exceeds
+  cpu_threshold_percent: 80   # Alert if CPU usage exceeds
+  latency_threshold_ms: 5000  # Alert if response time exceeds
+
+  # Export settings
+  save_metrics: true
+  metrics_format: "json"      # json, csv, prometheus
+  export_interval_seconds: 60
+
+# Security and Privacy Settings
+security:
+  # Data protection
+  encrypt_at_rest: false      # Enable in production
+  encrypt_in_transit: true
+
+  # API security
+  validate_ssl_certificates: true
+  use_api_key_rotation: false
+  log_api_requests: true
+  redact_sensitive_data: true
+
+  # Access control
+  require_authentication: false
+  audit_user_actions: true
+
+  # Data retention
+  data_retention_days: 90
+  auto_cleanup_temp_files: true
+
+# Error Handling and Recovery
+error_handling:
+  # General error behavior
+  fail_fast: false            # Continue on non-critical errors
+  detailed_error_messages: true
+  include_stack_traces: false # Enable for debugging
+
+  # Recovery mechanisms
+  auto_retry_on_network_error: true
+  retry_exponential_backoff: true
+  max_retry_delay_seconds: 300
+
+  # Error reporting
+  save_error_logs: true
+  error_log_file: "${RESULTS_DIR:./results}/errors.log"
+
+  # Specific error handling
+  api_timeout_action: "skip"  # skip, retry, fail
+  validation_error_action: "log"  # log, skip, fail
+  resource_exhaustion_action: "wait"  # wait, skip, fail
+
+# Development and Testing Settings
+development:
+  # Quick testing options
+  dry_run_mode: false
+  sample_data_only: false
+  skip_expensive_operations: false
+
+  # Debugging
+  verbose_output: false
+  save_debug_info: false
+  profile_performance: false
+
+  # Testing
+  run_smoke_tests: true
+  validate_configs: true
+  check_dependencies: true
+
+# Production Optimization Settings
+production:
+  # Performance optimizations
+  optimize_for_throughput: true
+  enable_batch_processing: true
+  use_connection_pooling: true
+
+  # Resource management
+  gc_frequency: "auto"
+  memory_cleanup_interval: 300  # seconds
+
+  # Reliability
+  heartbeat_interval: 60      # seconds
+  health_check_enabled: true
+  graceful_shutdown_timeout: 30  # seconds
+
+# Integration Settings
+integrations:
+  # External services
+  wandb:
+    enabled: false
+    project: "llm-cybersec-benchmark"
+    entity: "${WANDB_ENTITY}"
+
+  mlflow:
+    enabled: false
+    tracking_uri: "${MLFLOW_TRACKING_URI:http://localhost:5000}"
+    experiment_name: "cybersec-benchmark"
+
+  tensorboard:
+    enabled: false
+    log_dir: "${RESULTS_DIR:./results}/tensorboard"
+
+  # Notification systems
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    notify_on_completion: false
+    notify_on_error: false
+
+  email:
+    enabled: false
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: "${SMTP_PORT:587}"
+    username: "${SMTP_USERNAME}"
+    password: "${SMTP_PASSWORD}"
+
+# Data Sources Configuration
+data_sources:
+  # Local data
+  local_data_dir: "${DATA_DIR:./data}"
+  temp_data_dir: "${TEMP_DIR:/tmp}"
+
+  # Remote data sources
+  kaggle:
+    username: "${KAGGLE_USERNAME}"
+    key: "${KAGGLE_KEY}"
+    download_dir: "${DATA_DIR:./data}/kaggle"
+
+  huggingface:
+    token: "${HF_TOKEN}"
+    cache_dir: "${DATA_DIR:./data}/huggingface"
+
+  # Cloud storage
+  aws_s3:
+    enabled: false
+    bucket: "${AWS_S3_BUCKET}"
+    region: "${AWS_REGION:us-east-1}"
+
+  gcp_storage:
+    enabled: false
+    bucket: "${GCP_STORAGE_BUCKET}"
+    project: "${GCP_PROJECT}"
+
+# Model Sources Configuration
+model_sources:
+  # Local models
+  local_model_dir: "${MODEL_DIR:./models}"
+
+  # API models
+  openai:
+    api_key: "${OPENAI_API_KEY}"
+    api_base: "${OPENAI_API_BASE:https://api.openai.com/v1}"
+    organization: "${OPENAI_ORG_ID}"
+
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    api_base: "${ANTHROPIC_API_BASE:https://api.anthropic.com}"
+
+  # Model registries
+  huggingface_hub:
+    token: "${HF_TOKEN}"
+    cache_dir: "${MODEL_DIR:./models}/huggingface"
+
+# Default Environment Variables Documentation
+environment_variables:
+  required:
+    - OPENAI_API_KEY          # Required for OpenAI models
+
+  optional:
+    - RESULTS_DIR             # Default: ./results
+    - DATA_DIR                # Default: ./data
+    - MODEL_DIR               # Default: ./models
+    - LOG_LEVEL               # Default: INFO
+    - ENVIRONMENT             # Default: development
+    - DEBUG                   # Default: false
+    - KAGGLE_USERNAME         # For Kaggle datasets
+    - KAGGLE_KEY              # For Kaggle datasets
+    - HF_TOKEN                # For HuggingFace datasets/models
+    - ANTHROPIC_API_KEY       # For Anthropic models
+    - WANDB_ENTITY            # For Weights & Biases logging
+    - SLACK_WEBHOOK_URL       # For Slack notifications
+
+# Configuration Validation Rules
+validation_rules:
+  # Required sections
+  required_sections: ["evaluation", "models", "datasets"]
+
+  # Model validation
+  model_requirements:
+    - "name"
+    - "type"
+    - "path"
+
+  # Dataset validation
+  dataset_requirements:
+    - "name"
+    - "source"
+    - "path"
+
+  # Value constraints
+  constraints:
+    temperature: [0.0, 2.0]
+    max_tokens: [1, 8192]
+    batch_size: [1, 128]
+    test_split: [0.0, 0.9]

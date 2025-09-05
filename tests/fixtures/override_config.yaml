@@ -1,0 +1,38 @@
+name: "override-experiment"
+description: "Override configuration that inherits from base"
+output_dir: "./results/override"
+
+# Add additional dataset
+datasets:
+  - name: "override-dataset"
+    source: "kaggle"
+    path: "/data/override.csv"
+    max_samples: 2000
+    test_split: 0.25
+    validation_split: 0.15
+
+# Override model configuration
+models:
+  - name: "base-model"  # Same name as base, will merge configs
+    max_tokens: 1024  # Override max_tokens
+    temperature: 0.2  # Override temperature
+    config:
+      device: "mps"  # Override device, keep precision from base
+      batch_size: 32  # Add new config parameter
+
+# Add additional model
+  - name: "override-model"
+    type: "openai_api"
+    path: "gpt-4"
+    max_tokens: 2048
+    temperature: 0.1
+
+# Override evaluation settings
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"  # Add more metrics
+  parallel_jobs: 4  # Override parallel jobs
+  batch_size: 32  # Override batch size

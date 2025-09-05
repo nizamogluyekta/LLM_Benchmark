@@ -1,0 +1,66 @@
+version: "1.2.0"
+logging_level: "INFO"
+global_settings:
+  hardware_optimization: true
+  result_caching: true
+  detailed_logging: true
+
+experiments:
+  - name: "malware-detection-experiment"
+    description: "Evaluate LLM performance on malware detection"
+    output_dir: "./results/malware"
+
+    datasets:
+      - name: "malware-samples"
+        source: "local"
+        path: "/data/malware.csv"
+        max_samples: 5000
+        test_split: 0.2
+        validation_split: 0.1
+
+    models:
+      - name: "gpt-4-cyber"
+        type: "openai_api"
+        path: "gpt-4"
+        max_tokens: 1024
+        temperature: 0.1
+
+    evaluation:
+      metrics:
+        - "accuracy"
+        - "precision"
+        - "recall"
+        - "detection_rate"
+      parallel_jobs: 2
+      timeout_minutes: 120
+      batch_size: 16
+
+  - name: "network-intrusion-experiment"
+    description: "Evaluate LLM performance on network intrusion detection"
+    output_dir: "./results/network"
+
+    datasets:
+      - name: "network-traffic"
+        source: "kaggle"
+        path: "network-intrusion/data.csv"
+        max_samples: 10000
+        test_split: 0.25
+        validation_split: 0.15
+
+    models:
+      - name: "claude-cyber"
+        type: "anthropic_api"
+        path: "claude-3-sonnet-20240229"
+        max_tokens: 2048
+        temperature: 0.05
+
+    evaluation:
+      metrics:
+        - "accuracy"
+        - "precision"
+        - "recall"
+        - "f1_score"
+        - "false_positive_rate"
+      parallel_jobs: 4
+      timeout_minutes: 180
+      batch_size: 24

@@ -1,0 +1,23 @@
+name: "malformed-yaml"
+description: "This YAML has syntax errors"
+output_dir: "./results"
+
+datasets:
+  - name: "test-dataset
+    source: "local"  # Missing closing quote above
+    path: "/data/test.csv"
+    [invalid_yaml_syntax  # Missing closing bracket
+    test_split: 0.2
+    validation_split: 0.1
+
+models:
+  - name: "test-model"
+    type: "mlx_local"
+    path: /models/test.mlx"  # Missing opening quote
+    max_tokens: 512
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - precision"  # Missing opening quote
+  parallel_jobs: 2

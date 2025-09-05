@@ -1,0 +1,29 @@
+name: "base-experiment"
+description: "Base configuration for inheritance"
+output_dir: "./results/base"
+
+datasets:
+  - name: "base-dataset"
+    source: "local"
+    path: "/data/base.csv"
+    max_samples: 1000
+    test_split: 0.2
+    validation_split: 0.1
+
+models:
+  - name: "base-model"
+    type: "mlx_local"
+    path: "/models/base.mlx"
+    max_tokens: 512
+    temperature: 0.1
+    config:
+      device: "cpu"
+      precision: "float32"
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+  parallel_jobs: 1
+  timeout_minutes: 60
+  batch_size: 16

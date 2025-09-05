@@ -23,6 +23,15 @@ from .config import (
     load_config_from_file,
     save_config_to_file,
 )
+from .config_loader import (
+    ConfigurationCache,
+    ConfigurationLoader,
+    clear_config_cache,
+    get_config_cache_stats,
+    load_benchmark_config,
+    load_experiment_config,
+    resolve_environment_variables,
+)
 from .exceptions import (
     BenchmarkError,
     ConfigurationError,
@@ -98,6 +107,14 @@ __all__ = [
     "create_standard_evaluation_config",
     "load_config_from_file",
     "save_config_to_file",
+    # Configuration loader
+    "ConfigurationLoader",
+    "ConfigurationCache",
+    "load_experiment_config",
+    "load_benchmark_config",
+    "resolve_environment_variables",
+    "clear_config_cache",
+    "get_config_cache_stats",
     # Logging utilities
     "get_logger",
     "get_data_logger",

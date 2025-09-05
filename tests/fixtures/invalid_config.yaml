@@ -1,0 +1,24 @@
+name: "invalid-config"
+description: "Configuration with validation errors"
+output_dir: "./results"
+
+datasets:
+  - name: "bad-dataset"
+    source: "invalid_source"  # Invalid source type
+    path: ""  # Empty path
+    max_samples: -100  # Negative samples
+    test_split: 0.9
+    validation_split: 0.8  # Combined > 1.0
+
+models:
+  - name: "bad-model"
+    type: "invalid_type"  # Invalid model type
+    path: ""  # Empty path
+    max_tokens: 0  # Zero tokens
+    temperature: -0.5  # Invalid temperature
+
+evaluation:
+  metrics: []  # Empty metrics list
+  parallel_jobs: 0  # Zero jobs
+  timeout_minutes: -30  # Negative timeout
+  batch_size: 0  # Zero batch size

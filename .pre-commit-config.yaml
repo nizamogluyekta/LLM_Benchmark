@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: check-yaml
         args: ['--unsafe']
+        exclude: ^tests/fixtures/malformed\.yaml$
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-merge-conflict

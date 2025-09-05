@@ -1,0 +1,52 @@
+name: "cybersec-evaluation"
+description: "Comprehensive cybersecurity LLM evaluation"
+output_dir: "./results/cybersec_eval"
+
+datasets:
+  - name: "malware-detection"
+    source: "local"
+    path: "/data/malware_samples.csv"
+    max_samples: 5000
+    test_split: 0.2
+    validation_split: 0.1
+    preprocessing:
+      - "tokenize"
+      - "normalize"
+
+  - name: "network-intrusion"
+    source: "kaggle"
+    path: "unsw-nb15/UNSW-NB15.csv"
+    max_samples: 10000
+    test_split: 0.25
+    validation_split: 0.15
+
+models:
+  - name: "llama-cybersec"
+    type: "mlx_local"
+    path: "/models/llama-7b-cybersec.mlx"
+    max_tokens: 1024
+    temperature: 0.3
+    config:
+      device: "mps"
+      precision: "float16"
+
+  - name: "gpt-4-analysis"
+    type: "openai_api"
+    path: "gpt-4-0125-preview"
+    max_tokens: 2048
+    temperature: 0.1
+    config:
+      api_base: "https://api.openai.com/v1"
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "detection_rate"
+    - "false_positive_rate"
+    - "response_time"
+  parallel_jobs: 4
+  timeout_minutes: 90
+  batch_size: 32

@@ -1,0 +1,35 @@
+name: "env-var-test"
+description: "Configuration with environment variables"
+output_dir: "${OUTPUT_DIR:./results/default}"
+
+datasets:
+  - name: "test-dataset"
+    source: "local"
+    path: "${DATA_PATH}"
+    max_samples: 1000
+    test_split: 0.2
+    validation_split: 0.1
+
+models:
+  - name: "openai-model"
+    type: "openai_api"
+    path: "${OPENAI_MODEL:gpt-3.5-turbo}"
+    max_tokens: 512
+    temperature: 0.1
+    config:
+      api_key: "${OPENAI_API_KEY}"
+      api_base: "${OPENAI_API_BASE:https://api.openai.com/v1}"
+
+  - name: "local-model"
+    type: "mlx_local"
+    path: "${LOCAL_MODEL_PATH:/models/default.mlx}"
+    max_tokens: 1024
+    temperature: 0.2
+
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+  parallel_jobs: 2
+  timeout_minutes: 60
+  batch_size: 16

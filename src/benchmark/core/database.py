@@ -34,7 +34,7 @@ from sqlalchemy.orm import (
 # Type: ignore for SQLAlchemy DeclarativeBase to avoid MyPy issues in some environments
 
 
-class Base(DeclarativeBase):  # type: ignore[misc]
+class Base(DeclarativeBase):  # type: ignore
     """Base class for all database models."""
 
     pass

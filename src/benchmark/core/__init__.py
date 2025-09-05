@@ -45,6 +45,15 @@ from .database import (
     create_session_factory,
     get_database_schema_info,
 )
+from .database_manager import (
+    DatabaseConnectionError,
+    DatabaseInitializationError,
+    DatabaseManager,
+    create_database_manager,
+    ensure_database_ready,
+    get_postgresql_url,
+    get_sqlite_url,
+)
 from .exceptions import (
     BenchmarkError,
     ConfigurationError,
@@ -140,6 +149,14 @@ __all__ = [
     "create_database_tables",
     "create_session_factory",
     "get_database_schema_info",
+    # Database manager
+    "DatabaseManager",
+    "DatabaseConnectionError",
+    "DatabaseInitializationError",
+    "create_database_manager",
+    "ensure_database_ready",
+    "get_sqlite_url",
+    "get_postgresql_url",
     # Logging utilities
     "get_logger",
     "get_data_logger",

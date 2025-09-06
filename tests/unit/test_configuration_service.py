@@ -687,7 +687,8 @@ async def test_configuration_service_integration():
 
             # Get default config
             default_config = await service.get_default_config()
-            validated_config = ExperimentConfig(**default_config)
+            resolved_config = service.resolve_environment_variables(default_config)
+            validated_config = ExperimentConfig(**resolved_config)
 
             # Save config
             config_file = config_dir / "test_config.yaml"

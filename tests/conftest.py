@@ -9,7 +9,7 @@ import tempfile
 from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -346,6 +346,26 @@ def sample_model_predictions(cybersec_data_generator):
                 cybersec_data_generator.generate_model_prediction(label, accuracy=0.85)
             )
     return predictions
+
+
+@pytest.fixture
+def env_variables():
+    """Set up test environment variables."""
+    with patch.dict(
+        os.environ,
+        {
+            "TEST_API_KEY": "test-key-123",
+            "TEST_TIMEOUT": "30",
+            "TEST_ENABLE_FEATURE": "true",
+            "TEST_LIST_VALUES": "accuracy,precision,recall",
+            "TEST_INTEGER": "42",
+            "TEST_BOOLEAN_TRUE": "yes",
+            "TEST_BOOLEAN_FALSE": "no",
+            "SENSITIVE_TOKEN": "super-secret-token-12345",
+            "ANTHROPIC_API_KEY": "ant-api-key-67890",
+        },
+    ):
+        yield
 
 
 # Test markers

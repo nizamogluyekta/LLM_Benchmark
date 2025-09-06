@@ -6,8 +6,10 @@ including loading, caching, validation, and runtime reloading of configurations.
 """
 
 import contextlib
+import copy
 import hashlib
 import os
+import re
 import threading
 import time
 from pathlib import Path
@@ -222,6 +224,9 @@ class ConfigurationService(BaseService):
                     metadata={"config_path": str(config_path)},
                 )
 
+            # Resolve environment variables
+            config_data = self.resolve_environment_variables(config_data)
+
             # Validate configuration
             try:
                 experiment_config = ExperimentConfig(**config_data)
@@ -274,15 +279,24 @@ class ConfigurationService(BaseService):
                     "type": "openai_api",
                     "path": "gpt-3.5-turbo",
                     "config": {"api_key": "${OPENAI_API_KEY:test_key}"},
-                    "max_tokens": 512,
+                    "max_tokens": "${MODEL_MAX_TOKENS:512}",
                     "temperature": 0.1,
-                }
+                },
+                {
+                    "name": "claude-3-haiku",
+                    "type": "anthropic_api",
+                    "path": "claude-3-haiku-20240307",
+                    "config": {"api_key": "${ANTHROPIC_API_KEY}"},
+                    "max_tokens": "${MODEL_MAX_TOKENS:1024}",
+                    "temperature": 0.1,
+                },
             ],
             "evaluation": {
-                "metrics": ["accuracy", "precision", "recall", "f1_score"],
-                "parallel_jobs": 2,
-                "timeout_minutes": 30,
-                "batch_size": 16,
+                "metrics": "${EVAL_METRICS:accuracy,precision,recall,f1_score}",
+                "parallel_jobs": "${EVAL_PARALLEL_JOBS:2}",
+                "timeout_minutes": "${EVAL_TIMEOUT:30}",
+                "batch_size": "${EVAL_BATCH_SIZE:16}",
+                "enable_detailed_logging": "${ENABLE_DEBUG_LOGS:false}",
             },
         }
 
@@ -361,6 +375,10 @@ class ConfigurationService(BaseService):
                 warnings_list.append(
                     f"Large batch size ({config.evaluation.batch_size}) may cause memory issues"
                 )
+
+            # Check environment variable requirements
+            env_warnings = self.validate_environment_requirements(config)
+            warnings_list.extend(env_warnings)
 
         except Exception as e:
             warnings_list.append(f"Error during validation: {str(e)}")
@@ -620,3 +638,224 @@ class ConfigurationService(BaseService):
             self.logger.error(error_msg, exc_info=True)
 
             return ServiceResponse(success=False, message=error_msg, error=str(e))
+
+    def resolve_environment_variables(self, config_dict: dict[str, Any]) -> dict[str, Any]:
+        """
+        Resolve environment variables in configuration dictionary.
+
+        Supports patterns:
+        - ${ENV_VAR} - required environment variable
+        - ${ENV_VAR:default_value} - optional with default
+
+        Args:
+            config_dict: Configuration dictionary to process
+
+        Returns:
+            Configuration dictionary with resolved environment variables
+
+        Raises:
+            ConfigurationError: If required environment variables are missing
+        """
+        resolved_config = copy.deepcopy(config_dict)
+        self._resolve_env_vars_recursive(resolved_config)
+        return resolved_config
+
+    def _resolve_env_vars_recursive(self, obj: Any) -> None:
+        """Recursively resolve environment variables in nested structures."""
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if isinstance(value, str):
+                    obj[key] = self._resolve_env_var_string(value)
+                elif isinstance(value, dict | list):
+                    self._resolve_env_vars_recursive(value)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                if isinstance(item, str):
+                    obj[i] = self._resolve_env_var_string(item)
+                elif isinstance(item, dict | list):
+                    self._resolve_env_vars_recursive(item)
+
+    def _resolve_env_var_string(self, value: str) -> Any:
+        """
+        Resolve environment variables in a string value.
+
+        Args:
+            value: String that may contain environment variable patterns
+
+        Returns:
+            Resolved value with appropriate type conversion
+        """
+        # Pattern to match ${VAR} or ${VAR:default}
+        pattern = r"\$\{([^}:]+)(?::([^}]*))?\}"
+
+        def replace_var(match: re.Match[str]) -> Any:
+            var_name = match.group(1)
+            default_value = match.group(2)
+
+            env_value = os.getenv(var_name)
+
+            if env_value is not None:
+                return self._convert_env_value_type(env_value)
+            elif default_value is not None:
+                return self._convert_env_value_type(default_value)
+            else:
+                raise ConfigurationError(
+                    f"Required environment variable '{var_name}' is not set",
+                    error_code=ErrorCode.CONFIG_VALIDATION_FAILED,
+                    metadata={"env_var": var_name},
+                )
+
+        # If the entire string is a single environment variable pattern, return the typed value
+        full_match = re.fullmatch(pattern, value)
+        if full_match:
+            return replace_var(full_match)
+
+        # Otherwise, do string substitution
+        return re.sub(pattern, lambda m: str(replace_var(m)), value)
+
+    def _convert_env_value_type(self, value: str) -> Any:
+        """
+        Convert environment variable string to appropriate type.
+
+        Args:
+            value: String value from environment variable
+
+        Returns:
+            Converted value (str, int, bool, or list)
+        """
+        # Handle boolean values
+        if value.lower() in ("true", "yes", "1", "on"):
+            return True
+        elif value.lower() in ("false", "no", "0", "off"):
+            return False
+
+        # Handle integer values
+        try:
+            if "." not in value and value.lstrip("-+").isdigit():
+                return int(value)
+        except ValueError:
+            pass
+
+        # Handle comma-separated lists
+        if "," in value:
+            return [item.strip() for item in value.split(",") if item.strip()]
+
+        # Return as string
+        return value
+
+    def validate_environment_requirements(self, config: ExperimentConfig) -> list[str]:
+        """
+        Validate that all required environment variables are present.
+
+        Args:
+            config: Configuration to validate
+
+        Returns:
+            List of warning messages for missing optional variables
+        """
+        warnings = []
+        required_vars = self.get_required_env_vars(config)
+
+        for var_name in required_vars:
+            if not os.getenv(var_name):
+                warnings.append(f"Environment variable '{var_name}' is not set")
+
+        return warnings
+
+    def get_required_env_vars(self, config: ExperimentConfig) -> set[str]:
+        """
+        Extract all required environment variables from configuration.
+
+        Args:
+            config: Configuration to analyze
+
+        Returns:
+            Set of required environment variable names
+        """
+        required_vars: set[str] = set()
+        config_dict = config.model_dump()
+        self._extract_env_vars_recursive(config_dict, required_vars)
+        return required_vars
+
+    def _extract_env_vars_recursive(self, obj: Any, required_vars: set[str]) -> None:
+        """Recursively extract environment variable names from nested structures."""
+        if isinstance(obj, dict):
+            for value in obj.values():
+                if isinstance(value, str):
+                    self._extract_env_vars_from_string(value, required_vars)
+                elif isinstance(value, dict | list):
+                    self._extract_env_vars_recursive(value, required_vars)
+        elif isinstance(obj, list):
+            for item in obj:
+                if isinstance(item, str):
+                    self._extract_env_vars_from_string(item, required_vars)
+                elif isinstance(item, dict | list):
+                    self._extract_env_vars_recursive(item, required_vars)
+
+    def _extract_env_vars_from_string(self, value: str, required_vars: set[str]) -> None:
+        """Extract environment variable names from a string."""
+        pattern = r"\$\{([^}:]+)(?::[^}]*)?\}"
+        matches = re.findall(pattern, value)
+        for var_name in matches:
+            required_vars.add(var_name)
+
+    def mask_sensitive_values(self, config_dict: dict[str, Any]) -> dict[str, Any]:
+        """
+        Create a masked copy of configuration for safe logging.
+
+        Args:
+            config_dict: Configuration dictionary to mask
+
+        Returns:
+            Dictionary with sensitive values masked
+        """
+        masked_config = copy.deepcopy(config_dict)
+        self._mask_sensitive_recursive(masked_config)
+        return masked_config
+
+    def _mask_sensitive_recursive(self, obj: Any) -> None:
+        """Recursively mask sensitive values in nested structures."""
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if self._is_sensitive_key(key):
+                    if isinstance(value, str) and value:
+                        obj[key] = self._mask_value(value)
+                elif isinstance(value, dict | list):
+                    self._mask_sensitive_recursive(value)
+        elif isinstance(obj, list):
+            for item in obj:
+                if isinstance(item, dict | list):
+                    self._mask_sensitive_recursive(item)
+
+    def _is_sensitive_key(self, key: str) -> bool:
+        """Check if a configuration key contains sensitive data."""
+        sensitive_patterns = {
+            "api_key",
+            "secret",
+            "password",
+            "token",
+            "credential",
+            "auth",
+            "secret_key",
+            "access_token",
+            "bearer_token",
+        }
+        key_lower = key.lower()
+
+        # Check for exact matches or patterns that end with sensitive words
+        for pattern in sensitive_patterns:
+            if (
+                pattern == key_lower
+                or key_lower.endswith("_" + pattern)
+                or key_lower.endswith(pattern)
+            ):
+                return True
+
+        # Special handling for "key" - only if it's at the end or preceded by underscore
+        return key_lower.endswith("_key") or key_lower == "key"
+
+    def _mask_value(self, value: str) -> str:
+        """Mask a sensitive value for logging."""
+        if len(value) <= 4:
+            return "*" * len(value)
+        return value[:2] + "*" * (len(value) - 4) + value[-2:]

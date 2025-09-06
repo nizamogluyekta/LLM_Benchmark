@@ -1,0 +1,427 @@
+name: Release & Documentation
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+          - 'major'
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  validate-release:
+    name: Validate Release Readiness
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+          poetry install --only-root
+
+      - name: Run full test suite
+        run: |
+          # Run all tests before release
+          poetry run pytest tests/ -v \
+            --cov=src/benchmark \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html:htmlcov \
+            --junitxml=test-results.xml \
+            --cov-fail-under=80
+
+      - name: Run linting and type checks
+        run: |
+          poetry run ruff check src/ tests/
+          poetry run ruff format src/ tests/ --check
+          poetry run mypy src/ tests/
+
+      - name: Validate package build
+        run: |
+          poetry build
+          poetry check
+
+          # Check that built package can be installed
+          pip install dist/*.whl
+          python -c "from benchmark.core.config import ExperimentConfig; print('✅ Package imports successfully')"
+
+      - name: Generate release artifacts
+        run: |
+          mkdir -p release-artifacts
+
+          # Copy build artifacts
+          cp dist/* release-artifacts/
+          cp coverage.xml release-artifacts/
+          cp test-results.xml release-artifacts/
+
+          # Generate changelog (basic version)
+          echo "# Changelog for $(poetry version --short)" > release-artifacts/CHANGELOG.md
+          echo "" >> release-artifacts/CHANGELOG.md
+          echo "Generated on: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release-artifacts/CHANGELOG.md
+          echo "" >> release-artifacts/CHANGELOG.md
+
+          # Get commits since last tag
+          if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^)
+            echo "## Changes since $LAST_TAG" >> release-artifacts/CHANGELOG.md
+            git log --oneline $LAST_TAG..HEAD >> release-artifacts/CHANGELOG.md
+          else
+            echo "## Initial Release" >> release-artifacts/CHANGELOG.md
+            echo "This is the first release of the LLM Cybersecurity Benchmark." >> release-artifacts/CHANGELOG.md
+          fi
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+
+  build-documentation:
+    name: Build Documentation
+    runs-on: macos-14
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+          poetry install --only-root
+
+      - name: Generate API documentation
+        run: |
+          mkdir -p docs/api
+
+          # Generate module documentation using pydoc
+          poetry run python -c "
+          import pydoc
+          import sys
+          from pathlib import Path
+
+          # Generate documentation for main modules
+          modules = [
+              'benchmark.core.config',
+              'benchmark.core.database',
+              'benchmark.core.database_manager'
+          ]
+
+          for module in modules:
+              try:
+                  mod_doc = pydoc.render_doc(module, renderer=pydoc.plaintext)
+                  doc_file = Path(f'docs/api/{module.replace(\".\", \"_\")}.txt')
+                  doc_file.write_text(mod_doc)
+                  print(f'Generated documentation for {module}')
+              except ImportError as e:
+                  print(f'Could not generate docs for {module}: {e}')
+          "
+
+      - name: Generate usage examples
+        run: |
+          mkdir -p docs/examples
+
+          # Create comprehensive usage examples
+          cat > docs/examples/basic_usage.py << 'EOF'
+          """
+          Basic usage examples for LLM Cybersecurity Benchmark.
+
+          This file demonstrates how to use the benchmark system for evaluating
+          LLM performance on cybersecurity tasks.
+          """
+
+          import asyncio
+          from benchmark.core.config import ExperimentConfig, ModelConfig, DatasetConfig, EvaluationConfig
+          from benchmark.core.database_manager import DatabaseManager
+
+          async def basic_example():
+              # Configure experiment
+              config = ExperimentConfig(
+                  name="Example Cybersecurity Benchmark",
+                  description="Basic example of benchmarking LLMs on cybersecurity tasks",
+                  output_dir="./outputs",
+                  datasets=[
+                      DatasetConfig(
+                          name="sample_dataset",
+                          source="local",
+                          path="./data/cybersec_samples.jsonl",
+                          max_samples=100
+                      )
+                  ],
+                  models=[
+                      ModelConfig(
+                          name="gpt-3.5-turbo",
+                          type="openai_api",
+                          path="gpt-3.5-turbo",
+                          config={"api_key": "your-api-key"}
+                      )
+                  ],
+                  evaluation=EvaluationConfig(
+                      metrics=["accuracy", "precision", "recall", "f1_score"],
+                      parallel_jobs=2
+                  )
+              )
+
+              # Initialize database
+              db_manager = DatabaseManager("sqlite+aiosqlite:///benchmark.db")
+              await db_manager.initialize()
+              await db_manager.create_tables()
+
+              print(f"✅ Configured experiment: {config.experiment.name}")
+              print(f"✅ Database initialized with {len(config.models)} models and {len(config.datasets)} datasets")
+
+              await db_manager.close()
+
+          if __name__ == "__main__":
+              asyncio.run(basic_example())
+          EOF
+
+          # Create data generation example
+          cat > docs/examples/data_generation.py << 'EOF'
+          """
+          Data generation examples using the cybersecurity data generators.
+          """
+
+          import sys
+          from pathlib import Path
+
+          # Add tests to path for data generators
+          sys.path.insert(0, str(Path(__file__).parent.parent / "tests"))
+
+          from utils.data_generators import CybersecurityDataGenerator
+
+          def generate_sample_data():
+              # Initialize generator with fixed seed for reproducibility
+              generator = CybersecurityDataGenerator(seed=42)
+
+              # Generate network logs
+              print("=== Network Log Examples ===")
+              attack_log = generator.generate_network_log(is_attack=True, attack_type="malware")
+              benign_log = generator.generate_network_log(is_attack=False)
+
+              print(f"Attack log: {attack_log['text']}")
+              print(f"Benign log: {benign_log['text']}")
+
+              # Generate email samples
+              print("\n=== Email Sample Examples ===")
+              phishing_email = generator.generate_email_sample(is_phishing=True, phishing_type="spear_phishing")
+              normal_email = generator.generate_email_sample(is_phishing=False)
+
+              print(f"Phishing email: {phishing_email['subject']}")
+              print(f"Normal email: {normal_email['subject']}")
+
+              # Generate model predictions
+              print("\n=== Model Prediction Examples ===")
+              prediction = generator.generate_model_prediction("ATTACK", accuracy=0.85)
+              print(f"Prediction: {prediction['prediction']} (confidence: {prediction['confidence']:.2f})")
+
+              # Generate batch samples
+              print("\n=== Batch Generation ===")
+              batch = generator.generate_batch_samples(num_samples=10, attack_ratio=0.4)
+              attack_count = sum(1 for sample in batch if sample['label'] == 'ATTACK')
+              print(f"Generated {len(batch)} samples with {attack_count} attacks ({attack_count/len(batch)*100:.0f}%)")
+
+          if __name__ == "__main__":
+              generate_sample_data()
+          EOF
+
+      - name: Create documentation index
+        run: |
+          cat > docs/README.md << 'EOF'
+          # LLM Cybersecurity Benchmark Documentation
+
+          This directory contains comprehensive documentation for the LLM Cybersecurity Benchmark system.
+
+          ## Contents
+
+          - [`api/`](api/) - API documentation for core modules
+          - [`examples/`](examples/) - Usage examples and tutorials
+
+          ## Quick Start
+
+          1. **Installation**: Install the package using Poetry
+             ```bash
+             poetry install
+             ```
+
+          2. **Basic Usage**: See [`examples/basic_usage.py`](examples/basic_usage.py)
+
+          3. **Data Generation**: See [`examples/data_generation.py`](examples/data_generation.py)
+
+          ## System Architecture
+
+          The benchmark system consists of several core components:
+
+          - **Configuration Management** (`benchmark.core.config`) - Pydantic models for type-safe configuration
+          - **Database Management** (`benchmark.core.database*`) - Async database operations with SQLAlchemy
+          - **Data Generators** (`tests.utils.data_generators`) - Realistic cybersecurity test data generation
+          - **Test Infrastructure** - Comprehensive pytest-based testing with fixtures
+
+          ## Testing
+
+          The system includes extensive testing infrastructure:
+
+          - Unit tests for all core functionality
+          - Integration tests for database operations
+          - End-to-end tests for complete workflows
+          - Performance benchmarks
+          - Security scanning and code quality checks
+
+          ## CI/CD Pipeline
+
+          GitHub Actions workflows provide:
+
+          - Code quality checks (ruff, mypy)
+          - Automated testing on macOS (MLX compatibility)
+          - Security vulnerability scanning
+          - Dependency management
+          - Automated releases
+
+          ## Contributing
+
+          Please see the main repository README for contribution guidelines.
+          EOF
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: macos-14
+    needs: [validate-release, build-documentation]
+    if: github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+
+      - name: Download documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: docs/
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Determine version and create tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Bump version based on input
+            RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+            poetry version $RELEASE_TYPE
+            NEW_VERSION="v$(poetry version --short)"
+
+            # Configure git
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+
+            # Commit version bump
+            git add pyproject.toml
+            git commit -m "chore: bump version to $(poetry version --short)"
+            git tag "$NEW_VERSION"
+            git push origin HEAD --tags
+          else
+            NEW_VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $NEW_VERSION"
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          body_path: release-artifacts/CHANGELOG.md
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        run: |
+          # Upload wheel and tarball
+          for file in release-artifacts/*.whl release-artifacts/*.tar.gz; do
+            if [ -f "$file" ]; then
+              gh release upload ${{ steps.version.outputs.version }} "$file"
+            fi
+          done
+
+          # Upload documentation as zip
+          zip -r documentation.zip docs/
+          gh release upload ${{ steps.version.outputs.version }} documentation.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI (if configured)
+        if: github.event_name != 'workflow_dispatch' && contains(github.ref, 'refs/tags/')
+        run: |
+          # Only publish to PyPI for actual tag releases, not manual releases
+          if [ -n "${{ secrets.PYPI_TOKEN }}" ]; then
+            poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+            poetry publish --build
+            echo "✅ Published to PyPI"
+          else
+            echo "ℹ️ PyPI token not configured, skipping PyPI publish"
+          fi

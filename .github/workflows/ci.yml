@@ -1,0 +1,300 @@
+name: CI - Code Quality & Unit Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.7.1"
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
+  POETRY_VENV_IN_PROJECT: true
+
+jobs:
+  code-quality:
+    name: Code Quality (Linting & Type Check)
+    runs-on: macos-14  # Apple Silicon for MLX compatibility
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Run ruff linting
+        run: |
+          poetry run ruff check src/ tests/ --format=github
+
+      - name: Run ruff formatting check
+        run: |
+          poetry run ruff format src/ tests/ --check --diff
+
+      - name: Run mypy type checking
+        run: |
+          poetry run mypy src/ tests/
+
+      - name: Check for security issues with bandit
+        run: |
+          poetry run pip install bandit[toml]
+          poetry run bandit -r src/ -f json -o bandit-report.json || true
+          poetry run bandit -r src/ --format custom --msg-template '{abspath}:{line}: {test_id} {severity}: {msg}'
+
+      - name: Upload bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report-${{ matrix.python-version }}
+          path: bandit-report.json
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-14  # Apple Silicon for MLX compatibility
+    timeout-minutes: 20
+    needs: code-quality
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Create test environment
+        run: |
+          mkdir -p test-results
+          mkdir -p coverage-reports
+
+      - name: Run unit tests with coverage
+        run: |
+          poetry run pytest tests/unit/ \
+            --cov=src/benchmark \
+            --cov-report=xml:coverage-reports/coverage-unit.xml \
+            --cov-report=html:coverage-reports/html-unit \
+            --cov-report=term-missing \
+            --junitxml=test-results/unit-tests.xml \
+            --maxfail=10 \
+            -v
+        env:
+          PYTEST_CURRENT_TEST: true
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results-${{ matrix.python-version }}
+          path: |
+            test-results/
+            coverage-reports/
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage-reports/coverage-unit.xml
+          flags: unit-tests
+          name: unit-tests-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+  test-data-generators:
+    name: Test Data Generators
+    runs-on: macos-14
+    timeout-minutes: 10
+    needs: code-quality
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Test cybersecurity data generators
+        run: |
+          poetry run pytest tests/unit/test_data_generators.py -v \
+            --junitxml=test-results/data-generators.xml
+
+      - name: Generate sample data for validation
+        run: |
+          poetry run python tests/utils/demo_data_generation.py
+          ls -la tests/utils/sample_output/
+
+      - name: Validate generated data structure
+        run: |
+          poetry run python -c "
+          import json
+          from pathlib import Path
+
+          # Validate sample output files exist and have correct structure
+          output_dir = Path('tests/utils/sample_output')
+          expected_files = ['network_logs.json', 'email_samples.json', 'model_predictions.json', 'performance_data.json']
+
+          for file in expected_files:
+              file_path = output_dir / file
+              assert file_path.exists(), f'Missing output file: {file}'
+
+              with open(file_path) as f:
+                  data = json.load(f)
+                  assert len(data) > 0, f'Empty output file: {file}'
+                  print(f'✓ {file}: {len(data)} samples')
+
+          print('All data generator outputs validated successfully!')
+          "
+
+      - name: Upload data generator artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-generator-samples-${{ matrix.python-version }}
+          path: |
+            tests/utils/sample_output/
+            test-results/data-generators.xml

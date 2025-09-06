@@ -1,0 +1,196 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: macos-14
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-3.11
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Run Safety check for known vulnerabilities
+        run: |
+          poetry run pip install safety
+          poetry run safety check --json --output security-reports/safety-report.json || true
+          poetry run safety check --short-report
+
+      - name: Run Bandit security linter
+        run: |
+          mkdir -p security-reports
+          poetry run pip install bandit[toml]
+          poetry run bandit -r src/ -f json -o security-reports/bandit-report.json
+          poetry run bandit -r src/ -f txt -o security-reports/bandit-report.txt
+          echo "## Bandit Security Report" >> $GITHUB_STEP_SUMMARY
+          poetry run bandit -r src/ -f custom --msg-template '{abspath}:{line}: {test_id} {severity}: {msg}' >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Run Semgrep static analysis
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/python
+          generateSarif: "1"
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Check for hardcoded secrets
+        run: |
+          poetry run pip install detect-secrets
+          detect-secrets scan --all-files --force-use-all-plugins \
+            --exclude-files 'poetry.lock|\.git/.*|.*\.pyc' \
+            > security-reports/secrets-baseline.json || true
+
+          echo "## Secret Detection Results" >> $GITHUB_STEP_SUMMARY
+          if [ -s security-reports/secrets-baseline.json ]; then
+            echo "⚠️ Potential secrets detected. Review the artifacts." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No secrets detected." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Dependency vulnerability check
+        run: |
+          poetry run pip install pip-audit
+          poetry run pip-audit --format=json --output=security-reports/pip-audit.json || true
+          poetry run pip-audit --format=cyclonedx-json --output=security-reports/sbom.json || true
+          echo "## Dependency Audit" >> $GITHUB_STEP_SUMMARY
+          poetry run pip-audit --desc >> $GITHUB_STEP_SUMMARY || true
+
+      - name: Generate security summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count issues from each tool
+          if [ -f security-reports/bandit-report.json ]; then
+            bandit_issues=$(jq '.results | length' security-reports/bandit-report.json 2>/dev/null || echo "0")
+            echo "- Bandit issues: $bandit_issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f security-reports/safety-report.json ]; then
+            safety_issues=$(jq '.vulnerabilities | length' security-reports/safety-report.json 2>/dev/null || echo "0")
+            echo "- Safety vulnerabilities: $safety_issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f security-reports/pip-audit.json ]; then
+            audit_issues=$(jq '.vulnerabilities | length' security-reports/pip-audit.json 2>/dev/null || echo "0")
+            echo "- Pip-audit vulnerabilities: $audit_issues" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            security-reports/
+            results.sarif
+          retention-days: 30
+
+      - name: Upload SARIF to GitHub Security
+        if: always() && github.event_name == 'push'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+        continue-on-error: true
+
+  license-check:
+    name: License Compliance Check
+    runs-on: macos-14
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Check licenses
+        run: |
+          poetry run pip install pip-licenses
+          mkdir -p security-reports
+
+          # Generate license report
+          poetry run pip-licenses --format=json --output-file=security-reports/licenses.json
+          poetry run pip-licenses --format=csv --output-file=security-reports/licenses.csv
+
+          echo "## License Report" >> $GITHUB_STEP_SUMMARY
+          poetry run pip-licenses --format=markdown >> $GITHUB_STEP_SUMMARY
+
+          # Check for problematic licenses
+          poetry run pip-licenses --fail-on="GPL v3;AGPL v3;LGPL v3" --format=plain || {
+            echo "⚠️ Potentially problematic licenses detected!" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
+
+      - name: Upload license reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-reports
+          path: security-reports/licenses.*

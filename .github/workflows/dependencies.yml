@@ -1,0 +1,299 @@
+name: Dependency Management
+
+on:
+  schedule:
+    # Check for dependency updates weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of dependency update'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - 'patch'
+          - 'minor'
+          - 'major'
+          - 'all'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit & Update Check
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-3.11
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Install current dependencies
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Check for outdated packages
+        run: |
+          mkdir -p dependency-reports
+
+          # Check outdated packages
+          poetry show --outdated > dependency-reports/outdated-packages.txt || true
+
+          echo "## Outdated Dependencies Report" >> $GITHUB_STEP_SUMMARY
+          echo "Generated on: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -s dependency-reports/outdated-packages.txt ]; then
+            echo "### Packages that can be updated:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat dependency-reports/outdated-packages.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All dependencies are up to date!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Generate dependency tree
+        run: |
+          poetry show --tree > dependency-reports/dependency-tree.txt
+          poetry export --format=requirements.txt --output=dependency-reports/requirements.txt --with dev
+          poetry export --format=requirements.txt --output=dependency-reports/requirements-prod.txt
+
+      - name: Check for security vulnerabilities
+        run: |
+          poetry run pip install safety pip-audit
+
+          # Safety check
+          poetry run safety check --json --output=dependency-reports/safety-check.json || true
+
+          # Pip audit
+          poetry run pip-audit --format=json --output=dependency-reports/pip-audit.json || true
+
+          echo "### Security Vulnerability Check" >> $GITHUB_STEP_SUMMARY
+          if poetry run safety check --short-report; then
+            echo "✅ No known security vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Security vulnerabilities detected - check artifacts" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Attempt dependency updates
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_type != 'patch'
+        run: |
+          # Create a new branch for dependency updates
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          UPDATE_TYPE="${{ github.event.inputs.update_type }}"
+          BRANCH_NAME="deps/automated-update-$(date +%Y%m%d-%H%M%S)"
+
+          git checkout -b "$BRANCH_NAME"
+
+          # Backup current lock file
+          cp poetry.lock poetry.lock.backup
+
+          case "$UPDATE_TYPE" in
+            "minor")
+              echo "Updating to latest compatible minor versions..."
+              poetry update --dry-run > dependency-reports/update-preview-minor.txt
+              ;;
+            "major")
+              echo "Attempting major version updates..."
+              poetry update --dry-run > dependency-reports/update-preview-major.txt
+              ;;
+            "all")
+              echo "Updating all dependencies to latest versions..."
+              poetry update --dry-run > dependency-reports/update-preview-all.txt
+              ;;
+          esac
+
+          echo "### Dependency Update Preview ($UPDATE_TYPE)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat dependency-reports/update-preview-*.txt >> $GITHUB_STEP_SUMMARY || echo "No updates available"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Test updated dependencies
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_type != 'patch'
+        run: |
+          # Install updated dependencies
+          poetry install --with dev --no-root
+
+          # Run basic tests to ensure compatibility
+          echo "Running compatibility tests..."
+          poetry run python -c "
+          # Basic import tests
+          try:
+              import pytest
+              import ruff
+              import mypy
+              from benchmark.core.config import ExperimentConfig
+              print('✅ Core imports successful')
+          except ImportError as e:
+              print(f'❌ Import error: {e}')
+              exit(1)
+          "
+
+          # Run unit tests
+          poetry run pytest tests/unit/test_data_generators.py -v --maxfail=3
+
+      - name: Upload dependency reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-reports
+          path: |
+            dependency-reports/
+            poetry.lock.backup
+          retention-days: 30
+
+      - name: Create dependency update summary
+        run: |
+          echo "## Dependency Management Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Workflow completed at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count total dependencies
+          total_deps=$(poetry show | wc -l)
+          echo "- Total dependencies: $total_deps" >> $GITHUB_STEP_SUMMARY
+
+          # Check if updates are available
+          if [ -s dependency-reports/outdated-packages.txt ]; then
+            outdated_count=$(wc -l < dependency-reports/outdated-packages.txt)
+            echo "- Outdated packages: $outdated_count" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Security status
+          if [ -f dependency-reports/safety-check.json ]; then
+            vulns=$(jq '.vulnerabilities | length' dependency-reports/safety-check.json 2>/dev/null || echo "0")
+            if [ "$vulns" -gt 0 ]; then
+              echo "- ⚠️ Security vulnerabilities found: $vulns" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ✅ No security vulnerabilities" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+  create-update-pr:
+    name: Create Dependency Update PR
+    runs-on: macos-14
+    needs: dependency-audit
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.update_type != 'patch'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Create update branch and perform updates
+        run: |
+          UPDATE_TYPE="${{ github.event.inputs.update_type }}"
+          BRANCH_NAME="deps/automated-update-$UPDATE_TYPE-$(date +%Y%m%d)"
+
+          git checkout -b "$BRANCH_NAME"
+
+          # Perform the actual update
+          case "$UPDATE_TYPE" in
+            "minor")
+              poetry update
+              ;;
+            "major")
+              poetry update
+              ;;
+            "all")
+              poetry update
+              ;;
+          esac
+
+          # Check if there are changes
+          if git diff --quiet poetry.lock; then
+            echo "No dependency updates available"
+            exit 0
+          fi
+
+          # Commit changes
+          git add poetry.lock
+          git commit -m "chore: update dependencies ($UPDATE_TYPE)
+
+          Automated dependency update triggered by workflow.
+          Update type: $UPDATE_TYPE
+
+          This PR was automatically created by the dependency management workflow.
+          Please review the changes and run tests before merging."
+
+          # Push branch
+          git push origin "$BRANCH_NAME"
+
+          # Create PR using GitHub CLI (if available)
+          if command -v gh >/dev/null 2>&1; then
+            gh pr create \
+              --title "chore: automated dependency updates ($UPDATE_TYPE)" \
+              --body "This PR contains automated dependency updates.
+
+          **Update Type:** $UPDATE_TYPE
+          **Generated by:** GitHub Actions workflow
+          **Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          ## Changes
+          - Updated dependencies as specified in \`poetry.lock\`
+          - All updates follow the '$UPDATE_TYPE' update strategy
+
+          ## Testing
+          - [ ] Review dependency changes
+          - [ ] Run full test suite
+          - [ ] Check for breaking changes
+          - [ ] Verify security scan results
+
+          **Note:** This PR was automatically created. Please review thoroughly before merging." \
+              --label "dependencies,automated" \
+              --draft
+          else
+            echo "GitHub CLI not available - branch pushed but PR not created"
+          fi

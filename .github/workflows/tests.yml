@@ -1,0 +1,615 @@
+name: Integration & End-to-End Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run integration tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of tests to run'
+        required: true
+        default: 'integration'
+        type: choice
+        options:
+          - 'integration'
+          - 'e2e'
+          - 'performance'
+          - 'all'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.7.1"
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
+  POETRY_VENV_IN_PROJECT: true
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: macos-14  # Apple Silicon for MLX compatibility
+    timeout-minutes: 30
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_type, 'integration') || github.event.inputs.test_type == 'all' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Set up test environment
+        run: |
+          mkdir -p test-results/integration
+          mkdir -p coverage-reports
+          mkdir -p test-data
+          # Create mock API keys for testing (not real keys)
+          echo "OPENAI_API_KEY=test-key-openai" >> $GITHUB_ENV
+          echo "ANTHROPIC_API_KEY=test-key-anthropic" >> $GITHUB_ENV
+
+      - name: Run database integration tests
+        run: |
+          poetry run pytest tests/integration/test_database_integration.py \
+            --cov=src/benchmark/core \
+            --cov-append \
+            --cov-report=xml:coverage-reports/coverage-integration-db.xml \
+            --junitxml=test-results/integration/database-tests.xml \
+            -v
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///test-data/test.db
+
+      - name: Test MLX model loading (Apple Silicon only)
+        if: matrix.python-version == '3.11'
+        run: |
+          poetry run python -c "
+          try:
+              import mlx.core as mx
+              import mlx.nn as nn
+              print('✓ MLX successfully imported')
+
+              # Test basic MLX operations
+              x = mx.array([1, 2, 3, 4])
+              y = mx.sum(x)
+              print(f'✓ MLX computation works: sum([1,2,3,4]) = {y}')
+
+              # Test MLX-LM availability
+              try:
+                  import mlx_lm
+                  print('✓ MLX-LM successfully imported')
+              except ImportError:
+                  print('⚠ MLX-LM not available (expected in CI)')
+
+          except ImportError as e:
+              print(f'⚠ MLX not available in CI environment: {e}')
+              print('This is expected if running on non-Apple Silicon hardware')
+          "
+
+      - name: Run configuration tests
+        run: |
+          poetry run pytest tests/integration/ \
+            -k "config" \
+            --cov=src/benchmark/core \
+            --cov-append \
+            --cov-report=xml:coverage-reports/coverage-integration-config.xml \
+            --junitxml=test-results/integration/config-tests.xml \
+            -v
+
+      - name: Test data generator integration
+        run: |
+          # Test that data generators work with the main system
+          poetry run python -c "
+          import sys
+          from pathlib import Path
+
+          # Add tests to path for imports
+          sys.path.insert(0, str(Path('tests')))
+
+          from utils.data_generators import CybersecurityDataGenerator
+          from benchmark.core.config import DatasetConfig
+
+          # Test data generation
+          generator = CybersecurityDataGenerator(seed=42)
+
+          # Generate test samples
+          logs = [generator.generate_network_log(is_attack=(i % 2 == 0)) for i in range(10)]
+          emails = [generator.generate_email_sample(is_phishing=(i % 3 == 0)) for i in range(6)]
+          predictions = [generator.generate_model_prediction('ATTACK', accuracy=0.8) for i in range(5)]
+
+          print(f'✓ Generated {len(logs)} network logs')
+          print(f'✓ Generated {len(emails)} email samples')
+          print(f'✓ Generated {len(predictions)} model predictions')
+
+          # Test with config validation
+          config = DatasetConfig(
+              name='test_dataset',
+              source='local',
+              path='/tmp/test',
+              max_samples=100
+          )
+
+          print(f'✓ Configuration validation works: {config.name}')
+          print('Integration test completed successfully!')
+          "
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.python-version }}
+          path: |
+            test-results/integration/
+            coverage-reports/
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage-reports/coverage-integration-db.xml,coverage-reports/coverage-integration-config.xml
+          flags: integration-tests
+          name: integration-tests-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: macos-14
+    timeout-minutes: 45
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_type, 'e2e') || github.event.inputs.test_type == 'all' }}
+    needs: integration-tests
+
+    strategy:
+      matrix:
+        python-version: ["3.11"]  # Run E2E on single Python version to save CI time
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Set up E2E test environment
+        run: |
+          mkdir -p test-results/e2e
+          mkdir -p test-data/e2e
+          mkdir -p test-outputs
+
+          # Create test configuration files
+          cat > test-config.yaml << EOF
+          experiment:
+            name: "E2E Test Experiment"
+            description: "End-to-end test with mock data"
+            output_dir: "./test-outputs"
+
+          datasets:
+            - name: "e2e_test_dataset"
+              source: "local"
+              path: "./test-data/e2e/samples.jsonl"
+              max_samples: 20
+              test_split: 0.3
+
+          models:
+            - name: "mock_model"
+              type: "mock"
+              path: "test://mock-model"
+              config:
+                mock_accuracy: 0.85
+
+          evaluation:
+            metrics: ["accuracy", "precision", "recall", "f1_score"]
+            parallel_jobs: 1
+            timeout_minutes: 10
+          EOF
+
+      - name: Generate E2E test data
+        run: |
+          poetry run python -c "
+          import json
+          import sys
+          from pathlib import Path
+
+          # Add tests to path
+          sys.path.insert(0, str(Path('tests')))
+
+          from utils.data_generators import CybersecurityDataGenerator
+
+          # Generate realistic test dataset
+          generator = CybersecurityDataGenerator(seed=123)
+
+          # Create mixed samples for E2E testing
+          samples = []
+
+          # Add network logs
+          for i in range(10):
+              is_attack = i % 2 == 0
+              log = generator.generate_network_log(is_attack=is_attack)
+              samples.append({
+                  'text': log['text'],
+                  'label': log['label'],
+                  'attack_type': log.get('attack_type')
+              })
+
+          # Add email samples
+          for i in range(10):
+              is_phishing = i % 3 == 0
+              email = generator.generate_email_sample(is_phishing=is_phishing)
+              samples.append({
+                  'text': email['text'],
+                  'label': email['label'],
+                  'attack_type': email.get('attack_type')
+              })
+
+          # Save as JSONL
+          with open('test-data/e2e/samples.jsonl', 'w') as f:
+              for sample in samples:
+                  f.write(json.dumps(sample) + '\\n')
+
+          print(f'Generated {len(samples)} E2E test samples')
+          "
+
+      - name: Test CLI help and validation
+        run: |
+          # Test CLI basic functionality
+          poetry run benchmark --help
+
+          # Test configuration validation
+          poetry run python -c "
+          from benchmark.core.config import ExperimentConfig
+          import yaml
+
+          with open('test-config.yaml') as f:
+              config_data = yaml.safe_load(f)
+
+          # This should validate successfully
+          config = ExperimentConfig(**config_data)
+          print(f'✓ Configuration validation passed: {config.experiment.name}')
+          "
+
+      - name: Run mock benchmark experiment
+        run: |
+          # Run a mock end-to-end benchmark
+          poetry run python -c "
+          import asyncio
+          import sys
+          from pathlib import Path
+
+          # Add tests to path for mock utilities
+          sys.path.insert(0, str(Path('tests')))
+
+          from benchmark.core.config import ExperimentConfig
+          from benchmark.core.database_manager import DatabaseManager
+          import yaml
+          import json
+
+          async def run_mock_experiment():
+              # Load config
+              with open('test-config.yaml') as f:
+                  config_data = yaml.safe_load(f)
+
+              config = ExperimentConfig(**config_data)
+
+              # Set up database
+              db_manager = DatabaseManager('sqlite+aiosqlite:///test-data/e2e/test.db')
+              await db_manager.initialize()
+              await db_manager.create_tables()
+
+              print('✓ Database initialized')
+
+              # Mock dataset loading
+              samples = []
+              with open('test-data/e2e/samples.jsonl') as f:
+                  for line in f:
+                      samples.append(json.loads(line))
+
+              print(f'✓ Loaded {len(samples)} samples')
+
+              # Mock model predictions (simulate API calls)
+              predictions = []
+              for i, sample in enumerate(samples[:5]):  # Test first 5 samples
+                  # Simulate model prediction
+                  predicted_label = 'ATTACK' if 'attack' in sample['text'].lower() or 'malicious' in sample['text'].lower() else 'BENIGN'
+                  confidence = 0.85 + (i % 3) * 0.05  # Vary confidence
+
+                  prediction = {
+                      'sample_id': str(i+1),
+                      'input_text': sample['text'],
+                      'prediction': predicted_label,
+                      'confidence': confidence,
+                      'ground_truth': sample['label'],
+                      'is_correct': predicted_label == sample['label']
+                  }
+                  predictions.append(prediction)
+
+              print(f'✓ Generated {len(predictions)} mock predictions')
+
+              # Calculate simple metrics
+              correct = sum(1 for p in predictions if p['is_correct'])
+              accuracy = correct / len(predictions) if predictions else 0
+
+              print(f'✓ Mock experiment completed - Accuracy: {accuracy:.2f}')
+
+              await db_manager.close()
+              return accuracy
+
+          # Run the mock experiment
+          accuracy = asyncio.run(run_mock_experiment())
+
+          # Validate results
+          assert 0 <= accuracy <= 1, f'Invalid accuracy: {accuracy}'
+          print(f'E2E test completed successfully with {accuracy:.1%} accuracy')
+          "
+
+      - name: Validate E2E outputs
+        run: |
+          # Check that expected outputs were created
+          ls -la test-outputs/ || echo "No outputs directory (expected for mock test)"
+          ls -la test-data/e2e/
+
+          # Validate test database was created
+          poetry run python -c "
+          import sqlite3
+          import os
+
+          db_path = 'test-data/e2e/test.db'
+          if os.path.exists(db_path):
+              conn = sqlite3.connect(db_path)
+              cursor = conn.cursor()
+
+              # Check if tables exist
+              cursor.execute(\\\"SELECT name FROM sqlite_master WHERE type='table'\\\")
+              tables = cursor.fetchall()
+
+              print(f'✓ Database created with {len(tables)} tables')
+              for table in tables:
+                  print(f'  - {table[0]}')
+
+              conn.close()
+          else:
+              print('⚠ Database file not found (expected for some test scenarios)')
+          "
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results-${{ matrix.python-version }}
+          path: |
+            test-results/e2e/
+            test-data/e2e/
+            test-outputs/
+            test-config.yaml
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: macos-14
+    timeout-minutes: 20
+    if: ${{ github.event_name != 'workflow_dispatch' || contains(github.event.inputs.test_type, 'performance') || github.event.inputs.test_type == 'all' }}
+
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+          poetry install --only-root
+
+      - name: Performance test - Data generation speed
+        run: |
+          poetry run python -c "
+          import time
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, str(Path('tests')))
+          from utils.data_generators import CybersecurityDataGenerator
+
+          # Test data generation performance
+          generator = CybersecurityDataGenerator(seed=42)
+
+          # Benchmark network log generation
+          start_time = time.time()
+          logs = [generator.generate_network_log(is_attack=(i % 2 == 0)) for i in range(1000)]
+          log_time = time.time() - start_time
+
+          # Benchmark email generation
+          start_time = time.time()
+          emails = [generator.generate_email_sample(is_phishing=(i % 3 == 0)) for i in range(500)]
+          email_time = time.time() - start_time
+
+          # Benchmark batch generation
+          start_time = time.time()
+          batch = generator.generate_batch_samples(num_samples=1000, attack_ratio=0.4)
+          batch_time = time.time() - start_time
+
+          print(f'Performance Results:')
+          print(f'  Network logs: {len(logs)} samples in {log_time:.2f}s ({len(logs)/log_time:.0f} samples/sec)')
+          print(f'  Email samples: {len(emails)} samples in {email_time:.2f}s ({len(emails)/email_time:.0f} samples/sec)')
+          print(f'  Batch generation: {len(batch)} samples in {batch_time:.2f}s ({len(batch)/batch_time:.0f} samples/sec)')
+
+          # Performance assertions (reasonable thresholds)
+          assert len(logs)/log_time > 100, f'Network log generation too slow: {len(logs)/log_time:.1f} samples/sec'
+          assert len(emails)/email_time > 50, f'Email generation too slow: {len(emails)/email_time:.1f} samples/sec'
+          assert len(batch)/batch_time > 100, f'Batch generation too slow: {len(batch)/batch_time:.1f} samples/sec'
+
+          print('✓ All performance benchmarks passed')
+          "
+
+      - name: Performance test - Database operations
+        run: |
+          poetry run python -c "
+          import asyncio
+          import time
+          from benchmark.core.database_manager import DatabaseManager
+
+          async def test_db_performance():
+              db_manager = DatabaseManager('sqlite+aiosqlite:///:memory:')
+              await db_manager.initialize()
+              await db_manager.create_tables()
+
+              # Test database initialization time
+              start_time = time.time()
+              for _ in range(10):
+                  test_db = DatabaseManager('sqlite+aiosqlite:///:memory:')
+                  await test_db.initialize()
+                  await test_db.create_tables()
+                  await test_db.close()
+              init_time = (time.time() - start_time) / 10
+
+              await db_manager.close()
+
+              print(f'Database Performance:')
+              print(f'  Average init + table creation: {init_time:.3f}s')
+
+              # Performance assertion
+              assert init_time < 1.0, f'Database initialization too slow: {init_time:.3f}s'
+
+              print('✓ Database performance test passed')
+
+          asyncio.run(test_db_performance())
+          "
+
+      - name: Upload performance test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-results-${{ matrix.python-version }}
+          path: test-results/

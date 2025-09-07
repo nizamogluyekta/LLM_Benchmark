@@ -20,6 +20,7 @@ from pydantic import ValidationError
 
 from benchmark.core.base import BaseService, HealthCheck, ServiceResponse, ServiceStatus
 from benchmark.core.config import ExperimentConfig
+from benchmark.core.config_validators import ConfigurationValidator
 from benchmark.core.exceptions import ConfigurationError, ErrorCode
 from benchmark.core.logging import get_logger
 
@@ -55,6 +56,9 @@ class ConfigurationService(BaseService):
 
         # File modification tracking for reload detection
         self._file_mtimes: dict[str, float] = {}
+
+        # Advanced configuration validator
+        self.validator = ConfigurationValidator()
 
         self.logger = get_logger("configuration")
 
@@ -313,75 +317,28 @@ class ConfigurationService(BaseService):
         warnings_list = []
 
         try:
-            # Check experiment configuration
-            if not config.name.strip():
-                warnings_list.append("Experiment name is empty or whitespace only")
+            # Use the advanced configuration validator
+            validation_warnings = await self.validator.validate_configuration(config)
 
-            if not config.output_dir:
-                warnings_list.append("No output directory specified")
+            # Convert ValidationWarning objects to string messages
+            for warning in validation_warnings:
+                if warning.field:
+                    message = f"[{warning.category}] {warning.field}: {warning.message}"
+                else:
+                    message = f"[{warning.category}] {warning.message}"
 
-            # Check dataset configurations
-            if not config.datasets:
-                warnings_list.append("No datasets configured")
-            else:
-                for i, dataset in enumerate(config.datasets):
-                    if dataset.source == "local" and not Path(dataset.path).exists():
-                        warnings_list.append(
-                            f"Dataset {i+1} ({dataset.name}): Local file not found: {dataset.path}"
-                        )
+                if warning.suggestion:
+                    message += f" (Suggestion: {warning.suggestion})"
 
-                    if dataset.max_samples and dataset.max_samples < 10:
-                        warnings_list.append(
-                            f"Dataset {i+1} ({dataset.name}): Very small sample size ({dataset.max_samples})"
-                        )
+                warnings_list.append(message)
 
-                    total_split = dataset.test_split + dataset.validation_split
-                    if total_split >= 1.0:
-                        warnings_list.append(
-                            f"Dataset {i+1} ({dataset.name}): Test and validation splits exceed 100%"
-                        )
-
-            # Check model configurations
-            if not config.models:
-                warnings_list.append("No models configured")
-            else:
-                for i, model in enumerate(config.models):
-                    if model.type == "openai_api" and not model.config.get("api_key"):
-                        warnings_list.append(
-                            f"Model {i+1} ({model.name}): No OpenAI API key configured"
-                        )
-
-                    if model.type == "anthropic_api" and not model.config.get("api_key"):
-                        warnings_list.append(
-                            f"Model {i+1} ({model.name}): No Anthropic API key configured"
-                        )
-
-                    if model.max_tokens and model.max_tokens > 4096:
-                        warnings_list.append(
-                            f"Model {i+1} ({model.name}): Very high max_tokens ({model.max_tokens})"
-                        )
-
-            # Check evaluation configuration
-            cpu_count = os.cpu_count() or 1
-            if config.evaluation.parallel_jobs > cpu_count:
-                warnings_list.append(
-                    f"Parallel jobs ({config.evaluation.parallel_jobs}) exceeds CPU count ({cpu_count})"
-                )
-
-            if config.evaluation.timeout_minutes < 5:
-                warnings_list.append("Evaluation timeout is very short (< 5 minutes)")
-
-            if config.evaluation.batch_size > 128:
-                warnings_list.append(
-                    f"Large batch size ({config.evaluation.batch_size}) may cause memory issues"
-                )
-
-            # Check environment variable requirements
+            # Still include environment variable validation from this service
             env_warnings = self.validate_environment_requirements(config)
             warnings_list.extend(env_warnings)
 
         except Exception as e:
             warnings_list.append(f"Error during validation: {str(e)}")
+            self.logger.error(f"Validation error: {e}", exc_info=True)
 
         return warnings_list
 

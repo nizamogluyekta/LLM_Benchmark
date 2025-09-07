@@ -23,6 +23,7 @@ from benchmark.core.config import ExperimentConfig
 from benchmark.core.config_validators import ConfigurationValidator
 from benchmark.core.exceptions import ConfigurationError, ErrorCode
 from benchmark.core.logging import get_logger
+from benchmark.services.cache import ConfigDiffTracker, ConfigurationCache, LazyConfigLoader
 
 
 class ConfigurationService(BaseService):
@@ -37,24 +38,48 @@ class ConfigurationService(BaseService):
     - Thread-safe access to configurations
     """
 
-    def __init__(self, config_dir: Path = Path("configs"), cache_ttl: int = 3600):
+    def __init__(
+        self,
+        config_dir: Path = Path("configs"),
+        cache_ttl: int = 3600,
+        max_cache_size: int = 100,
+        max_cache_memory_mb: int = 256,
+        enable_lazy_loading: bool = True,
+    ):
         """
         Initialize the Configuration Service.
 
         Args:
             config_dir: Directory containing configuration files
             cache_ttl: Cache time-to-live in seconds (default: 1 hour)
+            max_cache_size: Maximum number of configurations to cache
+            max_cache_memory_mb: Maximum memory usage for cache in MB
+            enable_lazy_loading: Whether to enable lazy loading of configuration sections
         """
         super().__init__("configuration_service")
         self.config_dir = Path(config_dir)
         self.cache_ttl = cache_ttl
+        self.enable_lazy_loading = enable_lazy_loading
 
-        # Thread-safe cache for configurations
+        # Advanced LRU cache with memory management
+        self._config_cache = ConfigurationCache(
+            max_size=max_cache_size, ttl_seconds=cache_ttl, max_memory_mb=max_cache_memory_mb
+        )
+
+        # Lazy config loader for section-based loading
+        if enable_lazy_loading:
+            self._lazy_loader: LazyConfigLoader | None = LazyConfigLoader(
+                cache_size=max_cache_size // 2
+            )
+            self._diff_tracker: ConfigDiffTracker | None = ConfigDiffTracker()
+        else:
+            self._lazy_loader = None
+            self._diff_tracker = None
+
+        # Legacy cache for backward compatibility (deprecated)
         self._cache: dict[str, ExperimentConfig] = {}
         self._cache_timestamps: dict[str, float] = {}
         self._cache_lock = threading.RLock()
-
-        # File modification tracking for reload detection
         self._file_mtimes: dict[str, float] = {}
 
         # Advanced configuration validator
@@ -816,3 +841,133 @@ class ConfigurationService(BaseService):
         if len(value) <= 4:
             return "*" * len(value)
         return value[:2] + "*" * (len(value) - 4) + value[-2:]
+
+    # New performance-focused methods
+
+    async def get_cache_performance_stats(self) -> dict[str, Any]:
+        """
+        Get comprehensive cache performance statistics.
+
+        Returns:
+            Dictionary with performance metrics from all cache systems
+        """
+        stats = {
+            "advanced_cache": self._config_cache.get_cache_stats(),
+            "service_status": self.status.value,
+            "config_directory": str(self.config_dir),
+            "lazy_loading_enabled": self.enable_lazy_loading,
+        }
+
+        if self._lazy_loader:
+            stats["lazy_loader"] = await self._lazy_loader.get_cache_info()
+
+        # Legacy cache stats
+        with self._cache_lock:
+            stats["legacy_cache"] = {
+                "size": len(self._cache),
+                "ttl_seconds": self.cache_ttl,
+            }
+
+        return stats
+
+    async def get_config_outline(self, config_path: str | Path) -> dict[str, Any]:
+        """
+        Get a lightweight outline of a configuration without full loading.
+
+        Args:
+            config_path: Path to the configuration file
+
+        Returns:
+            Dictionary with configuration outline
+        """
+        if self._lazy_loader:
+            return await self._lazy_loader.get_config_outline(str(config_path))
+        else:
+            # Fallback to full loading if lazy loader not available
+            config = await self.load_experiment_config(config_path)
+            return {
+                "name": config.name,
+                "description": config.description,
+                "output_dir": config.output_dir,
+                "_models_count": len(config.models),
+                "_datasets_count": len(config.datasets),
+                "_available_sections": ["models", "datasets", "evaluation"],
+            }
+
+    async def preload_configurations_bulk(self, config_paths: list[str]) -> ServiceResponse:
+        """
+        Preload multiple configurations for better performance.
+
+        Args:
+            config_paths: List of configuration file paths
+
+        Returns:
+            ServiceResponse with preloading results
+        """
+        try:
+            if self._lazy_loader:
+                await self._lazy_loader.preload_common_sections(config_paths)
+
+            success_count = 0
+            for config_path in config_paths:
+                try:
+                    if Path(config_path).exists():
+                        # Load configuration outline to warm up cache
+                        await self.get_config_outline(config_path)
+                        success_count += 1
+                except Exception as e:
+                    self.logger.warning(f"Failed to preload {config_path}: {e}")
+
+            return ServiceResponse(
+                success=True,
+                message=f"Preloaded {success_count}/{len(config_paths)} configurations",
+                data={"success_count": success_count, "total_count": len(config_paths)},
+            )
+
+        except Exception as e:
+            error_msg = f"Failed to preload configurations: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            return ServiceResponse(success=False, message=error_msg, error=str(e))
+
+    async def invalidate_config_cache(self, config_path: str | Path) -> ServiceResponse:
+        """
+        Invalidate cache for a specific configuration.
+
+        Args:
+            config_path: Path to the configuration file
+
+        Returns:
+            ServiceResponse indicating success
+        """
+        try:
+            config_id = self._get_config_id(Path(config_path))
+
+            # Invalidate advanced cache
+            advanced_invalidated = await self._config_cache.invalidate(config_id)
+
+            # Invalidate lazy loader cache
+            if self._lazy_loader:
+                await self._lazy_loader.clear_cache(str(config_path))
+
+            # Invalidate legacy cache
+            legacy_invalidated = False
+            with self._cache_lock:
+                if config_id in self._cache:
+                    del self._cache[config_id]
+                    self._cache_timestamps.pop(config_id, None)
+                    self._file_mtimes.pop(config_id, None)
+                    legacy_invalidated = True
+
+            return ServiceResponse(
+                success=True,
+                message=f"Invalidated cache for {config_path}",
+                data={
+                    "advanced_cache_invalidated": advanced_invalidated,
+                    "legacy_cache_invalidated": legacy_invalidated,
+                },
+            )
+
+        except Exception as e:
+            error_msg = f"Failed to invalidate cache for {config_path}: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            return ServiceResponse(success=False, message=error_msg, error=str(e))

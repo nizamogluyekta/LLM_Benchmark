@@ -7,7 +7,9 @@ model operations, dataset handling, and evaluation services.
 """
 
 from .configuration_service import ConfigurationService
+from .data_service import DataService
 
 __all__ = [
     "ConfigurationService",
+    "DataService",
 ]

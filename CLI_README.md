@@ -257,10 +257,65 @@ benchmark config validate config.yaml
 - **Use quiet mode** in CI/CD pipelines
 - **Save configurations** in version control (without secrets)
 
+## ⚡ Performance Features
+
+### Advanced Configuration Caching
+The CLI now leverages advanced performance optimizations:
+- **LRU Cache**: Memory-efficient configuration caching with automatic eviction
+- **Lazy Loading**: Section-based loading for faster access to large configurations
+- **Diff Tracking**: Intelligent change detection to avoid unnecessary reprocessing
+- **Memory Management**: Configurable memory limits with real-time monitoring
+
+### Performance Commands
+
+#### `benchmark config cache-stats <config_file>`
+View configuration cache performance statistics:
+
+```bash
+# View cache performance metrics
+benchmark config cache-stats config.yaml
+
+# Example output:
+# 📊 Cache Performance Statistics:
+#   ✅ Advanced cache enabled: True
+#   📈 Hit rate: 85.2%
+#   💾 Memory usage: 12.3MB / 256MB (4.8%)
+#   🔄 Cache entries: 15 / 100
+#   ⚡ Avg access time: 2.1ms
+```
+
+#### `benchmark config preload <config_files...>`
+Preload multiple configurations for better performance:
+
+```bash
+# Preload configurations for faster access
+benchmark config preload config1.yaml config2.yaml config3.yaml
+
+# Bulk preload from directory
+benchmark config preload configs/*.yaml
+```
+
+#### `benchmark config outline <config_file>`
+Get lightweight configuration outline without full loading:
+
+```bash
+# Fast configuration overview
+benchmark config outline large_config.yaml
+
+# Example output:
+# 📋 Configuration Outline:
+#   Name: Large Scale Security Benchmark
+#   Models: 12 configured
+#   Datasets: 8 configured
+#   Available sections: models, datasets, evaluation
+```
+
 ## 🔗 Integration
 
 The CLI integrates seamlessly with:
-- **Configuration Service**: Automatic validation and parsing
+- **Configuration Service**: Automatic validation and parsing with advanced caching
+- **Performance Optimizations**: LRU caching, lazy loading, and diff tracking
 - **Environment Resolution**: Dynamic variable substitution
 - **Rich Output**: Beautiful terminal formatting
 - **Error Handling**: Comprehensive error reporting with suggestions
+- **Memory Management**: Intelligent memory usage optimization

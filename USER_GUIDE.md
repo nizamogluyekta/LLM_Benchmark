@@ -80,11 +80,18 @@ print("\n🎉 Congratulations! You're ready to use the system.")
 The LLM Cybersecurity Benchmark consists of several key components:
 
 ### Core Components
-- **🔧 Configuration System**: Manages experiment settings and validation
+- **🔧 Configuration System**: Manages experiment settings and validation with advanced performance optimization
+- **⚡ Performance Cache**: Advanced LRU caching with memory management and lazy loading
 - **🗄️ Database Management**: Handles data storage and retrieval
 - **🎲 Data Generators**: Creates realistic cybersecurity test data
 - **🧪 Testing Framework**: Comprehensive testing and validation tools
 - **🚀 CI/CD Pipeline**: Automated testing and deployment workflows
+
+### Performance Features (NEW!)
+- **🚀 Advanced Caching**: LRU cache with automatic eviction and memory management
+- **📋 Lazy Loading**: Load only needed configuration sections for faster access
+- **🔍 Diff Tracking**: Intelligent change detection to avoid reprocessing
+- **📊 Performance Monitoring**: Real-time cache statistics and performance metrics
 
 ### What This System Does
 This benchmark helps you:
@@ -140,6 +147,144 @@ EOF
 poetry run pytest tests/unit/ -v
 
 # This should show all tests passing ✅
+```
+
+---
+
+## ⚡ Performance Features
+
+The system now includes advanced performance optimizations for enterprise-scale operations:
+
+### Advanced Configuration Caching
+
+The configuration system includes enterprise-grade caching with LRU eviction and memory management:
+
+```python
+from benchmark.services.configuration_service import ConfigurationService
+import asyncio
+
+async def use_performance_features():
+    """Demonstrate advanced performance features."""
+
+    # Create service with performance optimizations
+    service = ConfigurationService(
+        cache_ttl=3600,           # Cache entries for 1 hour
+        max_cache_size=100,       # Maximum 100 configurations in cache
+        max_cache_memory_mb=256,  # Limit cache memory usage to 256MB
+        enable_lazy_loading=True  # Enable section-based loading
+    )
+
+    await service.initialize()
+
+    # Load configurations (uses advanced caching)
+    config = await service.load_experiment_config("my_experiment.yaml")
+
+    # Get performance statistics
+    stats = await service.get_cache_performance_stats()
+    print(f"📈 Cache hit rate: {stats['advanced_cache']['hit_rate_percent']:.1f}%")
+    print(f"💾 Memory usage: {stats['advanced_cache']['memory_usage_mb']:.2f}MB")
+    print(f"🔄 Cache entries: {stats['advanced_cache']['current_size']}")
+
+    # Get lightweight configuration outline (very fast)
+    outline = await service.get_config_outline("large_config.yaml")
+    print(f"📋 Configuration: {outline['name']}")
+    print(f"🤖 Models: {outline['_models_count']}")
+    print(f"📁 Datasets: {outline['_datasets_count']}")
+
+    # Preload multiple configurations for better performance
+    config_paths = ["config1.yaml", "config2.yaml", "config3.yaml"]
+    result = await service.preload_configurations_bulk(config_paths)
+    print(f"🚀 Preloaded {result.data['success_count']} configurations")
+
+    await service.shutdown()
+
+# Run the example
+asyncio.run(use_performance_features())
+```
+
+### Performance Monitoring
+
+Monitor cache performance and optimization effectiveness:
+
+```python
+import asyncio
+from benchmark.services.configuration_service import ConfigurationService
+
+async def monitor_performance():
+    """Monitor configuration service performance."""
+
+    service = ConfigurationService(enable_lazy_loading=True)
+    await service.initialize()
+
+    # Load several configurations
+    for i in range(5):
+        await service.load_experiment_config(f"config_{i}.yaml")
+
+    # Get comprehensive performance statistics
+    stats = await service.get_cache_performance_stats()
+
+    print("📊 Performance Report:")
+    print("=" * 40)
+
+    # Advanced cache statistics
+    cache_stats = stats['advanced_cache']
+    print(f"🚀 Advanced Cache:")
+    print(f"   Hit Rate: {cache_stats['hit_rate_percent']:.1f}%")
+    print(f"   Hits: {cache_stats['hits']}")
+    print(f"   Misses: {cache_stats['misses']}")
+    print(f"   Memory: {cache_stats['memory_usage_mb']:.2f}MB")
+    print(f"   Evictions: {cache_stats['evictions']}")
+
+    # Lazy loader statistics (if enabled)
+    if 'lazy_loader' in stats:
+        lazy_stats = stats['lazy_loader']
+        print(f"📋 Lazy Loader:")
+        print(f"   Cached Files: {lazy_stats['cached_files']}")
+        print(f"   Total Sections: {lazy_stats['total_sections']}")
+
+    await service.shutdown()
+
+asyncio.run(monitor_performance())
+```
+
+### Performance Testing
+
+Run comprehensive performance tests:
+
+```bash
+# Run all performance tests
+poetry run pytest tests/performance/ -v
+
+# Run specific performance test categories
+poetry run pytest tests/performance/test_config_performance.py::TestConfigurationLoadingPerformance -v
+poetry run pytest tests/performance/test_config_performance.py::TestCachePerformance -v
+poetry run pytest tests/performance/test_config_performance.py::TestMemoryEfficiency -v
+
+# Run cache-specific unit tests
+poetry run pytest tests/unit/test_config_caching.py -v
+
+# Run the interactive performance demonstration
+poetry run python demo_performance.py
+```
+
+### Performance Best Practices
+
+To get the best performance from the system:
+
+1. **Enable Lazy Loading**: Always enable lazy loading for large configurations
+2. **Configure Memory Limits**: Set appropriate memory limits based on your system
+3. **Use Bulk Preloading**: Preload multiple configurations when possible
+4. **Monitor Cache Performance**: Regularly check cache hit rates and memory usage
+5. **Optimize Cache Size**: Tune cache size based on your usage patterns
+
+```python
+# Optimal configuration for large-scale operations
+service = ConfigurationService(
+    cache_ttl=7200,              # 2 hours cache
+    max_cache_size=200,          # Large cache for many configurations
+    max_cache_memory_mb=512,     # 512MB memory limit
+    enable_lazy_loading=True     # Always enable for performance
+)
 ```
 
 ---
@@ -1301,14 +1446,16 @@ This comprehensive user guide should help anyone, from beginners to advanced use
 You now have a comprehensive understanding of the LLM Cybersecurity Benchmark system! This guide covered:
 
 - ✅ **Quick setup and installation**
+- ✅ **Advanced performance features with caching and lazy loading**
 - ✅ **Configuration management with YAML files**
 - ✅ **Database operations for storing results**
 - ✅ **Realistic cybersecurity data generation**
 - ✅ **Comprehensive testing and validation**
 - ✅ **Professional CI/CD automation**
+- ✅ **Performance monitoring and optimization**
 - ✅ **Troubleshooting common issues**
 - ✅ **Advanced customization and optimization**
 
-The system is production-ready and designed to scale with your needs. Whether you're a researcher, security professional, or developer, you now have the tools to benchmark LLMs on cybersecurity tasks effectively.
+The system is production-ready with enterprise-grade performance optimizations and designed to scale with your needs. Whether you're a researcher, security professional, or developer, you now have the tools to benchmark LLMs on cybersecurity tasks effectively and efficiently.
 
 Happy benchmarking! 🚀

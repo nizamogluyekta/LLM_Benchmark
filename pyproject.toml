@@ -138,3 +138,7 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "benchmark.core.database_manager"
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "benchmark.cli.*"
+disallow_untyped_decorators = false

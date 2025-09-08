@@ -30,6 +30,7 @@ mlx-lm = ">=0.10"
 openai = ">=1.0"
 anthropic = ">=0.7"
 httpx = ">=0.25"
+kaggle = ">=1.5.16"
 
 # Additional core utilities
 asyncio = "^3.4.3"

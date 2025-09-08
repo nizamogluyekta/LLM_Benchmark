@@ -266,6 +266,170 @@ SampleBatch = DataBatch
 DatasetMetadata = dict[str, Any]
 SampleMetadata = dict[str, Any]
 
+
+class DataQualityReport(BaseModel):
+    """Report on dataset quality metrics."""
+
+    dataset_id: str = Field(..., description="Dataset identifier")
+    total_samples: int = Field(..., ge=0, description="Total number of samples analyzed")
+    quality_score: float = Field(..., ge=0.0, le=1.0, description="Overall quality score (0-1)")
+
+    # Sample-level quality metrics
+    empty_samples: int = Field(default=0, ge=0, description="Number of empty samples")
+    duplicate_samples: int = Field(default=0, ge=0, description="Number of duplicate samples")
+    malformed_samples: int = Field(default=0, ge=0, description="Number of malformed samples")
+    missing_labels: int = Field(
+        default=0, ge=0, description="Number of samples with missing labels"
+    )
+    invalid_labels: int = Field(
+        default=0, ge=0, description="Number of samples with invalid labels"
+    )
+
+    # Content quality metrics
+    avg_content_length: float = Field(default=0.0, ge=0, description="Average content length")
+    min_content_length: int = Field(default=0, ge=0, description="Minimum content length")
+    max_content_length: int = Field(default=0, ge=0, description="Maximum content length")
+
+    # Label distribution
+    attack_ratio: float = Field(default=0.0, ge=0.0, le=1.0, description="Ratio of attack samples")
+    benign_ratio: float = Field(default=0.0, ge=0.0, le=1.0, description="Ratio of benign samples")
+    label_balance_score: float = Field(
+        default=0.0, ge=0.0, le=1.0, description="Label balance score"
+    )
+
+    # Validation issues
+    validation_errors: list[str] = Field(
+        default_factory=list, description="List of validation errors found"
+    )
+    warnings: list[str] = Field(default_factory=list, description="List of quality warnings")
+
+    # Metadata
+    analysis_timestamp: datetime = Field(
+        default_factory=datetime.now, description="Analysis timestamp"
+    )
+    analysis_duration_seconds: float = Field(
+        default=0.0, ge=0, description="Analysis duration in seconds"
+    )
+
+    @property
+    def has_issues(self) -> bool:
+        """Check if the dataset has quality issues."""
+        return (
+            self.empty_samples > 0
+            or self.duplicate_samples > 0
+            or self.malformed_samples > 0
+            or self.missing_labels > 0
+            or self.invalid_labels > 0
+            or len(self.validation_errors) > 0
+        )
+
+    @property
+    def issues_count(self) -> int:
+        """Total number of quality issues."""
+        return (
+            self.empty_samples
+            + self.duplicate_samples
+            + self.malformed_samples
+            + self.missing_labels
+            + self.invalid_labels
+        )
+
+    @property
+    def clean_sample_ratio(self) -> float:
+        """Ratio of clean samples without issues."""
+        if self.total_samples == 0:
+            return 0.0
+        return (self.total_samples - self.issues_count) / self.total_samples
+
+
+class DatasetStatistics(BaseModel):
+    """Comprehensive statistics for a dataset."""
+
+    dataset_id: str = Field(..., description="Dataset identifier")
+    dataset_name: str = Field(..., description="Dataset name")
+
+    # Basic statistics
+    total_samples: int = Field(..., ge=0, description="Total number of samples")
+    total_size_bytes: int = Field(default=0, ge=0, description="Total dataset size in bytes")
+
+    # Label distribution
+    attack_samples: int = Field(default=0, ge=0, description="Number of attack samples")
+    benign_samples: int = Field(default=0, ge=0, description="Number of benign samples")
+    attack_types: dict[str, int] = Field(
+        default_factory=dict, description="Count of each attack type"
+    )
+
+    # Content statistics
+    content_length_stats: dict[str, float] = Field(
+        default_factory=dict, description="Content length statistics (mean, std, min, max, median)"
+    )
+    word_count_stats: dict[str, float] = Field(
+        default_factory=dict, description="Word count statistics"
+    )
+    character_count_stats: dict[str, float] = Field(
+        default_factory=dict, description="Character count statistics"
+    )
+
+    # Language and encoding
+    detected_languages: dict[str, int] = Field(
+        default_factory=dict, description="Detected languages and their counts"
+    )
+    encoding_info: dict[str, Any] = Field(
+        default_factory=dict, description="Character encoding information"
+    )
+
+    # Metadata distribution
+    metadata_fields: dict[str, int] = Field(
+        default_factory=dict, description="Count of samples with each metadata field"
+    )
+    timestamp_range: dict[str, str] = Field(
+        default_factory=dict, description="Timestamp range (earliest, latest)"
+    )
+
+    # Quality metrics
+    quality_report: DataQualityReport | None = Field(None, description="Quality analysis report")
+
+    # Processing metadata
+    computed_at: datetime = Field(
+        default_factory=datetime.now, description="Statistics computation time"
+    )
+    computation_duration_seconds: float = Field(
+        default=0.0, ge=0, description="Time taken to compute stats"
+    )
+
+    @property
+    def attack_ratio(self) -> float:
+        """Ratio of attack samples."""
+        return self.attack_samples / self.total_samples if self.total_samples > 0 else 0.0
+
+    @property
+    def benign_ratio(self) -> float:
+        """Ratio of benign samples."""
+        return self.benign_samples / self.total_samples if self.total_samples > 0 else 0.0
+
+    @property
+    def label_balance(self) -> float:
+        """Label balance score (1.0 = perfectly balanced, 0.0 = completely imbalanced)."""
+        if self.total_samples == 0:
+            return 0.0
+
+        attack_ratio = self.attack_ratio
+        benign_ratio = self.benign_ratio
+
+        # Calculate balance score (higher when closer to 0.5/0.5 split)
+        return 1.0 - abs(attack_ratio - benign_ratio)
+
+    @property
+    def most_common_attack_types(self) -> list[tuple[str, int]]:
+        """Get attack types sorted by frequency."""
+        return sorted(self.attack_types.items(), key=lambda x: x[1], reverse=True)
+
+    @property
+    def avg_content_length(self) -> float:
+        """Average content length."""
+        return self.content_length_stats.get("mean", 0.0)
+
+
 # Constants for validation
 VALID_LABELS = ["ATTACK", "BENIGN"]
 COMMON_ATTACK_TYPES = [

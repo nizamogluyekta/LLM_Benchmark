@@ -8,8 +8,10 @@ architecture for different data sources.
 import asyncio
 import hashlib
 import json
+import statistics
 import threading
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,8 @@ from benchmark.core.base import BaseService, HealthCheck, ServiceResponse, Servi
 from benchmark.core.config import DatasetConfig
 from benchmark.core.exceptions import DataLoadingError, ErrorCode
 from benchmark.core.logging import get_logger
+from benchmark.data.loaders import HuggingFaceDataLoader, KaggleDataLoader
+from benchmark.data.models import DataQualityReport, DatasetStatistics
 from benchmark.interfaces.data_interfaces import (
     DataBatch,
     DataCache,
@@ -456,6 +460,11 @@ class DataService(BaseService):
         self.validators: dict[str, DataValidator] = {}
         self.splitters: dict[str, DataSplitter] = {}
 
+        # Dataset management
+        self._dataset_registry: dict[str, DatasetInfo] = {}
+        self._quality_reports: dict[str, DataQualityReport] = {}
+        self._dataset_statistics: dict[str, DatasetStatistics] = {}
+
         # Cache system
         self.cache: DataCache = MemoryDataCache(
             max_size=cache_max_size, max_memory_mb=cache_max_memory_mb, ttl_default=cache_ttl
@@ -530,6 +539,9 @@ class DataService(BaseService):
             async with self._lock:
                 self._datasets.clear()
                 self._dataset_splits.clear()
+                self._dataset_registry.clear()
+                self._quality_reports.clear()
+                self._dataset_statistics.clear()
 
             self._set_status(ServiceStatus.STOPPED)
             self.logger.info("Data Service shutdown completed")
@@ -794,13 +806,35 @@ class DataService(BaseService):
 
     async def _register_default_plugins(self) -> None:
         """Register default data loaders and processors."""
-        # Register local data loader
-        local_loader: DataLoader = LocalDataLoader()
-        await self.register_loader(DataSource.LOCAL, local_loader)
+        # Register all available data loaders
+        await self._auto_register_loaders()
 
         # Register random data splitter
         random_splitter = RandomDataSplitter()
         await self.register_splitter("random", random_splitter)
+
+    async def _auto_register_loaders(self) -> None:
+        """Auto-register all available data loaders."""
+        # Register local data loader (using the existing one from the service for compatibility)
+        local_loader: DataLoader = LocalDataLoader()
+        await self.register_loader(DataSource.LOCAL, local_loader)
+        self.logger.info("Registered LocalDataLoader for LOCAL source")
+
+        # Register Kaggle data loader if available
+        try:
+            kaggle_loader: DataLoader = KaggleDataLoader()  # type: ignore[assignment]
+            await self.register_loader(DataSource.KAGGLE, kaggle_loader)
+            self.logger.info("Registered KaggleDataLoader for KAGGLE source")
+        except Exception as e:
+            self.logger.warning(f"Could not register KaggleDataLoader: {e}")
+
+        # Register HuggingFace data loader if available
+        try:
+            hf_loader: DataLoader = HuggingFaceDataLoader()  # type: ignore[assignment]
+            await self.register_loader(DataSource.HUGGINGFACE, hf_loader)
+            self.logger.info("Registered HuggingFaceDataLoader for HUGGINGFACE source")
+        except Exception as e:
+            self.logger.warning(f"Could not register HuggingFaceDataLoader: {e}")
 
     def _get_cache_key(self, prefix: str, dataset_id: str, config: DatasetConfig) -> str:
         """Generate cache key for dataset or splits."""
@@ -819,3 +853,405 @@ class DataService(BaseService):
 
         config_hash = hashlib.md5(config_str.encode()).hexdigest()[:8]
         return f"{prefix}_{dataset_id}_{config_hash}"
+
+    async def list_available_datasets(self) -> list[DatasetInfo]:
+        """List all available datasets in the registry."""
+        async with self._lock:
+            return list(self._dataset_registry.values())
+
+    async def discover_datasets(self, source_paths: list[str]) -> list[DatasetInfo]:
+        """Discover datasets in specified paths."""
+        discovered = []
+
+        for path_str in source_paths:
+            try:
+                path = Path(path_str)
+                if not path.exists():
+                    self.logger.warning(f"Path does not exist: {path}")
+                    continue
+
+                # Look for dataset files
+                dataset_files: list[Path] = []
+                for ext in ["*.json", "*.jsonl", "*.csv", "*.tsv", "*.parquet"]:
+                    dataset_files.extend(path.glob(ext))
+                    if path.is_dir():
+                        dataset_files.extend(path.rglob(ext))
+
+                for file_path in dataset_files:
+                    try:
+                        # Create minimal dataset info for discovery
+                        try:
+                            data_format = DataFormat(file_path.suffix.lstrip(".").lower())
+                        except ValueError:
+                            data_format = DataFormat.JSON  # Default format
+
+                        dataset_info = DatasetInfo(
+                            dataset_id=f"discovered_{file_path.stem}",
+                            name=file_path.stem,
+                            description=f"Auto-discovered dataset from {file_path}",
+                            source=DataSource.LOCAL,
+                            format=data_format,
+                            size_bytes=file_path.stat().st_size,
+                            created_at=str(file_path.stat().st_ctime),
+                            modified_at=str(file_path.stat().st_mtime),
+                            metadata={"file_path": str(file_path), "auto_discovered": True},
+                        )
+
+                        discovered.append(dataset_info)
+
+                        # Add to registry
+                        async with self._lock:
+                            self._dataset_registry[dataset_info.dataset_id] = dataset_info
+
+                    except Exception as e:
+                        self.logger.warning(f"Could not analyze file {file_path}: {e}")
+
+            except Exception as e:
+                self.logger.error(f"Error discovering datasets in {path_str}: {e}")
+
+        self.logger.info(f"Discovered {len(discovered)} datasets")
+        return discovered
+
+    async def validate_dataset_quality(self, dataset_id: str) -> DataQualityReport:
+        """Validate dataset quality and generate a report."""
+        # Check if we have a cached report
+        async with self._lock:
+            if dataset_id in self._quality_reports:
+                return self._quality_reports[dataset_id]
+
+        # Get dataset
+        dataset = None
+        async with self._lock:
+            dataset = self._datasets.get(dataset_id)
+
+        if not dataset:
+            raise DataLoadingError(
+                f"Dataset not loaded: {dataset_id}",
+                error_code=ErrorCode.DATASET_NOT_FOUND,
+                metadata={"dataset_id": dataset_id},
+            )
+
+        start_time = time.time()
+
+        # Initialize counters
+        empty_samples = 0
+        malformed_samples = 0
+        missing_labels = 0
+        invalid_labels = 0
+        duplicate_samples = 0
+
+        content_lengths = []
+        attack_count = 0
+        benign_count = 0
+        validation_errors = []
+        warnings = []
+
+        # Track duplicates
+        content_hashes = set()
+
+        # Analyze each sample
+        for sample in dataset.samples:
+            try:
+                # Check for empty content - look for text field or general data content
+                content_str = ""
+                if hasattr(sample, "input_text") and sample.input_text:
+                    content_str = str(sample.input_text)
+                elif isinstance(sample.data, dict) and "text" in sample.data:
+                    content_str = str(sample.data["text"])
+                elif sample.data:
+                    content_str = str(sample.data)
+
+                if not content_str.strip():
+                    empty_samples += 1
+                    continue
+
+                # Check for missing labels
+                if not sample.label:
+                    missing_labels += 1
+                    warnings.append(f"Sample {sample.sample_id} missing label")
+                    continue
+
+                # Check for invalid labels
+                if sample.label.upper() not in ["ATTACK", "BENIGN"]:
+                    invalid_labels += 1
+                    validation_errors.append(
+                        f"Sample {sample.sample_id} has invalid label: {sample.label}"
+                    )
+                    continue
+
+                # Count labels
+                if sample.label.upper() == "ATTACK":
+                    attack_count += 1
+                else:
+                    benign_count += 1
+
+                # Check for duplicates (use the same content_str from above)
+                content_hash = hashlib.md5(content_str.encode()).hexdigest()
+                if content_hash in content_hashes:
+                    duplicate_samples += 1
+                else:
+                    content_hashes.add(content_hash)
+
+                # Collect content length
+                content_lengths.append(len(content_str))
+
+            except Exception as e:
+                malformed_samples += 1
+                validation_errors.append(f"Sample {sample.sample_id} is malformed: {str(e)}")
+
+        # Calculate statistics
+        total_samples = len(dataset.samples)
+        avg_content_length = statistics.mean(content_lengths) if content_lengths else 0.0
+        min_content_length = min(content_lengths) if content_lengths else 0
+        max_content_length = max(content_lengths) if content_lengths else 0
+
+        attack_ratio = attack_count / total_samples if total_samples > 0 else 0.0
+        benign_ratio = benign_count / total_samples if total_samples > 0 else 0.0
+
+        # Calculate label balance score
+        label_balance_score = 1.0 - abs(attack_ratio - benign_ratio) if total_samples > 0 else 0.0
+
+        # Calculate overall quality score
+        issues_ratio = (
+            (
+                empty_samples
+                + malformed_samples
+                + missing_labels
+                + invalid_labels
+                + duplicate_samples
+            )
+            / total_samples
+            if total_samples > 0
+            else 0.0
+        )
+
+        quality_score = max(0.0, 1.0 - issues_ratio)
+
+        # Create quality report
+        report = DataQualityReport(
+            dataset_id=dataset_id,
+            total_samples=total_samples,
+            quality_score=quality_score,
+            empty_samples=empty_samples,
+            duplicate_samples=duplicate_samples,
+            malformed_samples=malformed_samples,
+            missing_labels=missing_labels,
+            invalid_labels=invalid_labels,
+            avg_content_length=avg_content_length,
+            min_content_length=min_content_length,
+            max_content_length=max_content_length,
+            attack_ratio=attack_ratio,
+            benign_ratio=benign_ratio,
+            label_balance_score=label_balance_score,
+            validation_errors=validation_errors,
+            warnings=warnings,
+            analysis_duration_seconds=time.time() - start_time,
+        )
+
+        # Cache the report
+        async with self._lock:
+            self._quality_reports[dataset_id] = report
+
+        self.logger.info(
+            f"Quality analysis complete for '{dataset_id}': "
+            f"score={quality_score:.3f}, issues={report.issues_count}"
+        )
+
+        return report
+
+    async def compute_dataset_statistics(self, dataset_id: str) -> DatasetStatistics:
+        """Compute comprehensive statistics for a dataset."""
+        # Check if we have cached statistics
+        async with self._lock:
+            if dataset_id in self._dataset_statistics:
+                return self._dataset_statistics[dataset_id]
+
+        # Get dataset
+        dataset = None
+        async with self._lock:
+            dataset = self._datasets.get(dataset_id)
+
+        if not dataset:
+            raise DataLoadingError(
+                f"Dataset not loaded: {dataset_id}",
+                error_code=ErrorCode.DATASET_NOT_FOUND,
+                metadata={"dataset_id": dataset_id},
+            )
+
+        start_time = time.time()
+
+        # Initialize collectors
+        content_lengths: list[int] = []
+        word_counts: list[int] = []
+        character_counts: list[int] = []
+        attack_types: Counter[str] = Counter()
+        metadata_fields: Counter[str] = Counter()
+        languages: Counter[str] = Counter()
+
+        attack_count = 0
+        benign_count = 0
+        timestamps = []
+
+        # Analyze each sample
+        for sample in dataset.samples:
+            try:
+                # Get content string consistently
+                content_str = ""
+                if hasattr(sample, "input_text") and sample.input_text:
+                    content_str = str(sample.input_text)
+                elif isinstance(sample.data, dict) and "text" in sample.data:
+                    content_str = str(sample.data["text"])
+                elif sample.data:
+                    content_str = str(sample.data)
+
+                content_lengths.append(len(content_str))
+
+                # Word and character counts
+                words = content_str.split()
+                word_counts.append(len(words))
+                character_counts.append(len(content_str))
+
+                # Label analysis
+                if sample.label and sample.label.upper() == "ATTACK":
+                    attack_count += 1
+                    # Try to get attack type from different sources
+                    attack_type = None
+                    if hasattr(sample, "attack_type") and sample.attack_type:
+                        attack_type = sample.attack_type
+                    elif isinstance(sample.data, dict) and "attack_type" in sample.data:
+                        attack_type = sample.data["attack_type"]
+
+                    if attack_type and attack_type.strip():
+                        attack_types[attack_type.strip()] += 1
+                elif sample.label and sample.label.upper() == "BENIGN":
+                    benign_count += 1
+
+                # Metadata analysis
+                for key in sample.metadata:
+                    metadata_fields[key] += 1
+
+                # Timestamp analysis
+                if hasattr(sample, "timestamp") and sample.timestamp:
+                    timestamps.append(sample.timestamp)
+
+                # Simple language detection (basic heuristic)
+                if any(ord(char) > 127 for char in content_str[:100]):
+                    languages["non_ascii"] += 1
+                else:
+                    languages["ascii"] += 1
+
+            except Exception as e:
+                self.logger.warning(f"Error analyzing sample {sample.sample_id}: {e}")
+
+        # Calculate statistics
+        def calc_stats(values: list[int] | list[float]) -> dict[str, float]:
+            if not values:
+                return {"mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0, "median": 0.0}
+            return {
+                "mean": statistics.mean(values),
+                "std": statistics.stdev(values) if len(values) > 1 else 0.0,
+                "min": float(min(values)),
+                "max": float(max(values)),
+                "median": statistics.median(values),
+            }
+
+        # Get quality report if available
+        quality_report = None
+        async with self._lock:
+            quality_report = self._quality_reports.get(dataset_id)
+
+        # Build timestamp range
+        timestamp_range = {}
+        if timestamps:
+            timestamp_range["earliest"] = str(min(timestamps))
+            timestamp_range["latest"] = str(max(timestamps))
+
+        # Create statistics
+        stats = DatasetStatistics(
+            dataset_id=dataset_id,
+            dataset_name=dataset.info.name,
+            total_samples=len(dataset.samples),
+            total_size_bytes=dataset.info.size_bytes,
+            attack_samples=attack_count,
+            benign_samples=benign_count,
+            attack_types=dict(attack_types),
+            content_length_stats=calc_stats(content_lengths),
+            word_count_stats=calc_stats(word_counts),
+            character_count_stats=calc_stats(character_counts),
+            detected_languages=dict(languages),
+            encoding_info={"analysis_method": "basic_heuristic"},
+            metadata_fields=dict(metadata_fields),
+            timestamp_range=timestamp_range,
+            quality_report=quality_report,
+            computation_duration_seconds=time.time() - start_time,
+        )
+
+        # Cache the statistics
+        async with self._lock:
+            self._dataset_statistics[dataset_id] = stats
+
+        self.logger.info(
+            f"Statistics computed for '{dataset_id}' in {stats.computation_duration_seconds:.2f}s"
+        )
+
+        return stats
+
+    async def get_dataset_quality_report(self, dataset_id: str) -> DataQualityReport:
+        """Get quality report for a dataset, computing if necessary."""
+        async with self._lock:
+            if dataset_id in self._quality_reports:
+                return self._quality_reports[dataset_id]
+
+        return await self.validate_dataset_quality(dataset_id)
+
+    async def get_dataset_statistics(self, dataset_id: str) -> DatasetStatistics:
+        """Get statistics for a dataset, computing if necessary."""
+        async with self._lock:
+            if dataset_id in self._dataset_statistics:
+                return self._dataset_statistics[dataset_id]
+
+        return await self.compute_dataset_statistics(dataset_id)
+
+    async def get_registered_loaders(self) -> dict[str, dict[str, Any]]:
+        """Get information about all registered loaders."""
+        loader_info: dict[str, dict[str, Any]] = {}
+
+        for source, loader in self.loaders.items():
+            try:
+                info: dict[str, Any] = {
+                    "class_name": loader.__class__.__name__,
+                    "source_type": source.value,
+                }
+
+                # Try to get supported formats if available
+                if hasattr(loader, "get_supported_formats") and callable(
+                    loader.get_supported_formats
+                ):
+                    try:
+                        formats = loader.get_supported_formats()
+                        if hasattr(formats[0], "value"):  # Enum format
+                            info["supported_formats"] = [fmt.value for fmt in formats]
+                        else:  # String format
+                            info["supported_formats"] = formats
+                    except Exception:
+                        info["supported_formats"] = ["unknown"]
+                else:
+                    # Default supported formats based on loader type
+                    if "LocalFile" in loader.__class__.__name__:
+                        info["supported_formats"] = ["json", "jsonl", "csv", "tsv", "parquet"]
+                    elif "Kaggle" in loader.__class__.__name__:
+                        info["supported_formats"] = ["csv", "json", "zip"]
+                    elif "HuggingFace" in loader.__class__.__name__:
+                        info["supported_formats"] = ["datasets"]
+                    else:
+                        info["supported_formats"] = ["unknown"]
+
+                loader_info[source.value] = info
+
+            except Exception as e:
+                loader_info[source.value] = {
+                    "error": str(e),
+                    "class_name": loader.__class__.__name__,
+                }
+
+        return loader_info

@@ -1,0 +1,154 @@
+{
+  "edge_cases": [
+    {
+      "description": "Empty email",
+      "email_content": "",
+      "expected_features": {
+        "character_count": 0,
+        "word_count": 0
+      }
+    },
+    {
+      "description": "Email with only whitespace",
+      "email_content": "   \n\n  \t  \n   ",
+      "expected_features": {
+        "word_count": 0
+      }
+    },
+    {
+      "description": "Very long email",
+      "email_content": "From: sender@example.com\nTo: recipient@example.com\nSubject: Long email test\n\nThis is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content. This is a very long email content.",
+      "expected_features": {
+        "character_count": 550,
+        "word_count": 92
+      }
+    }
+  ],
+  "html_emails": [
+    {
+      "description": "Complex HTML email with styles",
+      "email_content": "From: marketing@company.com\nTo: customer@gmail.com\nSubject: Special Offer Just for You!\nContent-Type: text/html\n\n<html>\n<head>\n  <style>\n    body { font-family: Arial; }\n    .highlight { color: red; font-weight: bold; }\n  </style>\n</head>\n<body>\n  <script>alert('test');</script>\n  <h1 class=\"highlight\">Special Offer!</h1>\n  <p>Get 50% off on all items!</p>\n  <p>Visit our store: <a href=\"https://company.com/sale\">Click here</a></p>\n  <p>Or call us at: <a href=\"tel:+1234567890\">123-456-7890</a></p>\n</body>\n</html>",
+      "expected_features": {
+        "email_format": "html",
+        "html_content_cleaned": true,
+        "url_count": 1
+      }
+    },
+    {
+      "description": "HTML email with suspicious content",
+      "email_content": "<html><body>\n<p>Urgent security update required!</p>\n<p>Click here to update: <a href=\"http://192.168.1.1/update\">Security Update</a></p>\n<p>Download attachment: <a href=\"virus.exe\">security_patch.exe</a></p>\n<script>window.location='http://malicious.com';</script>\n</body></html>",
+      "expected_features": {
+        "attachment_indicators": 1,
+        "email_format": "html",
+        "security_keywords": 3,
+        "suspicious_url_count": 2,
+        "urgency_keywords": 1
+      }
+    }
+  ],
+  "legitimate_emails": [
+    {
+      "description": "Normal business email",
+      "email_content": "From: john.doe@company.com\nTo: jane.smith@company.com\nSubject: Meeting Tomorrow\nDate: Mon, 15 Jan 2024 10:30:00 +0000\n\nHi Jane,\n\nJust wanted to confirm our meeting tomorrow at 2 PM in conference room A. We'll be discussing the quarterly budget review.\n\nPlease let me know if you need to reschedule.\n\nBest regards,\nJohn",
+      "expected_features": {
+        "email_count": 2,
+        "email_format": "plain_text",
+        "suspicious_url_count": 0
+      }
+    },
+    {
+      "description": "HTML newsletter",
+      "email_content": "From: newsletter@techcompany.com\nTo: subscriber@gmail.com\nSubject: Weekly Tech Newsletter\nContent-Type: text/html\n\n<html><body><h1>Weekly Tech Updates</h1><p>Here are this week's highlights:</p><ul><li>New product launch</li><li>Industry news</li></ul><p>Visit our website at <a href=\"https://techcompany.com\">techcompany.com</a></p></body></html>",
+      "expected_features": {
+        "email_format": "mime",
+        "html_content_cleaned": true,
+        "url_count": 1
+      }
+    },
+    {
+      "description": "Payment confirmation",
+      "email_content": "From: noreply@amazon.com\nTo: customer@gmail.com\nSubject: Order Confirmation\n\nDear Customer,\n\nThank you for your recent purchase. Your order #12345 has been confirmed and will be shipped within 2 business days.\n\nOrder Total: $49.99\nShipping Address: 123 Main St, City, State\n\nYou can track your order at amazon.com/orders\n\nThank you for shopping with Amazon.",
+      "expected_features": {
+        "email_format": "plain_text",
+        "financial_keywords": 1,
+        "legitimate_domain_count": 2
+      }
+    }
+  ],
+  "malformed_emails": [
+    {
+      "description": "Email with malformed headers",
+      "email_content": "From: sender@[192.168.1.1]\nTo: =?UTF-8?B?dGVzdEB0ZXN0LmNvbQ==?=\nSubject: =?UTF-8?Q?Test_Subject?=\n\nThis email has encoded headers and IP address sender.",
+      "expected_features": {
+        "suspicious_domain_count": 0,
+        "suspicious_url_count": 0
+      }
+    },
+    {
+      "description": "MIME multipart email",
+      "email_content": "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"boundary123\"\nFrom: sender@example.com\nTo: recipient@example.com\nSubject: Test multipart\n\n--boundary123\nContent-Type: text/plain\n\nThis is the text part.\n\n--boundary123\nContent-Type: text/html\n\n<html><body>This is the HTML part.</body></html>\n\n--boundary123--",
+      "expected_features": {
+        "email_format": "mime",
+        "is_multipart": true,
+        "multipart_sections": 2
+      }
+    }
+  ],
+  "phishing_emails": [
+    {
+      "description": "PayPal phishing attempt",
+      "email_content": "From: security@payp4l.com\nTo: victim@gmail.com\nSubject: URGENT: Your PayPal Account Has Been Suspended!\n\nDear PayPal Customer,\n\nYour account has been SUSPENDED due to suspicious activity. You must verify your identity IMMEDIATELY to avoid permanent closure.\n\nCLICK HERE to verify: http://payp4l-security.tk/verify\n\nThis is your FINAL NOTICE. Act now or lose access forever!\n\nPayPal Security Team",
+      "expected_features": {
+        "action_required_keywords": 2,
+        "exclamation_count": 3,
+        "security_keywords": 3,
+        "social_engineering_score": 3,
+        "suspicious_url_count": 1,
+        "urgency_keywords": 4
+      }
+    },
+    {
+      "description": "Bank account phishing",
+      "email_content": "From: alerts@b4nk-security.com\nTo: customer@yahoo.com\nSubject: Security Alert - Verify Your Account Now\n\nATTENTION: Unauthorized access detected on your bank account!\n\nWe have detected suspicious login attempts from IP: 192.168.1.1\n\nTo secure your account, please verify your identity immediately:\nhttps://bit.ly/secure-bank-verify\n\nFAILURE TO RESPOND within 24 hours will result in account suspension.\n\nBank Security Department",
+      "expected_features": {
+        "caps_ratio": 0.15,
+        "security_keywords": 4,
+        "social_engineering_score": 2,
+        "suspicious_url_count": 1,
+        "urgency_keywords": 3
+      }
+    },
+    {
+      "description": "Prize notification scam",
+      "email_content": "Subject: CONGRATULATIONS! You've Won $1,000,000!!!\nFrom: winner@lottery-international.ml\n\nDear Lucky Winner,\n\nCONGRATULATIONS! You have been selected as the GRAND PRIZE WINNER in our international lottery!\n\nPrize Amount: $1,000,000 USD\nReference Number: WIN/2024/001\n\nTo claim your prize, click here immediately: http://claim-now.ga/lottery\n\nThis is a LIMITED TIME OFFER - you must respond within 48 hours or forfeit your winnings!\n\nLottery Commission",
+      "expected_features": {
+        "caps_ratio": 0.2,
+        "exclamation_count": 4,
+        "prizes_keywords": 5,
+        "social_engineering_score": 1,
+        "suspicious_url_count": 1,
+        "urgency_keywords": 2
+      }
+    },
+    {
+      "description": "Microsoft support scam",
+      "email_content": "From: support@micr0soft.com\nTo: user@hotmail.com\nSubject: Your Windows License Has Expired\n\n<html><body>\n<p>Dear Windows User,</p>\n<p>Your Windows license has <strong>EXPIRED</strong> and your computer is at risk!</p>\n<p>Download our security update immediately:</p>\n<p><a href=\"http://windows-update.exe\">Download Security Patch</a></p>\n<p style=\"color:red;\">WARNING: Your system will be compromised if you don't act now!</p>\n</body></html>",
+      "expected_features": {
+        "action_required_keywords": 1,
+        "email_format": "html",
+        "security_keywords": 2,
+        "suspicious_url_count": 1,
+        "urgency_keywords": 2
+      }
+    },
+    {
+      "description": "CEO fraud email",
+      "email_content": "From: ceo@company.co\nTo: finance@company.com\nSubject: Urgent Wire Transfer Needed\n\nHi,\n\nI need you to process an urgent wire transfer for a confidential acquisition. Please transfer $50,000 to:\n\nAccount: 123456789\nBank: International Trust Bank\nSwift: INTLBANK\n\nThis must be done today before 5 PM. Please confirm once completed.\n\nRegards,\nCEO",
+      "expected_features": {
+        "financial_keywords": 3,
+        "social_engineering_score": 1,
+        "urgency_keywords": 2
+      }
+    }
+  ]
+}

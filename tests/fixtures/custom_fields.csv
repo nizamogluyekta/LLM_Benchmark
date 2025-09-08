@@ -1,0 +1,5 @@
+request_text,classification,threat_category,data_source,risk_level
+"SELECT * FROM users WHERE 1=1",malicious,sql_injection,web_logs,high
+"GET /index.html HTTP/1.1",benign,,web_logs,low
+"<img src=x onerror=alert(1)>",malicious,xss,web_logs,medium
+"POST /api/data HTTP/1.1",benign,,web_logs,low

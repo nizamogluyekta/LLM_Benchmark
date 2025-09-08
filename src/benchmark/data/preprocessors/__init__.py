@@ -7,10 +7,12 @@ normalizing, and transforming cybersecurity datasets before analysis.
 
 from .base import DataPreprocessor, PreprocessingProgress, PreprocessorError
 from .common import PreprocessingUtilities
+from .network_logs import NetworkLogPreprocessor
 
 __all__ = [
     "DataPreprocessor",
     "PreprocessingProgress",
     "PreprocessorError",
     "PreprocessingUtilities",
+    "NetworkLogPreprocessor",
 ]

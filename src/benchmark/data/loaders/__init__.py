@@ -6,6 +6,7 @@ local files, remote datasets, and streaming data.
 """
 
 from .base_loader import DataLoader
+from .huggingface_loader import HuggingFaceDataLoader
 from .kaggle_loader import KaggleDataLoader
 from .local_loader import LocalFileDataLoader
 
@@ -13,4 +14,5 @@ __all__ = [
     "DataLoader",
     "LocalFileDataLoader",
     "KaggleDataLoader",
+    "HuggingFaceDataLoader",
 ]

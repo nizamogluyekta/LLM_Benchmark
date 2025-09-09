@@ -241,3 +241,12 @@ def service_timeout_error(service_name: str, timeout_seconds: float) -> ServiceU
         ErrorCode.SERVICE_TIMEOUT,
         metadata={"service_name": service_name, "timeout_seconds": timeout_seconds},
     )
+
+
+def model_loading_error(model_name: str, reason: str) -> ModelLoadingError:
+    """Create model loading error with detailed reason."""
+    return ModelLoadingError(
+        f"Failed to load model '{model_name}': {reason}",
+        ErrorCode.MODEL_INITIALIZATION_FAILED,
+        metadata={"model_name": model_name, "reason": reason},
+    )

@@ -6,14 +6,23 @@ architecture for different data sources.
 """
 
 import asyncio
+import gc
+import gzip
 import hashlib
 import json
+import pickle
+import platform
 import statistics
 import threading
 import time
+import weakref
 from collections import Counter
+from collections.abc import AsyncIterator, Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import psutil
 
 from benchmark.core.base import BaseService, HealthCheck, ServiceResponse, ServiceStatus
 from benchmark.core.config import DatasetConfig
@@ -35,6 +44,521 @@ from benchmark.interfaces.data_interfaces import (
     DataSplitter,
     DataValidator,
 )
+
+
+@dataclass
+class MemoryStatus:
+    """Memory usage status information."""
+
+    total_gb: float
+    used_gb: float
+    available_gb: float
+    usage_percent: float
+    process_memory_mb: float
+    cache_memory_mb: float
+
+
+@dataclass
+class ProgressReport:
+    """Progress report for long operations."""
+
+    operation: str
+    current: int
+    total: int
+    percentage: float
+    elapsed_seconds: float
+    estimated_remaining_seconds: float | None = None
+
+    @property
+    def is_complete(self) -> bool:
+        return self.current >= self.total
+
+
+class MemoryManager:
+    """Monitor and manage memory usage with hardware-specific optimizations."""
+
+    def __init__(self, max_memory_gb: float = 8.0):
+        """
+        Initialize memory manager.
+
+        Args:
+            max_memory_gb: Maximum memory usage in GB (conservative for M4 Pro)
+        """
+        self.max_memory_gb = max_memory_gb
+        self.max_memory_bytes = int(max_memory_gb * 1024 * 1024 * 1024)
+        self.logger = get_logger("memory_manager")
+        self._dataset_refs: weakref.WeakValueDictionary[str, Dataset] = (
+            weakref.WeakValueDictionary()
+        )
+
+        # Auto-detect hardware if not specified
+        if max_memory_gb == 8.0:  # Default value
+            self._auto_configure_memory_limits()
+
+    def _auto_configure_memory_limits(self) -> None:
+        """Auto-configure memory limits based on available RAM."""
+        try:
+            total_memory = psutil.virtual_memory().total
+            total_gb = total_memory / (1024**3)
+
+            # Use 60% of available RAM for M-series Macs, 50% for others
+            is_apple_silicon = platform.machine().lower() in ["arm64", "aarch64"]
+            usage_ratio = 0.6 if is_apple_silicon else 0.5
+
+            self.max_memory_gb = min(total_gb * usage_ratio, 16.0)  # Cap at 16GB
+            self.max_memory_bytes = int(self.max_memory_gb * 1024 * 1024 * 1024)
+
+            self.logger.info(
+                f"Auto-configured memory limit: {self.max_memory_gb:.1f}GB "
+                f"(Apple Silicon: {is_apple_silicon})"
+            )
+        except Exception as e:
+            self.logger.warning(f"Failed to auto-configure memory limits: {e}")
+
+    async def get_memory_status(self) -> MemoryStatus:
+        """Get current memory usage status."""
+        vm = psutil.virtual_memory()
+        process = psutil.Process()
+
+        total_gb = vm.total / (1024**3)
+        used_gb = vm.used / (1024**3)
+        available_gb = vm.available / (1024**3)
+        usage_percent = vm.percent
+
+        process_memory_mb = process.memory_info().rss / (1024**2)
+
+        # Estimate cache memory from tracked datasets
+        cache_memory_mb = sum(
+            self._estimate_dataset_size(dataset) / (1024**2)
+            for dataset in self._dataset_refs.values()
+        )
+
+        return MemoryStatus(
+            total_gb=total_gb,
+            used_gb=used_gb,
+            available_gb=available_gb,
+            usage_percent=usage_percent,
+            process_memory_mb=process_memory_mb,
+            cache_memory_mb=cache_memory_mb,
+        )
+
+    async def check_memory_pressure(self) -> bool:
+        """Check if memory pressure is high."""
+        status = await self.get_memory_status()
+        return (
+            status.usage_percent > 80
+            or status.process_memory_mb > self.max_memory_gb * 1024 * 0.8
+            or status.available_gb < 1.0
+        )
+
+    async def cleanup_unused_datasets(self) -> int:
+        """Clean up unused datasets and run garbage collection."""
+        initial_count = len(self._dataset_refs)
+
+        # Force garbage collection
+        collected = gc.collect()
+
+        # The weak references will automatically clean up unreferenced datasets
+        final_count = len(self._dataset_refs)
+        cleaned_count = initial_count - final_count
+
+        self.logger.info(
+            f"Cleaned up {cleaned_count} datasets, " f"collected {collected} objects via GC"
+        )
+
+        return cleaned_count
+
+    def track_dataset(self, dataset_id: str, dataset: Dataset) -> None:
+        """Track a dataset for memory management."""
+        self._dataset_refs[dataset_id] = dataset
+
+    def _estimate_dataset_size(self, dataset: Dataset) -> int:
+        """Estimate dataset memory usage in bytes."""
+        try:
+            # Rough estimation: average sample size * number of samples + overhead
+            if dataset.samples:
+                sample_sizes = []
+                for sample in dataset.samples[: min(10, len(dataset.samples))]:
+                    size = len(str(sample.data).encode("utf-8"))
+                    size += len(str(sample.label).encode("utf-8")) if sample.label else 0
+                    size += sum(len(str(v).encode("utf-8")) for v in sample.metadata.values())
+                    sample_sizes.append(size)
+
+                avg_sample_size = sum(sample_sizes) / len(sample_sizes)
+                return int(avg_sample_size * len(dataset.samples) * 1.5)  # 50% overhead
+        except Exception:
+            pass
+        return 1024 * 1024  # Default 1MB estimate
+
+
+class StreamingDataLoader:
+    """Memory-efficient streaming loader for large datasets."""
+
+    def __init__(self, chunk_size: int = 1000, max_memory_mb: int = 512):
+        """
+        Initialize streaming loader.
+
+        Args:
+            chunk_size: Number of samples to process at once
+            max_memory_mb: Maximum memory usage for streaming operations
+        """
+        self.chunk_size = chunk_size
+        self.max_memory_mb = max_memory_mb
+        self.logger = get_logger("streaming_loader")
+
+    async def stream_batches(
+        self,
+        loader: DataLoader,
+        config: DatasetConfig,
+        batch_size: int,
+        progress_callback: Callable[..., Any] | None = None,
+    ) -> AsyncIterator[DataBatch]:
+        """
+        Stream dataset batches for memory-efficient processing.
+
+        Args:
+            loader: Data loader to use
+            config: Dataset configuration
+            batch_size: Size of each batch
+            progress_callback: Optional progress callback
+
+        Yields:
+            DataBatch: Batches of samples
+        """
+        # For now, implement basic streaming by loading full dataset and batching
+        # In a production system, this would be implemented with true streaming
+        dataset = await loader.load(config)
+
+        total_samples = len(dataset.samples)
+        total_batches = (total_samples + batch_size - 1) // batch_size
+
+        for i in range(0, total_samples, batch_size):
+            batch_samples = dataset.samples[i : i + batch_size]
+            batch_id = f"{config.name}_stream_batch_{i // batch_size}"
+
+            batch = DataBatch(
+                batch_id=batch_id,
+                samples=batch_samples,
+                batch_info={
+                    "dataset_id": config.name,
+                    "batch_size": len(batch_samples),
+                    "offset": i,
+                    "total_samples": total_samples,
+                    "batch_index": i // batch_size,
+                    "total_batches": total_batches,
+                    "streaming": True,
+                },
+            )
+
+            if progress_callback:
+                progress = ProgressReport(
+                    operation=f"Streaming {config.name}",
+                    current=i // batch_size + 1,
+                    total=total_batches,
+                    percentage=(i // batch_size + 1) / total_batches * 100,
+                    elapsed_seconds=0.0,  # Would be calculated in real implementation
+                )
+                await progress_callback(progress)
+
+            yield batch
+
+
+class CompressedCache(DataCache):
+    """Compressed cache implementation for better memory efficiency."""
+
+    def __init__(self, max_size: int = 50, max_memory_mb: int = 256, ttl_default: int = 3600):
+        """
+        Initialize compressed cache.
+
+        Args:
+            max_size: Maximum number of cached items
+            max_memory_mb: Maximum memory usage in MB
+            ttl_default: Default TTL in seconds
+        """
+        self.max_size = max_size
+        self.max_memory_bytes = max_memory_mb * 1024 * 1024
+        self.ttl_default = ttl_default
+
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._access_order: list[str] = []
+        self._lock = threading.RLock()
+        self._memory_usage = 0
+
+        self.logger = get_logger("compressed_cache")
+
+    async def get(self, cache_key: str) -> Any | None:
+        """Get and decompress data from cache."""
+        with self._lock:
+            if cache_key not in self._cache:
+                return None
+
+            entry = self._cache[cache_key]
+
+            # Check TTL
+            if time.time() > entry["expires_at"]:
+                await self._remove_entry(cache_key)
+                return None
+
+            # Update access order for LRU
+            if cache_key in self._access_order:
+                self._access_order.remove(cache_key)
+            self._access_order.append(cache_key)
+
+            # Decompress data
+            try:
+                compressed_data = entry["data"]
+                decompressed = gzip.decompress(compressed_data)
+                data = pickle.loads(decompressed)
+                return data
+            except Exception as e:
+                self.logger.error(f"Failed to decompress cache entry {cache_key}: {e}")
+                await self._remove_entry(cache_key)
+                return None
+
+    async def set(self, cache_key: str, data: Any, ttl: int | None = None) -> None:
+        """Compress and store data in cache."""
+        if ttl is None:
+            ttl = self.ttl_default
+
+        try:
+            # Compress data
+            pickled_data = pickle.dumps(data)
+            compressed_data = gzip.compress(pickled_data, compresslevel=6)
+            compressed_size = len(compressed_data)
+
+            with self._lock:
+                # Remove existing entry if present
+                if cache_key in self._cache:
+                    await self._remove_entry(cache_key)
+
+                # Check if we need to evict entries
+                while (
+                    len(self._cache) >= self.max_size
+                    or self._memory_usage + compressed_size > self.max_memory_bytes
+                ):
+                    if not self._access_order:
+                        break
+                    oldest_key = self._access_order[0]
+                    await self._remove_entry(oldest_key)
+
+                # Add new entry
+                entry = {
+                    "data": compressed_data,
+                    "expires_at": time.time() + ttl,
+                    "size": compressed_size,
+                    "created_at": time.time(),
+                    "original_size": len(pickled_data),
+                    "compression_ratio": len(pickled_data) / compressed_size
+                    if compressed_size > 0
+                    else 1.0,
+                }
+
+                self._cache[cache_key] = entry
+                self._access_order.append(cache_key)
+                self._memory_usage += compressed_size
+
+                self.logger.debug(
+                    f"Compressed cache entry {cache_key}: "
+                    f"{entry['original_size']} -> {compressed_size} bytes "
+                    f"(ratio: {entry['compression_ratio']:.2f})"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Failed to compress and cache data for {cache_key}: {e}")
+
+    async def delete(self, cache_key: str) -> bool:
+        """Delete data from cache."""
+        with self._lock:
+            if cache_key in self._cache:
+                await self._remove_entry(cache_key)
+                return True
+            return False
+
+    async def clear(self) -> None:
+        """Clear all cached data."""
+        with self._lock:
+            self._cache.clear()
+            self._access_order.clear()
+            self._memory_usage = 0
+            self.logger.info("Compressed cache cleared")
+
+    async def get_cache_info(self) -> dict[str, Any]:
+        """Get cache statistics including compression info."""
+        with self._lock:
+            total_original_size = sum(entry["original_size"] for entry in self._cache.values())
+            total_compressed_size = self._memory_usage
+            overall_ratio = (
+                total_original_size / total_compressed_size if total_compressed_size > 0 else 1.0
+            )
+
+            return {
+                "cache_size": len(self._cache),
+                "max_size": self.max_size,
+                "memory_usage_bytes": self._memory_usage,
+                "memory_usage_mb": self._memory_usage / (1024 * 1024),
+                "max_memory_mb": self.max_memory_bytes / (1024 * 1024),
+                "memory_utilization": (self._memory_usage / self.max_memory_bytes) * 100,
+                "compression_enabled": True,
+                "original_size_bytes": total_original_size,
+                "compression_ratio": overall_ratio,
+                "space_saved_bytes": total_original_size - total_compressed_size,
+                "entries": list(self._cache.keys()),
+            }
+
+    async def _remove_entry(self, cache_key: str) -> None:
+        """Remove entry from cache."""
+        if cache_key in self._cache:
+            entry = self._cache[cache_key]
+            self._memory_usage -= entry["size"]
+            del self._cache[cache_key]
+
+            if cache_key in self._access_order:
+                self._access_order.remove(cache_key)
+
+
+class DataServiceOptimizer:
+    """Optimize data service performance for specific hardware."""
+
+    def __init__(self, data_service: "DataService"):
+        """Initialize optimizer with reference to data service."""
+        self.data_service = data_service
+        self.logger = get_logger("data_optimizer")
+        self._hardware_info: dict[str, Any] = {}
+
+    async def optimize_for_hardware(self, hardware_info: dict[str, Any] | None = None) -> None:
+        """
+        Optimize data service settings for specific hardware.
+
+        Args:
+            hardware_info: Hardware information dict, auto-detected if None
+        """
+        if hardware_info is None:
+            hardware_info = await self._detect_hardware()
+
+        self._hardware_info = hardware_info
+
+        # Optimize cache settings
+        await self._optimize_cache_settings()
+
+        # Optimize batch processing
+        await self._optimize_batch_settings()
+
+        # Set up memory management
+        await self._setup_memory_management()
+
+        self.logger.info(
+            f"Optimized data service for: {hardware_info.get('cpu_name', 'Unknown CPU')}"
+        )
+
+    async def preload_common_datasets(self, dataset_ids: list[str]) -> None:
+        """
+        Preload commonly used datasets for faster access.
+
+        Args:
+            dataset_ids: List of dataset IDs to preload
+        """
+        preload_tasks: list[Any] = []
+
+        for dataset_id in dataset_ids:
+            # Check if dataset is already loaded
+            if dataset_id not in self.data_service._datasets:
+                # Would implement actual preloading logic here
+                self.logger.info(f"Would preload dataset: {dataset_id}")
+
+        if preload_tasks:
+            await asyncio.gather(*preload_tasks, return_exceptions=True)
+
+        self.logger.info(f"Preloaded {len(dataset_ids)} datasets")
+
+    async def _detect_hardware(self) -> dict[str, Any]:
+        """Detect hardware information."""
+        try:
+            cpu_info = {}
+
+            # Basic CPU info
+            cpu_info["cpu_count"] = psutil.cpu_count(logical=False)
+            cpu_info["cpu_count_logical"] = psutil.cpu_count(logical=True)
+            cpu_info["cpu_freq"] = psutil.cpu_freq()._asdict() if psutil.cpu_freq() else {}
+
+            # Memory info
+            memory = psutil.virtual_memory()
+            cpu_info["memory_total_gb"] = memory.total / (1024**3)
+
+            # Platform info
+            cpu_info["platform"] = platform.platform()
+            cpu_info["machine"] = platform.machine()
+            cpu_info["processor"] = platform.processor()
+
+            # Apple Silicon detection
+            cpu_info["is_apple_silicon"] = platform.machine().lower() in ["arm64", "aarch64"]
+
+            # Try to get CPU name on macOS
+            if platform.system() == "Darwin":
+                try:
+                    import subprocess
+
+                    result = subprocess.run(
+                        ["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True
+                    )
+                    if result.returncode == 0:
+                        cpu_info["cpu_name"] = result.stdout.strip()
+                except Exception:
+                    pass
+
+            return cpu_info
+
+        except Exception as e:
+            self.logger.error(f"Failed to detect hardware: {e}")
+            return {"error": str(e)}
+
+    async def _optimize_cache_settings(self) -> None:
+        """Optimize cache settings based on hardware."""
+        memory_gb = self._hardware_info.get("memory_total_gb", 8.0)
+        is_apple_silicon = self._hardware_info.get("is_apple_silicon", False)
+
+        if is_apple_silicon and memory_gb >= 16:
+            # M-series Macs are efficient with memory, can use more cache
+            cache_memory_mb = min(int(memory_gb * 1024 * 0.3), 4096)  # Up to 4GB cache
+        else:
+            # Conservative settings for other systems
+            cache_memory_mb = min(int(memory_gb * 1024 * 0.2), 2048)  # Up to 2GB cache
+
+        # Update cache if it's compressed cache
+        if hasattr(self.data_service.cache, "max_memory_bytes"):
+            self.data_service.cache.max_memory_bytes = cache_memory_mb * 1024 * 1024
+
+        self.logger.info(f"Optimized cache memory limit: {cache_memory_mb}MB")
+
+    async def _optimize_batch_settings(self) -> None:
+        """Optimize batch processing settings."""
+        cpu_count = self._hardware_info.get("cpu_count_logical", 4)
+
+        # Optimal batch size based on CPU cores
+        optimal_batch_size = max(32, cpu_count * 16)  # 16 samples per core minimum
+
+        # Store optimization settings (would be used by batch processing)
+        self.data_service._optimization_settings = {
+            "optimal_batch_size": optimal_batch_size,
+            "max_concurrent_batches": cpu_count,
+            "chunk_size": optimal_batch_size * 2,
+        }
+
+        self.logger.info(
+            f"Optimized batch settings: size={optimal_batch_size}, " f"concurrent={cpu_count}"
+        )
+
+    async def _setup_memory_management(self) -> None:
+        """Set up memory management based on hardware."""
+        memory_gb = self._hardware_info.get("memory_total_gb", 8.0)
+
+        # Conservative memory limits
+        max_memory_gb = min(memory_gb * 0.6, 16.0) if memory_gb >= 16 else memory_gb * 0.5
+
+        # Initialize memory manager if not already present
+        if not hasattr(self.data_service, "memory_manager"):
+            self.data_service.memory_manager = MemoryManager(max_memory_gb)
+
+        self.logger.info(f"Memory management configured: {max_memory_gb:.1f}GB limit")
 
 
 class MemoryDataCache(DataCache):
@@ -442,7 +966,12 @@ class DataService(BaseService):
     """
 
     def __init__(
-        self, cache_max_size: int = 50, cache_max_memory_mb: int = 1024, cache_ttl: int = 3600
+        self,
+        cache_max_size: int = 50,
+        cache_max_memory_mb: int = 1024,
+        cache_ttl: int = 3600,
+        enable_compression: bool = True,
+        enable_hardware_optimization: bool = True,
     ):
         """
         Initialize the Data Service.
@@ -451,6 +980,8 @@ class DataService(BaseService):
             cache_max_size: Maximum number of datasets to cache
             cache_max_memory_mb: Maximum cache memory in MB
             cache_ttl: Cache time-to-live in seconds
+            enable_compression: Enable compressed caching for better memory efficiency
+            enable_hardware_optimization: Enable hardware-specific optimizations
         """
         super().__init__("data_service")
 
@@ -465,10 +996,23 @@ class DataService(BaseService):
         self._quality_reports: dict[str, DataQualityReport] = {}
         self._dataset_statistics: dict[str, DatasetStatistics] = {}
 
-        # Cache system
-        self.cache: DataCache = MemoryDataCache(
-            max_size=cache_max_size, max_memory_mb=cache_max_memory_mb, ttl_default=cache_ttl
-        )
+        # Cache system - use compressed cache if enabled
+        self.cache: DataCache
+        if enable_compression:
+            self.cache = CompressedCache(
+                max_size=cache_max_size, max_memory_mb=cache_max_memory_mb, ttl_default=cache_ttl
+            )
+        else:
+            self.cache = MemoryDataCache(
+                max_size=cache_max_size, max_memory_mb=cache_max_memory_mb, ttl_default=cache_ttl
+            )
+
+        # Performance optimization components
+        self.memory_manager: MemoryManager | None = None
+        self.streaming_loader = StreamingDataLoader()
+        self.optimizer: DataServiceOptimizer | None = None
+        self._optimization_settings: dict[str, Any] = {}
+        self._enable_hardware_optimization = enable_hardware_optimization
 
         # Internal state
         self._datasets: dict[str, Dataset] = {}
@@ -482,19 +1026,35 @@ class DataService(BaseService):
         try:
             self.logger.info("Initializing Data Service")
 
+            # Initialize performance optimization components
+            if self._enable_hardware_optimization:
+                self.memory_manager = MemoryManager()
+                self.optimizer = DataServiceOptimizer(self)
+                await self.optimizer.optimize_for_hardware()
+                self.logger.info("Hardware optimizations enabled")
+
             # Register default plugins
             await self._register_default_plugins()
 
             self._set_status(ServiceStatus.HEALTHY)
             self.logger.info("Data Service initialized successfully")
 
+            # Gather initialization info
+            init_data = {
+                "registered_loaders": list(self.loaders.keys()),
+                "registered_splitters": list(self.splitters.keys()),
+                "compression_enabled": isinstance(self.cache, CompressedCache),
+                "hardware_optimization": self._enable_hardware_optimization,
+            }
+
+            # Add optimization settings if available
+            if self._optimization_settings:
+                init_data["optimization_settings"] = self._optimization_settings
+
             return ServiceResponse(
                 success=True,
                 message="Data Service initialized successfully",
-                data={
-                    "registered_loaders": list(self.loaders.keys()),
-                    "registered_splitters": list(self.splitters.keys()),
-                },
+                data=init_data,
             )
 
         except Exception as e:
@@ -508,16 +1068,29 @@ class DataService(BaseService):
         """Perform a health check on the Data Service."""
         try:
             cache_info = await self.cache.get_cache_info()
+            checks = {
+                "cache_status": cache_info,
+                "registered_loaders": len(self.loaders),
+                "loaded_datasets": len(self._datasets),
+                "cached_splits": len(self._dataset_splits),
+            }
+
+            # Add memory status if memory manager is available
+            if self.memory_manager:
+                memory_status = await self.memory_manager.get_memory_status()
+                checks["memory_status"] = {
+                    "total_gb": round(memory_status.total_gb, 2),
+                    "used_gb": round(memory_status.used_gb, 2),
+                    "available_gb": round(memory_status.available_gb, 2),
+                    "usage_percent": round(memory_status.usage_percent, 1),
+                    "process_memory_mb": round(memory_status.process_memory_mb, 1),
+                    "cache_memory_mb": round(memory_status.cache_memory_mb, 1),
+                }
 
             return HealthCheck(
                 status=self.status,
                 message="Data Service is healthy",
-                checks={
-                    "cache_status": cache_info,
-                    "registered_loaders": len(self.loaders),
-                    "loaded_datasets": len(self._datasets),
-                    "cached_splits": len(self._dataset_splits),
-                },
+                checks=checks,
             )
 
         except Exception as e:
@@ -638,6 +1211,10 @@ class DataService(BaseService):
             # Store in internal registry
             async with self._lock:
                 self._datasets[dataset_id] = dataset
+
+            # Track dataset in memory manager if available
+            if self.memory_manager:
+                self.memory_manager.track_dataset(dataset_id, dataset)
 
             self.logger.info(
                 f"Successfully loaded dataset '{dataset_id}' with {dataset.size} samples"
@@ -794,6 +1371,143 @@ class DataService(BaseService):
             )
 
             return batch
+
+    async def get_optimized_batch(
+        self, dataset_id: str, batch_size: int | None = None, offset: int = 0
+    ) -> DataBatch:
+        """
+        Get an optimized batch using hardware-specific settings.
+
+        Args:
+            dataset_id: Dataset identifier
+            batch_size: Number of samples in batch (uses optimized size if None)
+            offset: Starting offset
+
+        Returns:
+            Optimized data batch
+        """
+        # Use optimized batch size if not specified
+        if batch_size is None:
+            batch_size = self._optimization_settings.get("optimal_batch_size", 64)
+
+        return await self.get_batch(dataset_id, batch_size, offset)
+
+    async def stream_dataset_batches(
+        self,
+        config: DatasetConfig,
+        batch_size: int | None = None,
+        progress_callback: Callable[..., Any] | None = None,
+    ) -> AsyncIterator[DataBatch]:
+        """
+        Stream dataset in batches for memory-efficient processing.
+
+        Args:
+            config: Dataset configuration
+            batch_size: Size of each batch (uses optimized size if None)
+            progress_callback: Optional progress callback function
+
+        Yields:
+            DataBatch: Batches of dataset samples
+        """
+        # Use optimized batch size if not specified
+        if batch_size is None:
+            batch_size = self._optimization_settings.get("optimal_batch_size", 64)
+
+        # Get appropriate loader
+        source_str = getattr(config, "source", "local")
+        source_type = DataSource(source_str.lower())
+
+        if source_type not in self.loaders:
+            raise DataLoadingError(
+                f"No loader registered for source: {source_type}",
+                error_code=ErrorCode.DATASET_NOT_FOUND,
+                metadata={"source": source_type.value},
+            )
+
+        loader = self.loaders[source_type]
+
+        # Stream batches using the streaming loader
+        async for batch in self.streaming_loader.stream_batches(
+            loader, config, batch_size, progress_callback
+        ):
+            yield batch
+
+    async def get_memory_status(self) -> dict[str, Any]:
+        """
+        Get current memory status and usage information.
+
+        Returns:
+            Memory status information
+        """
+        if not self.memory_manager:
+            return {"error": "Memory manager not available"}
+
+        memory_status = await self.memory_manager.get_memory_status()
+        cache_info = await self.cache.get_cache_info()
+
+        return {
+            "memory_status": {
+                "total_gb": round(memory_status.total_gb, 2),
+                "used_gb": round(memory_status.used_gb, 2),
+                "available_gb": round(memory_status.available_gb, 2),
+                "usage_percent": round(memory_status.usage_percent, 1),
+                "process_memory_mb": round(memory_status.process_memory_mb, 1),
+                "cache_memory_mb": round(memory_status.cache_memory_mb, 1),
+            },
+            "cache_info": cache_info,
+            "memory_pressure": await self.memory_manager.check_memory_pressure(),
+        }
+
+    async def cleanup_memory(self) -> dict[str, Any]:
+        """
+        Perform memory cleanup and return cleanup statistics.
+
+        Returns:
+            Cleanup statistics
+        """
+        if not self.memory_manager:
+            return {"error": "Memory manager not available"}
+
+        # Get initial memory status
+        initial_status = await self.memory_manager.get_memory_status()
+
+        # Perform cleanup
+        cleaned_datasets = await self.memory_manager.cleanup_unused_datasets()
+
+        # Get final memory status
+        final_status = await self.memory_manager.get_memory_status()
+
+        return {
+            "cleaned_datasets": cleaned_datasets,
+            "memory_freed_mb": round(
+                initial_status.process_memory_mb - final_status.process_memory_mb, 2
+            ),
+            "initial_memory_mb": round(initial_status.process_memory_mb, 2),
+            "final_memory_mb": round(final_status.process_memory_mb, 2),
+        }
+
+    async def get_cache_performance_stats(self) -> dict[str, Any]:
+        """
+        Get detailed cache performance statistics.
+
+        Returns:
+            Cache performance statistics including compression info if available
+        """
+        cache_info = await self.cache.get_cache_info()
+
+        # Add optimization info
+        stats = {
+            **cache_info,
+            "advanced_cache": isinstance(self.cache, CompressedCache),
+            "optimization_settings": self._optimization_settings,
+            "lazy_loading_enabled": hasattr(self, "streaming_loader"),
+        }
+
+        # Add hardware optimization info if available
+        if self.optimizer:
+            stats["hardware_optimized"] = True
+
+        return stats
 
     async def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""

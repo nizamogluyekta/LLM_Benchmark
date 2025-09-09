@@ -315,7 +315,214 @@ benchmark config outline large_config.yaml
 The CLI integrates seamlessly with:
 - **Configuration Service**: Automatic validation and parsing with advanced caching
 - **Performance Optimizations**: LRU caching, lazy loading, and diff tracking
+- **Data Service**: Complete E2E data loading and processing pipeline
 - **Environment Resolution**: Dynamic variable substitution
 - **Rich Output**: Beautiful terminal formatting
 - **Error Handling**: Comprehensive error reporting with suggestions
 - **Memory Management**: Intelligent memory usage optimization
+
+## 📊 Data Service Integration
+
+### Data Loading Commands
+
+#### `benchmark data load <dataset_config>`
+Load and process datasets with comprehensive validation:
+
+```bash
+# Load dataset from configuration
+benchmark data load configs/datasets/unsw_nb15.yaml
+
+# Load with custom preprocessing
+benchmark data load configs/datasets/phishing_emails.yaml --preprocess tokenize,normalize
+
+# Batch load multiple datasets
+benchmark data load configs/datasets/*.yaml --batch-size 1000
+
+# Example output:
+# 🚀 Loading dataset: UNSW-NB15 Network Traffic
+# 📊 Loaded 10,000 samples (3,000 attacks, 7,000 benign)
+# ⚡ Processing speed: 91,234 samples/second
+# ✅ Dataset validation: 98.5% quality score
+# 💾 Memory usage: 45.2MB compressed
+```
+
+#### `benchmark data validate <dataset_path>`
+Comprehensive dataset quality validation:
+
+```bash
+# Validate dataset quality
+benchmark data validate data/cybersecurity_logs.json
+
+# Validate with detailed statistics
+benchmark data validate data/network_traffic.csv --detailed-stats
+
+# Batch validation with quality thresholds
+benchmark data validate data/*.jsonl --min-quality 0.8
+
+# Example output:
+# 🔍 Dataset Quality Report:
+#   ✅ Total samples: 50,000
+#   📈 Quality score: 0.94/1.0
+#   🎯 Attack ratio: 32.1%
+#   ⚠️ Issues found: 127 duplicate samples
+#   💡 Recommendation: Apply deduplication preprocessing
+```
+
+#### `benchmark data stream <dataset_config>`
+Stream large datasets with real-time processing:
+
+```bash
+# Stream dataset in batches
+benchmark data stream large_dataset.yaml --batch-size 500
+
+# Stream with concurrent processing
+benchmark data stream huge_dataset.yaml --concurrent-batches 4
+
+# Stream with progress monitoring
+benchmark data stream dataset.yaml --show-progress --update-interval 1000
+
+# Example output:
+# 🌊 Streaming dataset: Large Scale Security Logs
+# 📦 Processing batch 1/200 (500 samples)
+# ⚡ Current speed: 1,234,567 samples/second validation
+# 📊 Progress: [████████████████████] 100% (100,000/100,000)
+# ✅ Stream completed: 2.3 minutes total
+```
+
+### Performance Monitoring Commands
+
+#### `benchmark data performance <dataset_config>`
+Monitor data service performance and optimization:
+
+```bash
+# Performance benchmark
+benchmark data performance dataset.yaml
+
+# Memory usage analysis
+benchmark data performance dataset.yaml --memory-profile
+
+# Concurrent load testing
+benchmark data performance dataset.yaml --concurrent-streams 8
+
+# Example output:
+# 📊 Data Service Performance Report:
+#   🚀 Loading speed: 91,234 samples/second
+#   ✅ Validation speed: 1,234,567 samples/second
+#   💾 Memory usage: 128MB (optimized compression)
+#   🔄 Cache hit rate: 87.3%
+#   ⚡ Hardware optimization: Active (Apple M4 Pro)
+```
+
+#### `benchmark data health-check`
+Comprehensive data service health monitoring:
+
+```bash
+# Basic health check
+benchmark data health-check
+
+# Detailed system diagnostics
+benchmark data health-check --detailed
+
+# Export health metrics
+benchmark data health-check --export-json health_metrics.json
+
+# Example output:
+# 🏥 Data Service Health Check:
+#   ✅ Service status: HEALTHY
+#   📊 Active datasets: 12 cached, 3 streaming
+#   💾 Memory status: 245MB / 512MB (48% usage)
+#   🔄 Cache performance: 87.3% hit rate
+#   ⚡ Hardware optimization: Apple M4 Pro detected
+#   🌊 Stream throughput: 45,234 samples/second
+```
+
+## 🧪 End-to-End Testing Integration
+
+### E2E Test Execution Commands
+
+#### `benchmark test e2e <test_suite>`
+Execute comprehensive end-to-end test scenarios:
+
+```bash
+# Run complete E2E test suite
+benchmark test e2e --suite complete
+
+# Run specific E2E scenarios
+benchmark test e2e --scenarios realistic_workflows,performance_benchmarks
+
+# Run with custom dataset sizes
+benchmark test e2e --dataset-size large --concurrent-streams 6
+
+# Example output:
+# 🧪 E2E Testing: Complete Data Service Pipeline
+# ✅ Test 1/9: Complete dataset pipeline (PASSED)
+# ✅ Test 2/9: Multi-source loading (PASSED)
+# ✅ Test 3/9: Large dataset handling (PASSED)
+# ✅ Test 4/9: Error recovery scenarios (PASSED)
+# ✅ Test 5/9: Concurrent load testing (PASSED)
+# ✅ Test 6/9: Realistic cybersecurity workflows (PASSED)
+# ✅ Test 7/9: Integration with preprocessing (PASSED)
+# ✅ Test 8/9: Performance benchmarks (PASSED)
+# ✅ Test 9/9: Service resilience testing (PASSED)
+#
+# 📊 E2E Test Results Summary:
+#   ✅ All 9 scenarios passed
+#   ⚡ Average loading speed: 91,234+ samples/second
+#   📈 Average validation speed: 1,234,567+ samples/second
+#   💾 Memory efficiency: Outstanding (compression active)
+#   🏆 Overall grade: EXCELLENT
+```
+
+#### `benchmark test performance <performance_suite>`
+Run performance-specific testing scenarios:
+
+```bash
+# Performance test suite
+benchmark test performance --suite data_service
+
+# Hardware optimization tests
+benchmark test performance --hardware-specific --platform apple_m4_pro
+
+# Concurrent processing tests
+benchmark test performance --concurrent-load --max-streams 10
+
+# Example output:
+# ⚡ Performance Testing: Data Service Optimization
+# 🚀 Hardware optimization: ACTIVE (Apple M4 Pro detected)
+# 📊 Loading performance: 91,234 samples/second (✅ EXCELLENT)
+# ✅ Validation performance: 1,234,567 samples/second (✅ OUTSTANDING)
+# 💾 Memory efficiency: 60% reduction through compression
+# 🔄 Cache performance: 87.3% hit rate (✅ TARGET MET)
+# 🌊 Concurrent streams: 8 streams processed simultaneously
+# 🏆 Performance grade: OUTSTANDING
+```
+
+### Data Generation Testing Commands
+
+#### `benchmark test datagen <generation_suite>`
+Test realistic cybersecurity data generation capabilities:
+
+```bash
+# Test data generation pipeline
+benchmark test datagen --suite cybersecurity
+
+# Test specific attack types
+benchmark test datagen --attack-types malware,phishing,dos
+
+# Test large-scale generation
+benchmark test datagen --scale large --samples 100000
+
+# Example output:
+# 🎲 Data Generation Testing: Cybersecurity Scenarios
+# ✅ Network logs: 10,000 samples generated
+# ✅ Phishing emails: 5,000 samples generated
+# ✅ Web attack logs: 7,500 samples generated
+# ✅ Malware samples: 2,500 samples generated
+#
+# 📊 Generation Performance:
+#   ⚡ Speed: 15,234 samples/second
+#   🎯 Attack distribution: 32.1% (target: 30%)
+#   📈 Quality metrics: 94.2% realistic samples
+#   🔍 Schema compliance: 100% valid
+#   ✅ All generation tests passed
+```

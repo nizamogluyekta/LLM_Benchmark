@@ -30,6 +30,7 @@ mlx-lm = ">=0.10"
 openai = ">=1.0"
 anthropic = ">=0.7"
 httpx = ">=0.25"
+tenacity = ">=8.2.0"
 kaggle = ">=1.5.16"
 datasets = ">=2.16.0"
 

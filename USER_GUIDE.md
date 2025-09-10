@@ -10,10 +10,12 @@ Welcome to the LLM Cybersecurity Benchmark system! This guide will walk you thro
 4. [Configuration Management](#configuration-management)
 5. [Database Operations](#database-operations)
 6. [Data Generation](#data-generation)
-7. [Testing & Validation](#testing--validation)
-8. [CI/CD & Automation](#cicd--automation)
-9. [Troubleshooting](#troubleshooting)
-10. [Advanced Usage](#advanced-usage)
+7. [Model Service Integration](#model-service-integration)
+8. [End-to-End Testing](#end-to-end-testing)
+9. [Testing & Validation](#testing--validation)
+10. [CI/CD & Automation](#cicd--automation)
+11. [Troubleshooting](#troubleshooting)
+12. [Advanced Usage](#advanced-usage)
 
 ---
 
@@ -1013,6 +1015,422 @@ simulate_model_predictions()
 
 ---
 
+## 🤖 Model Service Integration
+
+The system now includes a complete model service with comprehensive model lifecycle management, performance monitoring, and cost tracking capabilities.
+
+### Model Service Overview
+
+The model service provides a unified interface for working with multiple types of LLM models:
+
+- **OpenAI API Models**: GPT-4o-mini, GPT-4, GPT-3.5-turbo
+- **Anthropic API Models**: Claude-3.5-Sonnet, Claude-3-Haiku
+- **MLX Local Models**: Optimized for Apple Silicon (M4 Pro)
+- **Ollama Models**: Local deployment with Docker support
+
+### Complete Model Lifecycle Management
+
+```python
+from benchmark.services.model_service import ModelService
+import asyncio
+
+async def complete_model_workflow():
+    """Demonstrate complete model service workflow."""
+
+    # Create model service with performance monitoring
+    service = ModelService(
+        max_models=5,
+        max_memory_mb=16384,  # 16GB limit for M4 Pro
+        cleanup_interval_seconds=120,
+        enable_performance_monitoring=True,
+    )
+
+    await service.initialize()
+    print("✅ Model service initialized")
+
+    # Load multiple models for comparison
+    model_configs = [
+        {
+            "type": "openai_api",
+            "model_name": "gpt-4o-mini",
+            "name": "openai-fast",
+            "api_key": "test-key-123",
+        },
+        {
+            "type": "mlx_local",
+            "model_name": "llama2-7b",
+            "name": "mlx-local",
+            "model_path": "/models/llama2-7b",
+        }
+    ]
+
+    model_ids = []
+    for config in model_configs:
+        model_id = await service.load_model(config)
+        model_ids.append(model_id)
+        print(f"✅ Loaded model: {config['name']}")
+
+    # Test model inference with cybersecurity samples
+    cybersecurity_samples = [
+        "SELECT * FROM users WHERE id = '1' OR '1'='1'",
+        "<script>alert('XSS Attack')</script>",
+        "Welcome to our secure banking platform",
+        "; rm -rf / --no-preserve-root",
+        "Thank you for your recent purchase"
+    ]
+
+    # Run batch inference on multiple models
+    for model_id in model_ids:
+        response = await service.predict_batch(
+            model_id,
+            cybersecurity_samples,
+            batch_size=3
+        )
+
+        print(f"📊 Model {model_id} Results:")
+        print(f"   Processed: {response.successful_predictions}/{response.total_samples}")
+        print(f"   Inference time: {response.total_inference_time_ms}ms")
+
+        # Show sample predictions
+        for pred in response.predictions[:2]:
+            print(f"   Sample: {pred.input_text[:50]}...")
+            print(f"   Prediction: {pred.prediction} (confidence: {pred.confidence:.2f})")
+
+    # Compare model performance
+    if len(model_ids) >= 2:
+        comparison = await service.compare_model_performance(model_ids)
+        print(f"\n🏆 Performance Comparison:")
+        print(f"   Best performer: {comparison.summary.get('best_performer')}")
+        print(f"   Models compared: {len(comparison.model_ids)}")
+
+    # Get cost estimates
+    cost_estimate = await service.get_cost_estimates(model_configs, len(cybersecurity_samples))
+    print(f"\n💰 Cost Analysis:")
+    print(f"   Estimated cost: ${cost_estimate.total_estimated_cost_usd:.4f}")
+    print(f"   Cost by model: {list(cost_estimate.cost_by_model.keys())}")
+
+    # Check service health
+    health = await service.health_check()
+    print(f"\n🏥 Service Health: {health.status}")
+    print(f"   Loaded models: {health.checks['loaded_models']}")
+
+    # Cleanup models
+    for model_id in model_ids:
+        await service.cleanup_model(model_id)
+        print(f"🧹 Cleaned up model: {model_id}")
+
+    await service.shutdown()
+    print("✅ Model service shutdown complete")
+
+# Run the complete workflow
+asyncio.run(complete_model_workflow())
+```
+
+### Performance Monitoring and Optimization
+
+Monitor model performance in real-time:
+
+```python
+import asyncio
+from benchmark.services.model_service import ModelService
+
+async def monitor_model_performance():
+    """Monitor model service performance metrics."""
+
+    service = ModelService(enable_performance_monitoring=True)
+    await service.initialize()
+
+    # Load a model for performance testing
+    config = {
+        "type": "mlx_local",
+        "model_name": "llama2-7b",
+        "name": "performance-test"
+    }
+
+    model_id = await service.load_model(config)
+
+    # Run multiple inference rounds to build metrics
+    test_samples = [
+        "Analyze this network log for security threats",
+        "Is this email a phishing attempt?",
+        "Classify this web request as attack or benign"
+    ]
+
+    for round_num in range(5):
+        print(f"🔄 Performance Round {round_num + 1}")
+
+        # Run batch inference
+        response = await service.predict_batch(
+            model_id,
+            test_samples,
+            batch_size=len(test_samples)
+        )
+
+        # Get real-time performance metrics
+        performance = await service.get_model_performance(model_id)
+        basic_metrics = performance['basic_metrics']
+
+        print(f"   Predictions/sec: {basic_metrics['predictions_per_second']:.2f}")
+        print(f"   Success rate: {basic_metrics['success_rate']:.1%}")
+        print(f"   Avg inference time: {basic_metrics['average_inference_time_ms']:.2f}ms")
+
+        # Get service-level statistics
+        stats = await service.get_service_stats()
+        print(f"   Total models loaded: {stats['loaded_models']}")
+
+        if 'performance_summary' in stats:
+            perf_summary = stats['performance_summary']
+            print(f"   Total predictions: {perf_summary['total_predictions']}")
+
+    await service.cleanup_model(model_id)
+    await service.shutdown()
+
+asyncio.run(monitor_model_performance())
+```
+
+### Multi-Model Comparison Workflows
+
+Compare multiple models on the same cybersecurity tasks:
+
+```python
+import asyncio
+from benchmark.services.model_service import ModelService
+
+async def multi_model_comparison():
+    """Compare multiple models on cybersecurity tasks."""
+
+    service = ModelService(max_models=3)
+    await service.initialize()
+
+    # Load different model types for comparison
+    model_configs = [
+        {"type": "openai_api", "model_name": "gpt-4o-mini", "name": "openai-model"},
+        {"type": "mlx_local", "model_name": "llama2-7b", "name": "local-model"},
+        {"type": "anthropic_api", "model_name": "claude-3-haiku-20240307", "name": "anthropic-model"}
+    ]
+
+    model_ids = []
+    for config in model_configs:
+        model_id = await service.load_model(config)
+        model_ids.append(model_id)
+
+    # Cybersecurity evaluation dataset
+    evaluation_samples = [
+        "admin'; DROP TABLE users; --",
+        "<iframe src='javascript:alert(\"XSS\")'></iframe>",
+        "Welcome to our customer portal",
+        "curl http://malicious.com/steal-data",
+        "User johndoe@company.com logged in successfully",
+        "; cat /etc/passwd > /tmp/stolen.txt",
+        "System maintenance scheduled for tonight",
+        "SELECT username, password FROM accounts WHERE '1'='1"
+    ]
+
+    # Run evaluation on all models
+    model_results = {}
+    for model_id in model_ids:
+        print(f"🧪 Evaluating model: {model_id}")
+
+        response = await service.predict_batch(
+            model_id,
+            evaluation_samples,
+            batch_size=4
+        )
+
+        # Analyze results
+        attack_predictions = sum(
+            1 for pred in response.predictions
+            if pred.prediction == "ATTACK"
+        )
+
+        avg_confidence = sum(
+            pred.confidence for pred in response.predictions
+        ) / len(response.predictions)
+
+        model_results[model_id] = {
+            "attack_predictions": attack_predictions,
+            "benign_predictions": len(evaluation_samples) - attack_predictions,
+            "average_confidence": avg_confidence,
+            "inference_time_ms": response.total_inference_time_ms,
+            "success_rate": response.successful_predictions / response.total_samples
+        }
+
+        print(f"   Attack predictions: {attack_predictions}/{len(evaluation_samples)}")
+        print(f"   Average confidence: {avg_confidence:.2f}")
+        print(f"   Inference time: {response.total_inference_time_ms}ms")
+
+    # Compare models using built-in comparison
+    comparison = await service.compare_model_performance(model_ids)
+
+    print(f"\n🏆 Model Comparison Results:")
+    print(f"   Best performer: {comparison.summary.get('best_performer')}")
+    print(f"   Models evaluated: {len(comparison.model_ids)}")
+
+    # Display detailed comparison
+    for model_id in model_ids:
+        if model_id in comparison.metrics:
+            metrics = comparison.metrics[model_id]['basic_metrics']
+            print(f"\n📊 Model {model_id}:")
+            print(f"   Success rate: {metrics['success_rate']:.1%}")
+            print(f"   Predictions/sec: {metrics['predictions_per_second']:.2f}")
+
+    # Cleanup
+    for model_id in model_ids:
+        await service.cleanup_model(model_id)
+
+    await service.shutdown()
+
+asyncio.run(multi_model_comparison())
+```
+
+---
+
+## 🧪 End-to-End Testing
+
+The system includes comprehensive end-to-end testing capabilities that validate complete workflows from model loading through prediction and cleanup.
+
+### E2E Test Coverage
+
+The E2E testing suite includes **16 comprehensive scenarios**:
+
+#### Data Service E2E Tests (9 scenarios)
+- Complete dataset pipeline with preprocessing
+- Multi-source data loading (local, remote, streaming)
+- Large dataset handling with memory optimization
+- Error recovery and service resilience
+- Concurrent load testing with multiple streams
+- Realistic cybersecurity workflows
+- Integration with preprocessing pipelines
+- Performance benchmarking validation
+- Service health monitoring and diagnostics
+
+#### Model Service E2E Tests (7 scenarios)
+- Complete model lifecycle (load → predict → cleanup)
+- Multi-model comparison workflows
+- Model service resilience and error recovery
+- Realistic cybersecurity evaluation scenarios
+- Cost tracking accuracy validation
+- Performance monitoring integration
+- Configuration service integration
+
+### Running E2E Tests
+
+```bash
+# Run all E2E tests (16 scenarios)
+PYTHONPATH=src poetry run pytest tests/e2e/ -v
+
+# Run data service E2E tests (9 scenarios)
+PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py -v
+
+# Run model service E2E tests (7 scenarios)
+PYTHONPATH=src poetry run pytest tests/e2e/test_model_service_e2e.py -v
+
+# Run specific E2E scenario
+PYTHONPATH=src poetry run pytest tests/e2e/test_model_service_e2e.py::TestModelServiceE2E::test_complete_model_lifecycle -v
+
+# Run with detailed output
+PYTHONPATH=src poetry run pytest tests/e2e/ -v -s --tb=short
+```
+
+### E2E Test Results Analysis
+
+The E2E tests validate these key performance metrics:
+
+#### Data Service Performance
+- **Loading Speed**: >91,000 samples/second for network data
+- **Validation Speed**: >1,200,000 samples/second for quality checks
+- **Memory Efficiency**: 60% reduction through compression
+- **Concurrent Processing**: 8+ simultaneous data streams
+- **Data Quality**: >94% quality scores for generated data
+
+#### Model Service Performance
+- **Local MLX Models**: >8 tokens/sec for 7B models on Apple Silicon
+- **API Models**: <5 second average response time
+- **Memory Usage**: <16GB total for realistic model combinations
+- **Concurrent Processing**: 2-3 models simultaneously
+- **Cost Accuracy**: Precise cost tracking across model types
+
+### Real-World E2E Scenarios
+
+The E2E tests use realistic cybersecurity scenarios:
+
+```python
+# Example from E2E tests: Realistic cybersecurity evaluation
+async def test_realistic_cybersecurity_evaluation():
+    """Complete workflow with realistic cybersecurity data."""
+
+    # Generate realistic UNSW-NB15 network data
+    unsw_samples = generate_unsw_nb15_data(10000)
+
+    # Generate phishing emails
+    phishing_samples = generate_phishing_emails(5000)
+
+    # Generate web attack logs
+    web_samples = generate_web_attack_logs(7500)
+
+    # Load multiple models
+    model_ids = await load_comparison_models()
+
+    # Run comprehensive evaluation
+    results = {}
+    for model_id in model_ids:
+        # Process each dataset type
+        for dataset_name, samples in [
+            ("network_traffic", unsw_samples),
+            ("phishing_emails", phishing_samples),
+            ("web_attacks", web_samples)
+        ]:
+            response = await service.predict_batch(
+                model_id, samples, batch_size=8
+            )
+
+            # Calculate metrics
+            accuracy = calculate_accuracy(response.predictions, true_labels)
+            precision = calculate_precision(response.predictions, true_labels)
+            recall = calculate_recall(response.predictions, true_labels)
+
+            results[f"{model_id}_{dataset_name}"] = {
+                "accuracy": accuracy,
+                "precision": precision,
+                "recall": recall,
+                "samples_processed": len(samples)
+            }
+
+    # Validate results meet quality thresholds
+    for result_key, metrics in results.items():
+        assert metrics["accuracy"] >= 0.7  # Minimum accuracy threshold
+        assert metrics["precision"] >= 0.6  # Minimum precision threshold
+        assert metrics["recall"] >= 0.6     # Minimum recall threshold
+
+    return results
+```
+
+### E2E Performance Monitoring
+
+The E2E tests include comprehensive performance monitoring:
+
+```bash
+# Run performance-focused E2E tests
+PYTHONPATH=src poetry run pytest tests/performance/ -v
+
+# Monitor E2E performance metrics
+PYTHONPATH=src poetry run pytest tests/e2e/ --cov=src/benchmark --cov-report=html -v
+
+# Generate performance reports
+PYTHONPATH=src poetry run pytest tests/performance/test_model_service_performance.py::TestModelServicePerformance::test_benchmark_realistic_workloads -v
+```
+
+The performance monitoring validates:
+- Model loading and initialization times
+- Batch inference throughput rates
+- Memory usage patterns and optimization
+- Concurrent processing capabilities
+- Error recovery times and success rates
+- Cost tracking accuracy
+- Service health maintenance under load
+
+---
+
 ## 🧪 Testing & Validation
 
 The system includes comprehensive testing tools to validate everything works correctly.
@@ -1020,24 +1438,31 @@ The system includes comprehensive testing tools to validate everything works cor
 ### Running Tests
 
 ```bash
-# Run comprehensive test suite (180+ tests)
+# Run comprehensive test suite (200+ tests)
 poetry run pytest tests/ -v
 
 # Run specific test categories
 poetry run pytest tests/unit/ -v                          # Unit tests
 poetry run pytest tests/integration/ -v                   # Integration tests
-PYTHONPATH=src poetry run pytest tests/e2e/ -v          # End-to-end tests
-PYTHONPATH=src poetry run pytest tests/performance/ -v  # Performance tests
+PYTHONPATH=src poetry run pytest tests/e2e/ -v          # End-to-end tests (16 scenarios)
+PYTHONPATH=src poetry run pytest tests/performance/ -v  # Performance tests (17 scenarios)
 
 # Run tests with coverage report
 poetry run pytest tests/ --cov=src/benchmark --cov-report=html
 
-# Run specific E2E scenarios
-PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py::TestDataServiceE2E::test_complete_dataset_pipeline -v
-PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py::TestDataServiceE2E::test_realistic_cybersecurity_workflows -v
+# Run E2E test suites
+PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py -v      # 9 data service scenarios
+PYTHONPATH=src poetry run pytest tests/e2e/test_model_service_e2e.py -v     # 7 model service scenarios
 
 # Run performance benchmarks
-PYTHONPATH=src poetry run pytest tests/performance/test_data_service_performance.py -v
+PYTHONPATH=src poetry run pytest tests/performance/test_data_service_performance.py -v    # 8 scenarios
+PYTHONPATH=src poetry run pytest tests/performance/test_model_service_performance.py -v   # 9 scenarios
+
+# Run specific comprehensive E2E scenarios
+PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py::TestDataServiceE2E::test_complete_dataset_pipeline -v
+PYTHONPATH=src poetry run pytest tests/e2e/test_data_service_e2e.py::TestDataServiceE2E::test_realistic_cybersecurity_workflows -v
+PYTHONPATH=src poetry run pytest tests/e2e/test_model_service_e2e.py::TestModelServiceE2E::test_complete_model_lifecycle -v
+PYTHONPATH=src poetry run pytest tests/e2e/test_model_service_e2e.py::TestModelServiceE2E::test_realistic_cybersecurity_evaluation -v
 
 # Run data generation tests
 poetry run pytest tests/unit/test_data_generators.py -v

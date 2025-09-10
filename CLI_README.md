@@ -248,6 +248,15 @@ benchmark config validate config.yaml
    benchmark config show config.yaml
    ```
 
+6. **Test complete E2E pipeline**:
+   ```bash
+   # Test data service (9 E2E scenarios)
+   PYTHONPATH=src pytest tests/e2e/test_data_service_e2e.py -v
+
+   # Test model service (7 E2E scenarios)
+   PYTHONPATH=src pytest tests/e2e/test_model_service_e2e.py -v
+   ```
+
 ## 🎯 Best Practices
 
 - **Always validate** configurations before running experiments
@@ -320,6 +329,208 @@ The CLI integrates seamlessly with:
 - **Rich Output**: Beautiful terminal formatting
 - **Error Handling**: Comprehensive error reporting with suggestions
 - **Memory Management**: Intelligent memory usage optimization
+
+## 🤖 Model Service Integration
+
+### Model Management Commands
+
+#### `benchmark model load <model_config>`
+Load and initialize models with performance monitoring:
+
+```bash
+# Load OpenAI API model
+benchmark model load configs/models/openai_gpt4o.yaml
+
+# Load MLX local model with performance tracking
+benchmark model load configs/models/mlx_llama2_7b.yaml --enable-monitoring
+
+# Load multiple models for comparison
+benchmark model load configs/models/*.yaml --batch-load
+
+# Example output:
+# 🤖 Loading model: GPT-4o-mini
+# ✅ Model loaded successfully (ID: openai-gpt4o-12345)
+# 📊 Memory usage: 2.1GB
+# ⚡ Initialization time: 3.2s
+# 🏥 Health status: HEALTHY
+```
+
+#### `benchmark model predict <model_id> <samples_file>`
+Run batch inference with cybersecurity samples:
+
+```bash
+# Single model inference
+benchmark model predict openai-gpt4o-12345 data/cybersecurity_samples.jsonl
+
+# Batch processing with custom batch size
+benchmark model predict mlx-llama-67890 data/phishing_emails.json --batch-size 8
+
+# Multi-model comparison
+benchmark model predict --models openai-gpt4o-12345,mlx-llama-67890 data/attack_samples.json
+
+# Example output:
+# 🧪 Processing 100 cybersecurity samples
+# 📊 Batch 1/13 (8 samples): 7 ATTACK, 1 BENIGN predictions
+# ⚡ Processing speed: 45 samples/minute
+# 🎯 Attack detection accuracy: 94.2%
+# ✅ Batch inference completed: 2.3 minutes total
+```
+
+#### `benchmark model compare <model_ids>`
+Compare multiple models on the same cybersecurity tasks:
+
+```bash
+# Compare two models
+benchmark model compare openai-gpt4o-12345,mlx-llama-67890
+
+# Compare with detailed performance metrics
+benchmark model compare openai-gpt4o-12345,mlx-llama-67890,anthropic-claude-54321 --detailed
+
+# Export comparison results
+benchmark model compare model1,model2,model3 --export-json comparison_results.json
+
+# Example output:
+# 🏆 Model Performance Comparison:
+#   Best performer: mlx-llama-67890 (95.1% accuracy)
+#   Fastest inference: openai-gpt4o-12345 (0.8s avg)
+#   Most cost-effective: mlx-llama-67890 ($0.00/1k tokens)
+#
+# 📈 Detailed Metrics:
+#   openai-gpt4o-12345: 92.3% accuracy, $0.045/1k tokens
+#   mlx-llama-67890: 95.1% accuracy, $0.00/1k tokens
+#   anthropic-claude-54321: 93.7% accuracy, $0.032/1k tokens
+```
+
+#### `benchmark model health-check <model_id>`
+Monitor model service health and performance:
+
+```bash
+# Basic health check
+benchmark model health-check openai-gpt4o-12345
+
+# Detailed health diagnostics
+benchmark model health-check mlx-llama-67890 --detailed
+
+# Health check all loaded models
+benchmark model health-check --all
+
+# Example output:
+# 🏥 Model Health Report:
+#   Model ID: mlx-llama-67890
+#   Status: HEALTHY
+#   Memory usage: 6.8GB / 16GB (42.5%)
+#   Average response time: 0.95s
+#   Success rate: 99.2%
+#   Uptime: 2h 34m
+#   Total predictions: 1,847
+```
+
+### Performance Monitoring Commands
+
+#### `benchmark model performance <model_id>`
+Monitor model performance and optimization:
+
+```bash
+# Performance report
+benchmark model performance mlx-llama-67890
+
+# Real-time performance monitoring
+benchmark model performance openai-gpt4o-12345 --real-time --interval 30
+
+# Performance comparison across models
+benchmark model performance --compare-all --export-csv performance_report.csv
+
+# Example output:
+# 📊 Model Performance Report:
+#   🚀 Inference speed: 8.2 tokens/second (✅ EXCELLENT)
+#   ✅ Success rate: 99.2%
+#   💾 Memory efficiency: 42.5% usage (6.8GB / 16GB)
+#   ⚡ Hardware optimization: Active (Apple M4 Pro)
+#   🎯 Accuracy on cybersecurity tasks: 95.1%
+#   💰 Cost efficiency: $0.00/1k tokens (local model)
+```
+
+#### `benchmark model cost-estimate <model_configs>`
+Estimate costs for model usage scenarios:
+
+```bash
+# Cost estimate for specific model
+benchmark model cost-estimate configs/models/openai_gpt4o.yaml --samples 10000
+
+# Compare costs across models
+benchmark model cost-estimate configs/models/*.yaml --samples 50000 --compare
+
+# Monthly cost projection
+benchmark model cost-estimate configs/models/api_models.yaml --monthly-projection --daily-samples 1000
+
+# Example output:
+# 💰 Model Cost Estimation:
+#   Sample size: 10,000 cybersecurity samples
+#
+#   OpenAI GPT-4o-mini: $0.45 ($0.045/1k tokens)
+#   Anthropic Claude-3-Haiku: $0.32 ($0.032/1k tokens)
+#   MLX Llama2-7B: $0.00 (local model)
+#
+# 📊 Monthly projection (30k samples):
+#   Most cost-effective: MLX Llama2-7B ($0.00/month)
+#   Best accuracy/cost ratio: Claude-3-Haiku (93.7%/$0.96)
+```
+
+### Model Service Testing Commands
+
+#### `benchmark test model-service <test_suite>`
+Execute comprehensive model service test scenarios:
+
+```bash
+# Run complete model service E2E tests
+benchmark test model-service --suite e2e
+
+# Run specific test scenarios
+benchmark test model-service --scenarios lifecycle,comparison,resilience
+
+# Run with realistic cybersecurity datasets
+benchmark test model-service --dataset-size large --realistic-scenarios
+
+# Example output:
+# 🧪 E2E Testing: Complete Model Service Pipeline
+# ✅ Test 1/7: Complete model lifecycle (PASSED)
+# ✅ Test 2/7: Multi-model comparison workflow (PASSED)
+# ✅ Test 3/7: Model service resilience (PASSED)
+# ✅ Test 4/7: Realistic cybersecurity evaluation (PASSED)
+# ✅ Test 5/7: Cost tracking accuracy (PASSED)
+# ✅ Test 6/7: Performance monitoring integration (PASSED)
+# ✅ Test 7/7: Configuration service integration (PASSED)
+#
+# 📊 E2E Test Results Summary:
+#   ✅ All 7 scenarios passed
+#   ⚡ Local MLX models: >8 tokens/sec achieved
+#   📈 API models: <5s average response time
+#   💾 Memory usage: <16GB for realistic combinations
+#   🏆 Overall grade: EXCELLENT
+```
+
+#### `benchmark test performance <performance_suite>`
+Run performance-specific testing scenarios:
+
+```bash
+# Performance test suite
+benchmark test performance --suite model-service
+
+# Hardware optimization tests
+benchmark test performance --hardware-specific --platform apple_m4_pro
+
+# Concurrent processing tests
+benchmark test performance --concurrent-models --max-models 3
+
+# Example output:
+# ⚡ Performance Testing: Model Service Optimization
+# 🚀 Hardware optimization: ACTIVE (Apple M4 Pro detected)
+# 📊 Local MLX performance: 8.2 tokens/sec (✅ EXCELLENT)
+# ✅ API model performance: 2.1s avg response (✅ TARGET MET)
+# 💾 Memory efficiency: <16GB with 3 models loaded
+# 🔄 Concurrent processing: 2-3 models simultaneously
+# 🏆 Performance grade: OUTSTANDING
+```
 
 ## 📊 Data Service Integration
 

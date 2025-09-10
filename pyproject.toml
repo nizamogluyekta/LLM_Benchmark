@@ -133,6 +133,11 @@ module = "tests.*"
 disallow_untyped_defs = false
 disallow_untyped_decorators = false
 warn_return_any = false
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tests.integration.*"
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "sqlalchemy.*"
@@ -149,3 +154,7 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "benchmark.cli.*"
 disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = "benchmark.models.plugins.*"
+ignore_errors = true

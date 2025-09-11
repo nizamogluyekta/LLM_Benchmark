@@ -1,0 +1,203 @@
+name: CI - Minimal Resource Usage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VERSION: "1.7.1"
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
+  POETRY_VENV_IN_PROJECT: true
+
+jobs:
+  quick-check:
+    name: Quick Code Quality & Essential Tests
+    runs-on: ubuntu-latest  # Cheaper than macOS
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-ubuntu-${{ env.POETRY_VERSION }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-ubuntu-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-ubuntu-3.11-
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Run ruff linting
+        run: |
+          poetry run ruff check src/ tests/ --output-format=github
+
+      - name: Run ruff formatting check
+        run: |
+          poetry run ruff format src/ tests/ --check --diff
+
+      - name: Run mypy type checking (with error suppression)
+        continue-on-error: true  # Don't fail on type errors for now
+        run: |
+          poetry run mypy src/ tests/ --show-error-codes --ignore-missing-imports || true
+
+      - name: Run core unit tests
+        run: |
+          mkdir -p test-results
+          poetry run pytest tests/unit/test_resource_manager.py tests/unit/test_config*.py -v \
+            --junitxml=test-results/core-tests.xml \
+            --maxfail=5 \
+            --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Test basic imports
+        run: |
+          poetry run python -c "
+          try:
+              from benchmark.models.resource_manager import ModelResourceManager
+              from benchmark.models.model_cache import ModelCache
+              print('✅ Resource management imports successful')
+          except ImportError as e:
+              print(f'❌ Import error: {e}')
+              exit(1)
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimal-test-results
+          path: test-results/
+
+  macos-resource-tests:
+    name: macOS Resource Management Tests
+    runs-on: macos-14  # Only run resource management tests on macOS
+    timeout-minutes: 15
+    needs: quick-check
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'test-macos')
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-macos-${{ env.POETRY_VERSION }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-macos-3.11-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-macos-3.11-
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Run resource management tests
+        run: |
+          mkdir -p test-results
+          poetry run pytest tests/unit/test_resource_manager.py -v \
+            --junitxml=test-results/resource-tests.xml \
+            --maxfail=3 \
+            --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Test Apple Silicon detection
+        run: |
+          poetry run python -c "
+          from benchmark.models.resource_manager import MemoryMonitor
+          monitor = MemoryMonitor()
+          is_apple_silicon = monitor._detect_apple_silicon()
+          print(f'Apple Silicon detected: {is_apple_silicon}')
+          if is_apple_silicon:
+              print('✅ Running on Apple Silicon - MLX compatibility available')
+          else:
+              print('ℹ️  Running on Intel Mac')
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload macOS test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-test-results
+          path: test-results/

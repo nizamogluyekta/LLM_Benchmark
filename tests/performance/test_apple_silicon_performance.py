@@ -343,6 +343,7 @@ class TestAppleSiliconPerformance:
         return optimization_results
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_concurrent_processing_performance(self, benchmark_setup):
         """Test performance under concurrent load."""
         optimizer, queue = benchmark_setup
@@ -473,6 +474,7 @@ class TestAppleSiliconPerformance:
         platform.system() != "Darwin", reason="Requires macOS for real hardware testing"
     )
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_real_apple_silicon_performance(self, benchmark_setup):
         """Test performance on real Apple Silicon hardware."""
         optimizer, queue = benchmark_setup
@@ -641,6 +643,7 @@ class TestPerformanceComparison:
         return comparison_results
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_resource_utilization_comparison(self, comparison_setup):
         """Compare resource utilization between optimized and basic approaches."""
         (optimizer, optimized_queue), basic_queue = comparison_setup

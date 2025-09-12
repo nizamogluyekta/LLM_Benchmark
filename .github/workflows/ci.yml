@@ -19,13 +19,13 @@ env:
 jobs:
   code-quality:
     name: Code Quality (Linting & Type Check)
-    runs-on: macos-14  # Apple Silicon for MLX compatibility
-    timeout-minutes: 15
+    runs-on: ubuntu-latest  # ✅ Changed to Linux - much faster and free
+    timeout-minutes: 10     # ✅ Reduced timeout for faster feedback
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]  # Reduced to single version to save resources
+        python-version: ["3.11"]
 
     steps:
       - name: Check out repository
@@ -70,17 +70,18 @@ jobs:
           restore-keys: |
             poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install dependencies
+      - name: Install dependencies (excluding MLX)
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          poetry install --with dev --no-root
+          # Install without MLX dependencies for Linux
+          poetry install --with dev --no-root --extras "dev test"
 
       - name: Install project
         run: poetry install --only-root
 
       - name: Run ruff linting
         run: |
-          poetry run ruff check src/ tests/ --format=github
+          poetry run ruff check src/ tests/
 
       - name: Run ruff formatting check
         run: |
@@ -104,16 +105,16 @@ jobs:
           name: bandit-report-${{ matrix.python-version }}
           path: bandit-report.json
 
-  unit-tests:
-    name: Unit Tests
-    runs-on: macos-14  # Apple Silicon for MLX compatibility
-    timeout-minutes: 20
+  unit-tests-linux:
+    name: Unit Tests (Linux)
+    runs-on: ubuntu-latest  # ✅ Most unit tests on Linux
+    timeout-minutes: 15
     needs: code-quality
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]  # Reduced to single version to save resources
+        python-version: ["3.11"]
 
     steps:
       - name: Check out repository
@@ -158,7 +159,110 @@ jobs:
           restore-keys: |
             poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
 
-      - name: Install dependencies
+      - name: Install dependencies (excluding MLX)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root --extras "dev test"
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Create test environment
+        run: |
+          mkdir -p test-results
+          mkdir -p coverage-reports
+
+      - name: Run unit tests (excluding Apple Silicon specific)
+        run: |
+          poetry run pytest tests/unit/ \
+            --ignore=tests/unit/test_performance_optimization.py \
+            --ignore=tests/unit/test_mlx_integration.py \
+            --cov=src/benchmark \
+            --cov-report=xml:coverage-reports/coverage-unit-linux.xml \
+            --cov-report=html:coverage-reports/html-unit-linux \
+            --cov-report=term-missing \
+            --junitxml=test-results/unit-tests-linux.xml \
+            --maxfail=10 \
+            -v \
+            --tb=short
+        env:
+          PYTEST_CURRENT_TEST: true
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload unit test results (Linux)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results-linux-${{ matrix.python-version }}
+          path: |
+            test-results/
+            coverage-reports/
+
+      - name: Upload coverage to Codecov (Linux)
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage-reports/coverage-unit-linux.xml
+          flags: unit-tests-linux
+          name: unit-tests-linux-${{ matrix.python-version }}
+          fail_ci_if_error: false
+
+  apple-silicon-tests:
+    name: Apple Silicon Tests (macOS)
+    runs-on: macos-14      # ✅ Only use macOS for Apple Silicon specific tests
+    timeout-minutes: 25
+    needs: code-quality
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' # ✅ Run less frequently
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies (including MLX)
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           poetry install --with dev --no-root
@@ -171,49 +275,88 @@ jobs:
           mkdir -p test-results
           mkdir -p coverage-reports
 
-      - name: Run unit tests with coverage
+      - name: Run Apple Silicon optimization tests
         run: |
-          poetry run pytest tests/unit/ \
-            --cov=src/benchmark \
-            --cov-report=xml:coverage-reports/coverage-unit.xml \
-            --cov-report=html:coverage-reports/html-unit \
+          poetry run pytest tests/unit/test_performance_optimization.py \
+            --cov=src/benchmark/models/optimization \
+            --cov=src/benchmark/services/model_service \
+            --cov-report=xml:coverage-reports/coverage-apple-silicon.xml \
+            --cov-report=html:coverage-reports/html-apple-silicon \
             --cov-report=term-missing \
-            --junitxml=test-results/unit-tests.xml \
-            --maxfail=10 \
+            --junitxml=test-results/apple-silicon-tests.xml \
+            --maxfail=5 \
             -v \
             --tb=short
         env:
           PYTEST_CURRENT_TEST: true
           PYTHONPATH: ${{ github.workspace }}/src
 
-      - name: Upload unit test results
+      - name: Run Apple Silicon performance benchmarks (quick)
+        run: |
+          poetry run pytest tests/performance/test_apple_silicon_performance.py \
+            -m "not slow" \
+            --junitxml=test-results/apple-silicon-performance.xml \
+            --maxfail=3 \
+            -v \
+            --tb=short \
+            --timeout=300
+        env:
+          PYTEST_CURRENT_TEST: true
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Test Apple Silicon hardware detection
+        run: |
+          poetry run python -c "
+          import asyncio
+          from benchmark.models.optimization import AppleSiliconOptimizer
+
+          async def test():
+              optimizer = AppleSiliconOptimizer()
+              await optimizer.initialize()
+              print(f'✅ Hardware: {optimizer.hardware_info.type.value}')
+              print(f'✅ Cores: {optimizer.hardware_info.performance_cores}P + {optimizer.hardware_info.efficiency_cores}E')
+              print(f'✅ Memory: {optimizer.hardware_info.unified_memory_gb}GB')
+
+              # Test batch optimization
+              llm_config = optimizer.get_optimal_batch_size('test_model', 'llm')
+              embedding_config = optimizer.get_optimal_batch_size('test_model', 'embedding')
+
+              print(f'✅ LLM batch size: {llm_config.batch_size}')
+              print(f'✅ Embedding batch size: {embedding_config.batch_size}')
+
+          asyncio.run(test())
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload Apple Silicon test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-test-results-${{ matrix.python-version }}
+          name: apple-silicon-test-results-${{ matrix.python-version }}
           path: |
             test-results/
             coverage-reports/
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage to Codecov (Apple Silicon)
         if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
-          file: coverage-reports/coverage-unit.xml
-          flags: unit-tests
-          name: unit-tests-${{ matrix.python-version }}
+          file: coverage-reports/coverage-apple-silicon.xml
+          flags: apple-silicon-tests
+          name: apple-silicon-tests-${{ matrix.python-version }}
           fail_ci_if_error: false
 
   test-data-generators:
     name: Test Data Generators
-    runs-on: macos-14
-    timeout-minutes: 10
+    runs-on: ubuntu-latest  # ✅ Changed to Linux - data generators don't need macOS
+    timeout-minutes: 8
     needs: code-quality
 
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]  # Reduced to single version to save resources
+        python-version: ["3.11"]
 
     steps:
       - name: Check out repository
@@ -307,3 +450,85 @@ jobs:
           path: |
             tests/utils/sample_output/
             test-results/data-generators.xml
+
+  # Optional: MLX Integration Tests (only on pushes to main)
+  mlx-integration-tests:
+    name: MLX Integration Tests
+    runs-on: macos-14
+    timeout-minutes: 15
+    needs: [unit-tests-linux, apple-silicon-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' # ✅ Only on main branch pushes
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry installation
+        id: cache-poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/pypoetry
+            ~/.local/bin/poetry
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ matrix.python-version }}
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
+      - name: Cache Poetry dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ${{ env.POETRY_CACHE_DIR }}
+          key: poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
+
+      - name: Install dependencies (including MLX)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          poetry install --with dev --no-root
+
+      - name: Install project
+        run: poetry install --only-root
+
+      - name: Run MLX integration tests
+        run: |
+          mkdir -p test-results
+          poetry run pytest tests/integration/test_mlx_integration.py \
+            --junitxml=test-results/mlx-integration.xml \
+            --maxfail=3 \
+            -v \
+            --tb=short \
+            --timeout=600
+        env:
+          PYTEST_CURRENT_TEST: true
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload MLX integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlx-integration-test-results-${{ matrix.python-version }}
+          path: test-results/

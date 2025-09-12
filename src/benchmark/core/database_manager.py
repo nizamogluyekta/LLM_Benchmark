@@ -171,7 +171,8 @@ class DatabaseManager:
             return
 
         if self._closed:
-            raise DatabaseConnectionError("Cannot initialize closed DatabaseManager")
+            # Reset the closed state to allow re-initialization
+            self._closed = False
 
         try:
             # Create async engine with appropriate configuration
@@ -445,9 +446,8 @@ class DatabaseManager:
             import shutil
 
             # Extract database path from URL
-            db_path = self.database_url.replace("sqlite+aiosqlite:///", "").replace(
-                "sqlite:///", ""
-            )
+            db_url_str = str(self.database_url)
+            db_path = db_url_str.replace("sqlite+aiosqlite:///", "").replace("sqlite:///", "")
 
             if ":memory:" in db_path:
                 raise DatabaseError(

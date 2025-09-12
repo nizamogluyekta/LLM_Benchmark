@@ -597,17 +597,17 @@ class TestPerformanceRegression:
             large_metrics = performance_benchmark.end_benchmark()
 
             # Assert performance requirements
-            assert (
-                small_metrics["execution_time_ms"] < MAX_SMALL_CONFIG_TIME_MS
-            ), f"Small config took {small_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_SMALL_CONFIG_TIME_MS}ms"
+            assert small_metrics["execution_time_ms"] < MAX_SMALL_CONFIG_TIME_MS, (
+                f"Small config took {small_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_SMALL_CONFIG_TIME_MS}ms"
+            )
 
-            assert (
-                medium_metrics["execution_time_ms"] < MAX_MEDIUM_CONFIG_TIME_MS
-            ), f"Medium config took {medium_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_MEDIUM_CONFIG_TIME_MS}ms"
+            assert medium_metrics["execution_time_ms"] < MAX_MEDIUM_CONFIG_TIME_MS, (
+                f"Medium config took {medium_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_MEDIUM_CONFIG_TIME_MS}ms"
+            )
 
-            assert (
-                large_metrics["execution_time_ms"] < MAX_LARGE_CONFIG_TIME_MS
-            ), f"Large config took {large_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_LARGE_CONFIG_TIME_MS}ms"
+            assert large_metrics["execution_time_ms"] < MAX_LARGE_CONFIG_TIME_MS, (
+                f"Large config took {large_metrics['execution_time_ms']:.2f}ms, max allowed: {MAX_LARGE_CONFIG_TIME_MS}ms"
+            )
 
             print("Performance baseline test passed:")
             print(
@@ -637,8 +637,8 @@ class TestPerformanceRegression:
 
             # Should achieve at least 60% hit rate with repeated loads
             MIN_HIT_RATE = 60.0
-            assert (
-                hit_rate >= MIN_HIT_RATE
-            ), f"Cache hit rate {hit_rate:.1f}% below minimum {MIN_HIT_RATE}%"
+            assert hit_rate >= MIN_HIT_RATE, (
+                f"Cache hit rate {hit_rate:.1f}% below minimum {MIN_HIT_RATE}%"
+            )
 
             print(f"Cache hit rate baseline test passed: {hit_rate:.1f}% >= {MIN_HIT_RATE}%")

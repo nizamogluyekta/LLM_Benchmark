@@ -233,9 +233,9 @@ class TestMLXIntegration:
             ]
 
             prompt_lower = prompt.lower()
-            assert any(
-                keyword in prompt_lower for keyword in security_keywords
-            ), f"Prompt lacks security context for sample: {sample[:50]}..."
+            assert any(keyword in prompt_lower for keyword in security_keywords), (
+                f"Prompt lacks security context for sample: {sample[:50]}..."
+            )
 
             # Check for structured output requirements
             assert "Classification:" in prompt

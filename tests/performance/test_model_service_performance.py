@@ -503,9 +503,9 @@ class TestModelServicePerformance:
         efficiency_gain = best_batch_throughput / individual_throughput
 
         # Assertions for batch efficiency
-        assert (
-            efficiency_gain >= 1.5
-        ), f"Batch processing only {efficiency_gain:.2f}x more efficient"
+        assert efficiency_gain >= 1.5, (
+            f"Batch processing only {efficiency_gain:.2f}x more efficient"
+        )
 
         # Larger batches should generally be more efficient (with some exceptions)
         batch_8_throughput = batch_results[8]["throughput"]
@@ -600,9 +600,9 @@ class TestModelServicePerformance:
         loading_time = time.time() - loading_start
 
         # Performance assertions for optimized loading
-        assert (
-            loading_time <= strategy.estimated_loading_time_seconds * 2
-        ), f"Loading took {loading_time:.2f}s vs estimated {strategy.estimated_loading_time_seconds:.2f}s"
+        assert loading_time <= strategy.estimated_loading_time_seconds * 2, (
+            f"Loading took {loading_time:.2f}s vs estimated {strategy.estimated_loading_time_seconds:.2f}s"
+        )
 
         # Verify all models are functional
         test_sample = "SELECT * FROM users"
@@ -703,12 +703,12 @@ class TestModelServicePerformance:
 
         # Performance assertions for realistic workloads
         assert total_duration <= 30.0, f"Realistic workload took {total_duration:.2f}s"
-        assert (
-            overall_throughput >= 1.5
-        ), f"Overall throughput {overall_throughput:.2f} samples/sec too low"
-        assert all(
-            r["successful"] == r["samples"] for r in workload_results
-        ), "Some predictions failed"
+        assert overall_throughput >= 1.5, (
+            f"Overall throughput {overall_throughput:.2f} samples/sec too low"
+        )
+        assert all(r["successful"] == r["samples"] for r in workload_results), (
+            "Some predictions failed"
+        )
 
         # Log benchmark report for analysis
         print("\n" + "=" * 60)
@@ -766,12 +766,12 @@ class TestModelServicePerformance:
             )
 
             # Assertions for monitoring overhead
-            assert (
-                overhead_percentage <= 10.0
-            ), f"Performance monitoring adds {overhead_percentage:.1f}% overhead"
-            assert (
-                monitoring_time <= no_monitoring_time * 1.15
-            ), "Performance monitoring significantly impacts performance"
+            assert overhead_percentage <= 10.0, (
+                f"Performance monitoring adds {overhead_percentage:.1f}% overhead"
+            )
+            assert monitoring_time <= no_monitoring_time * 1.15, (
+                "Performance monitoring significantly impacts performance"
+            )
 
         finally:
             await non_monitoring_service.shutdown()

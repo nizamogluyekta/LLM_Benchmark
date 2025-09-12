@@ -421,9 +421,9 @@ class TestLoadProgressTracking:
 
         # Verify file is actually large enough
         actual_size = file_path.stat().st_size
-        assert (
-            actual_size > loader.PROGRESS_THRESHOLD_BYTES
-        ), f"File size {actual_size} should exceed {loader.PROGRESS_THRESHOLD_BYTES}"
+        assert actual_size > loader.PROGRESS_THRESHOLD_BYTES, (
+            f"File size {actual_size} should exceed {loader.PROGRESS_THRESHOLD_BYTES}"
+        )
 
         # Add progress callback to track calls
         progress_callback = Mock()

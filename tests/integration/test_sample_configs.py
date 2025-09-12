@@ -234,15 +234,15 @@ class TestSampleConfigurations:
 
             for env_var in env_vars:
                 # Check format: either VAR_NAME or VAR_NAME:default
-                assert (
-                    ":" in env_var or env_var.replace("_", "").isalnum()
-                ), f"Invalid env var format in {config_file}: ${{{env_var}}}"
+                assert ":" in env_var or env_var.replace("_", "").isalnum(), (
+                    f"Invalid env var format in {config_file}: ${{{env_var}}}"
+                )
 
                 if ":" in env_var:
                     var_name, default = env_var.split(":", 1)
-                    assert var_name.replace(
-                        "_", ""
-                    ).isalnum(), f"Invalid env var name in {config_file}: {var_name}"
+                    assert var_name.replace("_", "").isalnum(), (
+                        f"Invalid env var name in {config_file}: {var_name}"
+                    )
 
     def test_all_configs_have_required_fields(self, config_loader, configs_dir):
         """Test that all experiment configs have required fields."""

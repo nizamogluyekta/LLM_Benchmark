@@ -253,12 +253,12 @@ class TestAppleSiliconPerformance:
 
         # Verify performance characteristics
         for batch_size, result in results.items():
-            assert (
-                result["success_rate"] >= 0.9
-            ), f"Success rate too low for batch size {batch_size}"
-            assert (
-                result["requests_per_second"] > 0
-            ), f"No throughput measured for batch size {batch_size}"
+            assert result["success_rate"] >= 0.9, (
+                f"Success rate too low for batch size {batch_size}"
+            )
+            assert result["requests_per_second"] > 0, (
+                f"No throughput measured for batch size {batch_size}"
+            )
 
         # Larger batches should generally be more efficient (up to a point)
         assert results[4]["requests_per_second"] >= results[1]["requests_per_second"] * 0.8
@@ -284,9 +284,9 @@ class TestAppleSiliconPerformance:
         # Verify latency requirements
         assert latency_stats["mean_latency_ms"] < 5000, "Mean latency too high"
         assert latency_stats["p95_latency_ms"] < 8000, "P95 latency too high"
-        assert (
-            latency_stats["std_dev_ms"] < latency_stats["mean_latency_ms"]
-        ), "High latency variance"
+        assert latency_stats["std_dev_ms"] < latency_stats["mean_latency_ms"], (
+            "High latency variance"
+        )
 
         return latency_stats
 
@@ -336,9 +336,9 @@ class TestAppleSiliconPerformance:
                 ]
                 max_efficiency = max(efficiency_values)
                 min_efficiency = min(efficiency_values)
-                assert (
-                    max_efficiency > min_efficiency * 1.5
-                ), f"Insufficient batch efficiency improvement for {model_type}"
+                assert max_efficiency > min_efficiency * 1.5, (
+                    f"Insufficient batch efficiency improvement for {model_type}"
+                )
 
         return optimization_results
 
@@ -400,9 +400,9 @@ class TestAppleSiliconPerformance:
             ]
 
             # Should see some scaling benefit (not necessarily linear due to overhead)
-            assert (
-                multi_throughput >= single_throughput * 1.5
-            ), "Insufficient scaling with concurrency"
+            assert multi_throughput >= single_throughput * 1.5, (
+                "Insufficient scaling with concurrency"
+            )
 
         return concurrent_results
 
@@ -530,15 +530,15 @@ class TestAppleSiliconPerformance:
 
             # Verify that real hardware provides reasonable performance
             for model_type, results in real_hw_results.items():
-                assert (
-                    results["throughput"]["success_rate"] >= 0.9
-                ), f"Low success rate for {model_type}"
-                assert (
-                    results["throughput"]["requests_per_second"] > 1.0
-                ), f"Very low throughput for {model_type}"
-                assert (
-                    results["latency"]["mean_latency_ms"] < 10000
-                ), f"Very high latency for {model_type}"
+                assert results["throughput"]["success_rate"] >= 0.9, (
+                    f"Low success rate for {model_type}"
+                )
+                assert results["throughput"]["requests_per_second"] > 1.0, (
+                    f"Very low throughput for {model_type}"
+                )
+                assert results["latency"]["mean_latency_ms"] < 10000, (
+                    f"Very high latency for {model_type}"
+                )
 
             return real_hw_results
         else:
@@ -636,9 +636,9 @@ class TestPerformanceComparison:
             basic_success = results["basic"]["success_rate"]
 
             # At minimum, optimized version should be as reliable as basic
-            assert (
-                optimized_success >= basic_success * 0.95
-            ), f"Optimized version less reliable for {config_name}"
+            assert optimized_success >= basic_success * 0.95, (
+                f"Optimized version less reliable for {config_name}"
+            )
 
         return comparison_results
 

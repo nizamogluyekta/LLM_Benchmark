@@ -191,9 +191,9 @@ class TestEnvironmentVariableResolution:
 
             for input_val, expected in test_cases:
                 result = service._convert_env_value_type(input_val)
-                assert (
-                    result == expected
-                ), f"Failed for input '{input_val}': expected {expected}, got {result}"
+                assert result == expected, (
+                    f"Failed for input '{input_val}': expected {expected}, got {result}"
+                )
 
     def test_get_required_env_vars(self, env_variables):
         """Test extraction of required environment variables."""
@@ -411,9 +411,9 @@ class TestSensitiveDataMasking:
                 assert service._is_sensitive_key(key), f"'{key}' should be detected as sensitive"
 
             for key in non_sensitive_keys:
-                assert not service._is_sensitive_key(
-                    key
-                ), f"'{key}' should not be detected as sensitive"
+                assert not service._is_sensitive_key(key), (
+                    f"'{key}' should not be detected as sensitive"
+                )
 
 
 class TestEnvironmentVariableIntegration:

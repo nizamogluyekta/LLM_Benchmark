@@ -83,10 +83,49 @@ jobs:
         run: |
           poetry run mypy src/ tests/ --show-error-codes --ignore-missing-imports || true
 
+      - name: Debug Python path and module structure
+        run: |
+          echo "=== Current working directory ==="
+          pwd
+          echo "=== Python path ==="
+          poetry run python -c "import sys; print('\n'.join(sys.path))"
+          echo "=== PYTHONPATH environment variable ==="
+          echo "PYTHONPATH: $PYTHONPATH"
+          echo "=== Source directory structure ==="
+          ls -la src/
+          echo "=== Benchmark module structure ==="
+          ls -la src/benchmark/
+          echo "=== Models directory structure ==="
+          ls -la src/benchmark/models/
+          echo "=== Test import attempt ==="
+          poetry run python -c "
+          import sys
+          print('Python executable:', sys.executable)
+          print('PYTHONPATH from env:', '${{ github.workspace }}/src')
+          sys.path.insert(0, '${{ github.workspace }}/src')
+          print('Updated sys.path:')
+          for p in sys.path:
+              print(f'  {p}')
+          try:
+              import benchmark
+              print('✅ benchmark module imported successfully')
+              print('benchmark location:', benchmark.__file__)
+          except Exception as e:
+              print('❌ Failed to import benchmark:', e)
+          try:
+              from benchmark.models import resource_manager
+              print('✅ resource_manager imported successfully')
+          except Exception as e:
+              print('❌ Failed to import resource_manager:', e)
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
       - name: Run core unit tests
         run: |
           mkdir -p test-results
-          poetry run pytest tests/unit/test_resource_manager.py tests/unit/test_config*.py -v \
+          export PYTHONPATH="${{ github.workspace }}/src:$PYTHONPATH"
+          poetry run python -m pytest tests/unit/test_resource_manager.py tests/unit/test_config*.py -v \
             --junitxml=test-results/core-tests.xml \
             --maxfail=5 \
             --tb=short
@@ -95,13 +134,18 @@ jobs:
 
       - name: Test basic imports
         run: |
+          export PYTHONPATH="${{ github.workspace }}/src:$PYTHONPATH"
           poetry run python -c "
+          import sys
+          sys.path.insert(0, '${{ github.workspace }}/src')
           try:
               from benchmark.models.resource_manager import ModelResourceManager
               from benchmark.models.model_cache import ModelCache
               print('✅ Resource management imports successful')
           except ImportError as e:
               print(f'❌ Import error: {e}')
+              import traceback
+              traceback.print_exc()
               exit(1)
           "
         env:
@@ -169,7 +213,8 @@ jobs:
       - name: Run resource management tests
         run: |
           mkdir -p test-results
-          poetry run pytest tests/unit/test_resource_manager.py -v \
+          export PYTHONPATH="${{ github.workspace }}/src:$PYTHONPATH"
+          poetry run python -m pytest tests/unit/test_resource_manager.py -v \
             --junitxml=test-results/resource-tests.xml \
             --maxfail=3 \
             --tb=short
@@ -178,7 +223,10 @@ jobs:
 
       - name: Test Apple Silicon detection
         run: |
+          export PYTHONPATH="${{ github.workspace }}/src:$PYTHONPATH"
           poetry run python -c "
+          import sys
+          sys.path.insert(0, '${{ github.workspace }}/src')
           from benchmark.models.resource_manager import MemoryMonitor
           monitor = MemoryMonitor()
           is_apple_silicon = monitor._detect_apple_silicon()

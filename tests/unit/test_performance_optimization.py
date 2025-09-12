@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+import pytest_asyncio
 
 from benchmark.models.optimization import (
     AccelerationType,
@@ -29,14 +30,14 @@ from benchmark.models.optimization import (
 class TestAppleSiliconOptimizer:
     """Test Apple Silicon hardware optimizer."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def optimizer(self):
         """Create an optimizer instance for testing."""
         with tempfile.TemporaryDirectory() as tmpdir:
             optimizer = AppleSiliconOptimizer(cache_dir=Path(tmpdir))
             yield optimizer
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def initialized_optimizer(self):
         """Create and initialize an optimizer instance."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -65,7 +66,7 @@ class TestAppleSiliconOptimizer:
             hardware_info = await optimizer._detect_hardware()
 
             assert hardware_info.type == HardwareType.APPLE_SILICON_M4
-            assert "M4" in hardware_info.model_name
+            assert "m4" in hardware_info.model_name.lower()
             assert hardware_info.core_count > 0
             assert hardware_info.performance_cores > 0
             assert hardware_info.metal_support is True
@@ -220,7 +221,7 @@ class TestAppleSiliconOptimizer:
 class TestInferenceQueue:
     """Test inference queue management."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def queue(self):
         """Create an inference queue for testing."""
         optimizer = Mock(spec=AppleSiliconOptimizer)
@@ -396,7 +397,7 @@ class TestInferenceQueue:
 class TestOptimizationIntegration:
     """Test integration between optimization components."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def integrated_components(self):
         """Create integrated optimizer and queue for testing."""
         with tempfile.TemporaryDirectory() as tmpdir:

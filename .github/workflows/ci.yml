@@ -47,6 +47,9 @@ jobs:
           virtualenvs-path: .venv
           installer-parallel: true
 
+      - name: Configure Poetry cache
+        run: poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
       - name: Cache Poetry dependencies
         id: cache-deps
         uses: actions/cache@v4
@@ -62,7 +65,7 @@ jobs:
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
           # Install without MLX dependencies for Linux
-          poetry install --with dev --no-root --extras "dev test"
+          poetry install --with dev --no-root
 
       - name: Install project
         run: poetry install --only-root
@@ -123,6 +126,9 @@ jobs:
           virtualenvs-in-project: true
           virtualenvs-path: .venv
           installer-parallel: true
+
+      - name: Configure Poetry cache
+        run: poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -215,6 +221,9 @@ jobs:
           virtualenvs-path: .venv
           installer-parallel: true
 
+      - name: Configure Poetry cache
+        run: poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
       - name: Cache Poetry dependencies
         id: cache-deps
         uses: actions/cache@v4
@@ -229,7 +238,7 @@ jobs:
       - name: Install dependencies (including MLX)
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          poetry install --with dev --no-root
+          poetry install --with dev,mlx --no-root
 
       - name: Install project
         run: poetry install --only-root
@@ -447,6 +456,9 @@ jobs:
           virtualenvs-path: .venv
           installer-parallel: true
 
+      - name: Configure Poetry cache
+        run: poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+
       - name: Cache Poetry dependencies
         id: cache-deps
         uses: actions/cache@v4
@@ -461,7 +473,7 @@ jobs:
       - name: Install dependencies (including MLX)
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          poetry install --with dev --no-root
+          poetry install --with dev,mlx --no-root
 
       - name: Install project
         run: poetry install --only-root

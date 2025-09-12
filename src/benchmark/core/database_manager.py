@@ -354,9 +354,9 @@ class DatabaseManager:
         info = {
             "status": "initialized",
             "database_type": self.db_type,
-            "database_url": self.database_url.split("@")[-1]
-            if "@" in self.database_url
-            else self.database_url,  # Hide credentials
+            "database_url": str(self.database_url).split("@")[-1]
+            if "@" in str(self.database_url)
+            else str(self.database_url),  # Hide credentials
             "echo": self.echo,
         }
 

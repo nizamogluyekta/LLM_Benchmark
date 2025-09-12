@@ -22,9 +22,9 @@ scikit-learn = ">=1.4"
 numpy = ">=1.24"
 pandas = ">=2.1"
 
-# Apple Silicon ML
-mlx = ">=0.15"
-mlx-lm = ">=0.10"
+# Apple Silicon ML (optional - only works on Apple Silicon)
+# mlx = ">=0.15"  # Moved to optional group
+# mlx-lm = ">=0.10"  # Moved to optional group
 
 # API clients
 openai = ">=1.0"
@@ -60,6 +60,14 @@ pre-commit = ">=3.6"
 # Additional dev tools
 ipython = "^8.0"
 jupyter = "^1.0"
+
+[tool.poetry.group.mlx]
+optional = true
+
+[tool.poetry.group.mlx.dependencies]
+# Apple Silicon ML dependencies - only works on macOS with Apple Silicon
+mlx = ">=0.15"
+mlx-lm = ">=0.10"
 
 [tool.poetry.scripts]
 benchmark = "benchmark.cli:main"

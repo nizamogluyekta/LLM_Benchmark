@@ -270,12 +270,14 @@ jobs:
             poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
 
       - name: Install dependencies (including MLX)
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          poetry install --with dev,mlx --no-root
+          poetry install --with dev,mlx
 
-      - name: Install project
-        run: poetry install --only-root
+      - name: Verify key dependencies
+        run: |
+          poetry run python -c "import aiohttp; print('✅ aiohttp available')"
+          poetry run python -c "import pytest; print('✅ pytest available')"
+          poetry run python -c "import benchmark; print('✅ benchmark package available')"
 
       - name: Create test environment
         run: |
@@ -518,12 +520,8 @@ jobs:
             poetry-deps-${{ runner.os }}-${{ matrix.python-version }}-
 
       - name: Install dependencies (including MLX)
-        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
-          poetry install --with dev,mlx --no-root
-
-      - name: Install project
-        run: poetry install --only-root
+          poetry install --with dev,mlx
 
       - name: Run MLX integration tests
         run: |

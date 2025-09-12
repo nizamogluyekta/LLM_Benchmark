@@ -23,10 +23,13 @@ class TestServiceResponse:
 
     def test_success_response_creation(self):
         """Test creating successful response."""
-        response = ServiceResponse(success=True, data={"message": "Operation successful"})
+        response = ServiceResponse(
+            success=True, message="Operation successful", data={"key": "value"}
+        )
 
         assert response.success is True
-        assert response.data == {"message": "Operation successful"}
+        assert response.message == "Operation successful"
+        assert response.data == {"key": "value"}
         assert response.error is None
         assert response.metadata is None
         assert response.timestamp is not None
@@ -34,17 +37,21 @@ class TestServiceResponse:
     def test_error_response_creation(self):
         """Test creating error response."""
         response = ServiceResponse(
-            success=False, error="Something went wrong", metadata={"error_code": "E001"}
+            success=False,
+            message="Operation failed",
+            error="Something went wrong",
+            metadata={"error_code": "E001"},
         )
 
         assert response.success is False
         assert response.data is None
+        assert response.message == "Operation failed"
         assert response.error == "Something went wrong"
         assert response.metadata == {"error_code": "E001"}
 
     def test_response_serialization(self):
         """Test ServiceResponse can be serialized."""
-        response = ServiceResponse(success=True, data={"key": "value"})
+        response = ServiceResponse(success=True, message="Success", data={"key": "value"})
 
         # Should be able to convert to dict
         response_dict = response.model_dump()
@@ -64,36 +71,38 @@ class TestHealthCheck:
     def test_healthy_status_creation(self):
         """Test creating healthy status."""
         health = HealthCheck(
-            service_name="test_service",
             status=ServiceStatus.HEALTHY,
+            message="Service is healthy",
+            checks={"connections": 5, "memory_usage": "50MB"},
             timestamp=datetime.now().isoformat(),
-            details={"connections": 5, "memory_usage": "50MB"},
         )
 
-        assert health.service_name == "test_service"
         assert health.status == ServiceStatus.HEALTHY.value
-        assert health.details == {"connections": 5, "memory_usage": "50MB"}
+        assert health.message == "Service is healthy"
+        assert health.checks == {"connections": 5, "memory_usage": "50MB"}
         assert health.uptime_seconds is None
 
     def test_unhealthy_status_creation(self):
         """Test creating unhealthy status."""
         health = HealthCheck(
-            service_name="failing_service",
             status=ServiceStatus.UNHEALTHY,
+            message="Service is unhealthy",
+            checks={"error": "Database connection failed"},
             timestamp=datetime.now().isoformat(),
-            details={"error": "Database connection failed"},
             uptime_seconds=123.45,
         )
 
-        assert health.service_name == "failing_service"
         assert health.status == ServiceStatus.UNHEALTHY.value
-        assert health.details == {"error": "Database connection failed"}
+        assert health.message == "Service is unhealthy"
+        assert health.checks == {"error": "Database connection failed"}
         assert health.uptime_seconds == 123.45
 
     def test_health_check_serialization(self):
         """Test HealthCheck can be serialized."""
         health = HealthCheck(
-            service_name="test", status=ServiceStatus.DEGRADED, timestamp=datetime.now().isoformat()
+            status=ServiceStatus.DEGRADED,
+            message="Service is degraded",
+            timestamp=datetime.now().isoformat(),
         )
 
         # Should serialize to dict
@@ -124,7 +133,7 @@ class MockService(BaseService):
     """Mock service implementation for testing."""
 
     def __init__(self):
-        super().__init__()
+        super().__init__("mock_service")
         self.initialization_called = False
         self.health_check_called = False
         self.shutdown_called = False
@@ -133,16 +142,18 @@ class MockService(BaseService):
         """Mock initialization."""
         self.initialization_called = True
         self._mark_initialized()
-        return ServiceResponse(success=True, data={"initialized": True})
+        return ServiceResponse(
+            success=True, message="Service initialized", data={"initialized": True}
+        )
 
     async def health_check(self) -> HealthCheck:
         """Mock health check."""
         self.health_check_called = True
         return HealthCheck(
-            service_name="mock_service",
             status=ServiceStatus.HEALTHY,
+            message="Service is healthy",
+            checks={"mock": True},
             timestamp=datetime.now().isoformat(),
-            details={"mock": True},
             uptime_seconds=self.get_uptime_seconds(),
         )
 
@@ -150,7 +161,7 @@ class MockService(BaseService):
         """Mock shutdown."""
         self.shutdown_called = True
         self._mark_uninitialized()
-        return ServiceResponse(success=True, data={"shutdown": True})
+        return ServiceResponse(success=True, message="Service shutdown", data={"shutdown": True})
 
 
 class TestBaseService:
@@ -166,6 +177,7 @@ class TestBaseService:
         assert not service.health_check_called
         assert not service.shutdown_called
 
+    @pytest.mark.asyncio
     async def test_service_lifecycle(self):
         """Test complete service lifecycle."""
         service = MockService()
@@ -181,7 +193,7 @@ class TestBaseService:
 
         # Health check
         health = await service.health_check()
-        assert health.service_name == "mock_service"
+        assert health.message == "Service is healthy"
         assert health.status == ServiceStatus.HEALTHY.value
         assert health.uptime_seconds is not None
         assert health.uptime_seconds >= 0
@@ -272,21 +284,25 @@ class TestDataClassValidation:
     def test_service_response_validation(self):
         """Test ServiceResponse validates input."""
         # Valid response
-        response = ServiceResponse(success=True)
+        response = ServiceResponse(success=True, message="Success")
         assert response.success is True
+        assert response.message == "Success"
 
         # Test with invalid data should still work (Pydantic is flexible with dict)
-        response = ServiceResponse(success=False, data={"any": "value"})
+        response = ServiceResponse(success=False, message="Failed", data={"any": "value"})
         assert response.success is False
+        assert response.message == "Failed"
         assert response.data == {"any": "value"}
 
     def test_health_check_validation(self):
         """Test HealthCheck validates input."""
         # Valid health check
         health = HealthCheck(
-            service_name="test", status=ServiceStatus.HEALTHY, timestamp="2024-01-01T10:00:00"
+            status=ServiceStatus.HEALTHY,
+            message="Service is healthy",
+            timestamp="2024-01-01T10:00:00",
         )
-        assert health.service_name == "test"
+        assert health.message == "Service is healthy"
         assert health.status == ServiceStatus.HEALTHY.value
 
         # Test enum serialization

@@ -20,19 +20,20 @@ from benchmark.core.database_manager import (
 )
 
 
+@pytest.fixture
+def temp_db_file():
+    """Create temporary SQLite database file."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as temp_file:
+        temp_name = temp_file.name
+
+    yield temp_name
+
+    # Cleanup
+    Path(temp_name).unlink(missing_ok=True)
+
+
 class TestDatabaseIntegrationSQLite:
     """Integration tests with actual SQLite database."""
-
-    @pytest.fixture
-    async def temp_db_file(self):
-        """Create temporary SQLite database file."""
-        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as temp_file:
-            temp_name = temp_file.name
-
-        yield temp_name
-
-        # Cleanup
-        Path(temp_name).unlink(missing_ok=True)
 
     @pytest.mark.asyncio
     async def test_file_database_persistence(self, temp_db_file):

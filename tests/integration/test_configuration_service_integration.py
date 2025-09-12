@@ -154,7 +154,7 @@ class TestConfigurationServiceIntegration:
 
             # Write configuration files
             for i, config in enumerate(configs):
-                config_file = configs_dir / f"experiment_{i+1}.yaml"
+                config_file = configs_dir / f"experiment_{i + 1}.yaml"
                 with open(config_file, "w") as f:
                     yaml.dump(config, f, indent=2, default_flow_style=False)
 
@@ -554,19 +554,19 @@ class TestConfigurationServiceIntegration:
         try:
             for i in range(5):
                 config_data = {
-                    "name": f"Concurrent Test {i+1}",
-                    "description": f"Concurrent access test configuration {i+1}",
-                    "output_dir": f"./results/concurrent_{i+1}",
+                    "name": f"Concurrent Test {i + 1}",
+                    "description": f"Concurrent access test configuration {i + 1}",
+                    "output_dir": f"./results/concurrent_{i + 1}",
                     "datasets": [
                         {
-                            "name": f"dataset_{i+1}",
+                            "name": f"dataset_{i + 1}",
                             "source": "local",
-                            "path": f"./data/test_{i+1}.jsonl",
+                            "path": f"./data/test_{i + 1}.jsonl",
                         }
                     ],
                     "models": [
                         {
-                            "name": f"model_{i+1}",
+                            "name": f"model_{i + 1}",
                             "type": "openai_api",
                             "path": "gpt-3.5-turbo",
                             "config": {"api_key": "sk-test"},
@@ -592,9 +592,9 @@ class TestConfigurationServiceIntegration:
             # Verify all configurations loaded successfully
             assert len(configs) == 5
             for i, config in enumerate(configs):
-                assert config.name == f"Concurrent Test {i+1}"
-                assert config.datasets[0].name == f"dataset_{i+1}"
-                assert config.models[0].name == f"model_{i+1}"
+                assert config.name == f"Concurrent Test {i + 1}"
+                assert config.datasets[0].name == f"dataset_{i + 1}"
+                assert config.models[0].name == f"model_{i + 1}"
 
             # Test concurrent access to same configuration
             same_config_tasks = [load_config(config_files[0]) for _ in range(10)]

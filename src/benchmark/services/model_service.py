@@ -39,6 +39,12 @@ from benchmark.interfaces.model_interfaces import (
     PluginRegistry,
     Prediction,
 )
+from benchmark.models.optimization import (
+    AppleSiliconOptimizer,
+    InferenceQueue,
+    InferenceRequest,
+    RequestPriority,
+)
 from benchmark.models.plugins import (
     AnthropicModelPlugin,
     MLXModelPlugin,
@@ -118,6 +124,8 @@ class ModelService(BaseService):
         max_memory_mb: int = 8192,
         cleanup_interval_seconds: int = 300,
         enable_performance_monitoring: bool = True,
+        enable_apple_silicon_optimization: bool = True,
+        max_concurrent_requests: int = 10,
     ):
         """
         Initialize the model service.
@@ -139,9 +147,15 @@ class ModelService(BaseService):
         self.max_memory_mb = max_memory_mb
         self.cleanup_interval_seconds = cleanup_interval_seconds
         self.enable_performance_monitoring = enable_performance_monitoring
+        self.enable_apple_silicon_optimization = enable_apple_silicon_optimization
+        self.max_concurrent_requests = max_concurrent_requests
 
         # Performance monitoring
         self.performance_monitor = ModelPerformanceMonitor()
+
+        # Apple Silicon optimization components
+        self.apple_silicon_optimizer: AppleSiliconOptimizer | None = None
+        self.inference_queue: InferenceQueue | None = None
 
         # Async management
         self.cleanup_task: asyncio.Task[None] | None = None
@@ -153,6 +167,19 @@ class ModelService(BaseService):
         """Initialize the model service and register plugins."""
         try:
             self.logger.info("Initializing Model Service")
+
+            # Initialize Apple Silicon optimization if enabled
+            if self.enable_apple_silicon_optimization:
+                self.logger.info("Initializing Apple Silicon optimizations")
+                self.apple_silicon_optimizer = AppleSiliconOptimizer()
+                await self.apple_silicon_optimizer.initialize()
+
+                self.inference_queue = InferenceQueue(
+                    max_concurrent_requests=self.max_concurrent_requests,
+                    optimizer=self.apple_silicon_optimizer,
+                )
+                await self.inference_queue.initialize()
+                self.logger.info("Apple Silicon optimizations initialized")
 
             # Register all available model plugins
             await self._register_default_plugins()
@@ -172,6 +199,10 @@ class ModelService(BaseService):
                     "max_models": self.max_models,
                     "max_memory_mb": self.max_memory_mb,
                     "performance_monitoring": self.enable_performance_monitoring,
+                    "apple_silicon_optimization": self.enable_apple_silicon_optimization,
+                    "hardware_info": self.apple_silicon_optimizer.hardware_info.model_dump()
+                    if self.apple_silicon_optimizer and self.apple_silicon_optimizer.hardware_info
+                    else None,
                     "registered_plugins": list(self.plugins.keys()),
                 },
             )
@@ -241,6 +272,11 @@ class ModelService(BaseService):
 
             # Signal shutdown to background tasks
             self._shutdown_event.set()
+
+            # Shutdown Apple Silicon components
+            if self.inference_queue:
+                await self.inference_queue.shutdown()
+                self.logger.info("Inference queue shutdown complete")
 
             # Cancel cleanup task
             if self.cleanup_task and not self.cleanup_task.done():
@@ -331,6 +367,28 @@ class ModelService(BaseService):
 
             self.logger.info(f"Loading model {model_id} with type {model_type}")
 
+            # Apply Apple Silicon optimizations to config if available
+            if self.apple_silicon_optimizer:
+                # Get optimal batch configuration
+                batch_config = self.apple_silicon_optimizer.get_optimal_batch_size(
+                    model_id, model_type
+                )
+                model_config["batch_config"] = {
+                    "batch_size": batch_config.batch_size,
+                    "max_batch_size": batch_config.max_batch_size,
+                    "dynamic_sizing": batch_config.dynamic_sizing,
+                    "timeout_ms": batch_config.timeout_ms,
+                    "memory_limit_gb": batch_config.memory_limit_gb,
+                }
+
+                # Get optimal acceleration type
+                acceleration = self.apple_silicon_optimizer.get_optimal_acceleration(model_type)
+                model_config["acceleration"] = acceleration.value
+
+                self.logger.info(
+                    f"Applied Apple Silicon optimizations: batch_size={batch_config.batch_size}, acceleration={acceleration.value}"
+                )
+
             # Initialize plugin
             init_response = await plugin.initialize(model_config)
             if not init_response.success:
@@ -377,16 +435,18 @@ class ModelService(BaseService):
         model_id: str,
         samples: list[str],
         include_explanations: bool = False,
-        batch_size: int = 32,
+        batch_size: int | None = None,
+        priority: RequestPriority = RequestPriority.NORMAL,
     ) -> BatchInferenceResponse:
         """
-        Make batch predictions using the specified model.
+        Make batch predictions using the specified model with Apple Silicon optimizations.
 
         Args:
             model_id: ID of the model to use
             samples: List of input samples
             include_explanations: Whether to include explanations
-            batch_size: Batch size for processing
+            batch_size: Batch size for processing (None for auto-optimization)
+            priority: Request priority for queue management
 
         Returns:
             BatchInferenceResponse with prediction results
@@ -404,80 +464,31 @@ class ModelService(BaseService):
             loaded_model.last_accessed_at = datetime.now()
 
             self.logger.info(
-                f"Processing batch inference for {len(samples)} samples with model {model_id}"
+                f"Processing batch inference for {len(samples)} samples with model {model_id} (priority: {priority.name})"
             )
 
-            # Process samples in batches
-            all_predictions = []
-            successful_count = 0
-            failed_count = 0
-
-            for i in range(0, len(samples), batch_size):
-                batch = samples[i : i + batch_size]
-
-                try:
-                    # Make predictions
-                    batch_predictions = await loaded_model.plugin.predict(batch)
-
-                    # Add explanations if requested
-                    if include_explanations:
-                        for prediction in batch_predictions:
-                            if not prediction.explanation:
-                                try:
-                                    explanation = await loaded_model.plugin.explain(
-                                        prediction.input_text
-                                    )
-                                    prediction.explanation = explanation
-                                except Exception as e:
-                                    self.logger.warning(f"Failed to generate explanation: {e}")
-                                    prediction.explanation = "Explanation not available"
-
-                    all_predictions.extend(batch_predictions)
-                    successful_count += len(batch_predictions)
-
-                except Exception as e:
-                    self.logger.error(f"Batch prediction failed: {e}")
-                    failed_count += len(batch)
-
-                    # Create error predictions for failed samples
-                    for j, sample in enumerate(batch):
-                        error_prediction = Prediction(
-                            sample_id=f"error_{i+j}",
-                            input_text=sample,
-                            prediction="ERROR",
-                            confidence=0.0,
-                            attack_type=None,
-                            explanation=f"Prediction failed: {str(e)}",
-                            inference_time_ms=0.0,
-                            metadata={"error": str(e)},
-                            model_version=None,
-                        )
-                        all_predictions.append(error_prediction)
-
-            total_time_ms = (time.time() - start_time) * 1000
-
-            # Update performance metrics
-            if self.enable_performance_monitoring:
-                await self.performance_monitor.track_batch_inference(
-                    model_id, len(samples), total_time_ms, successful_count
+            # Use Apple Silicon optimization if available
+            if self.inference_queue and self.apple_silicon_optimizer:
+                return await self._predict_batch_optimized(
+                    request_id,
+                    model_id,
+                    loaded_model,
+                    samples,
+                    include_explanations,
+                    batch_size,
+                    priority,
+                    start_time,
                 )
-
-            response = BatchInferenceResponse(
-                request_id=request_id,
-                model_id=model_id,
-                predictions=all_predictions,
-                total_samples=len(samples),
-                successful_predictions=successful_count,
-                failed_predictions=failed_count,
-                total_inference_time_ms=total_time_ms,
-                average_inference_time_ms=total_time_ms / len(samples) if samples else 0.0,
-                metadata={"batch_size": batch_size, "include_explanations": include_explanations},
-            )
-
-            self.logger.info(
-                f"Batch inference completed: {successful_count}/{len(samples)} successful"
-            )
-            return response
+            else:
+                return await self._predict_batch_legacy(
+                    request_id,
+                    model_id,
+                    loaded_model,
+                    samples,
+                    include_explanations,
+                    batch_size or 32,
+                    start_time,
+                )
 
         except BenchmarkError:
             # Re-raise BenchmarkErrors to allow proper error handling in tests
@@ -497,6 +508,285 @@ class ModelService(BaseService):
                 average_inference_time_ms=0.0,
                 metadata={"error": str(e)},
             )
+
+    async def _predict_batch_optimized(
+        self,
+        request_id: str,
+        model_id: str,
+        loaded_model: LoadedModel,
+        samples: list[str],
+        include_explanations: bool,
+        batch_size: int | None,
+        priority: RequestPriority,
+        start_time: float,
+    ) -> BatchInferenceResponse:
+        """Apple Silicon optimized batch prediction using inference queue."""
+        all_predictions = []
+        successful_count = 0
+        failed_count = 0
+
+        # Get optimal batch configuration
+        if not self.apple_silicon_optimizer:
+            raise ValueError("Apple Silicon optimizer is not available")
+        batch_config = self.apple_silicon_optimizer.get_optimal_batch_size(model_id)
+        optimal_batch_size = batch_size or batch_config.batch_size
+
+        self.logger.info(
+            f"Using Apple Silicon optimized batch processing with size {optimal_batch_size}"
+        )
+
+        # Process samples using inference queue
+        for i in range(0, len(samples), optimal_batch_size):
+            batch = samples[i : i + optimal_batch_size]
+
+            # Create inference request
+            inference_request = InferenceRequest(
+                request_id=f"{request_id}_batch_{i}",
+                model_id=model_id,
+                input_data=batch,
+                priority=priority,
+                timeout_ms=batch_config.timeout_ms,
+                created_at=time.time() * 1000,
+                metadata={"include_explanations": include_explanations},
+            )
+
+            # Submit to inference queue with callback
+            batch_result: asyncio.Future[Any] = asyncio.Future()
+
+            async def result_callback(
+                result: Any, future: asyncio.Future[Any] = batch_result
+            ) -> None:
+                future.set_result(result)
+
+            inference_request.callback = result_callback
+
+            try:
+                # Submit request
+                if not self.inference_queue:
+                    raise ValueError("Inference queue is not available")
+                await self.inference_queue.submit_request(inference_request)
+
+                # Wait for result with timeout
+                result = await asyncio.wait_for(
+                    batch_result, timeout=batch_config.timeout_ms / 1000.0
+                )
+
+                if result.success:
+                    # Process the actual batch inference
+                    try:
+                        batch_predictions = await loaded_model.plugin.predict(batch)
+
+                        # Add explanations if requested
+                        if include_explanations:
+                            for prediction in batch_predictions:
+                                if not prediction.explanation:
+                                    try:
+                                        explanation = await loaded_model.plugin.explain(
+                                            prediction.input_text
+                                        )
+                                        prediction.explanation = explanation
+                                    except Exception as e:
+                                        self.logger.warning(f"Failed to generate explanation: {e}")
+                                        prediction.explanation = "Explanation not available"
+
+                        all_predictions.extend(batch_predictions)
+                        successful_count += len(batch_predictions)
+
+                    except Exception as e:
+                        self.logger.error(f"Batch processing failed: {e}")
+                        failed_count += len(batch)
+
+                        # Create error predictions for failed samples
+                        for j, sample in enumerate(batch):
+                            error_prediction = Prediction(
+                                sample_id=f"error_{i + j}",
+                                input_text=sample,
+                                prediction="ERROR",
+                                confidence=0.0,
+                                attack_type=None,
+                                explanation=f"Prediction failed: {str(e)}",
+                                inference_time_ms=0.0,
+                                metadata={"error": str(e)},
+                                model_version=None,
+                            )
+                            all_predictions.append(error_prediction)
+                else:
+                    self.logger.error(f"Inference queue processing failed: {result.error}")
+                    failed_count += len(batch)
+
+                    # Create error predictions
+                    for j, sample in enumerate(batch):
+                        error_prediction = Prediction(
+                            sample_id=f"error_{i + j}",
+                            input_text=sample,
+                            prediction="ERROR",
+                            confidence=0.0,
+                            attack_type=None,
+                            explanation=f"Queue processing failed: {result.error}",
+                            inference_time_ms=0.0,
+                            metadata={"error": result.error},
+                            model_version=None,
+                        )
+                        all_predictions.append(error_prediction)
+
+            except TimeoutError:
+                self.logger.error(f"Batch inference timeout for batch starting at {i}")
+                failed_count += len(batch)
+
+                # Create timeout error predictions
+                for j, sample in enumerate(batch):
+                    error_prediction = Prediction(
+                        sample_id=f"timeout_{i + j}",
+                        input_text=sample,
+                        prediction="TIMEOUT",
+                        confidence=0.0,
+                        attack_type=None,
+                        explanation="Inference timeout",
+                        inference_time_ms=batch_config.timeout_ms,
+                        metadata={"error": "timeout"},
+                        model_version=None,
+                    )
+                    all_predictions.append(error_prediction)
+
+            except Exception as e:
+                self.logger.error(f"Queue submission failed: {e}")
+                failed_count += len(batch)
+
+                # Create error predictions
+                for j, sample in enumerate(batch):
+                    error_prediction = Prediction(
+                        sample_id=f"queue_error_{i + j}",
+                        input_text=sample,
+                        prediction="ERROR",
+                        confidence=0.0,
+                        attack_type=None,
+                        explanation=f"Queue submission failed: {str(e)}",
+                        inference_time_ms=0.0,
+                        metadata={"error": str(e)},
+                        model_version=None,
+                    )
+                    all_predictions.append(error_prediction)
+
+        total_time_ms = (time.time() - start_time) * 1000
+
+        # Update performance metrics
+        if self.enable_performance_monitoring:
+            await self.performance_monitor.track_batch_inference(
+                model_id, len(samples), total_time_ms, successful_count
+            )
+
+        response = BatchInferenceResponse(
+            request_id=request_id,
+            model_id=model_id,
+            predictions=all_predictions,
+            total_samples=len(samples),
+            successful_predictions=successful_count,
+            failed_predictions=failed_count,
+            total_inference_time_ms=total_time_ms,
+            average_inference_time_ms=total_time_ms / len(samples) if samples else 0.0,
+            metadata={
+                "batch_size": optimal_batch_size,
+                "include_explanations": include_explanations,
+                "apple_silicon_optimized": True,
+                "priority": priority.name,
+                "queue_status": self.inference_queue.get_queue_status()
+                if self.inference_queue
+                else {},
+            },
+        )
+
+        self.logger.info(
+            f"Optimized batch inference completed: {successful_count}/{len(samples)} successful"
+        )
+        return response
+
+    async def _predict_batch_legacy(
+        self,
+        request_id: str,
+        model_id: str,
+        loaded_model: LoadedModel,
+        samples: list[str],
+        include_explanations: bool,
+        batch_size: int,
+        start_time: float,
+    ) -> BatchInferenceResponse:
+        """Legacy batch prediction without Apple Silicon optimizations."""
+        all_predictions = []
+        successful_count = 0
+        failed_count = 0
+
+        self.logger.info(f"Using legacy batch processing with size {batch_size}")
+
+        for i in range(0, len(samples), batch_size):
+            batch = samples[i : i + batch_size]
+
+            try:
+                # Make predictions
+                batch_predictions = await loaded_model.plugin.predict(batch)
+
+                # Add explanations if requested
+                if include_explanations:
+                    for prediction in batch_predictions:
+                        if not prediction.explanation:
+                            try:
+                                explanation = await loaded_model.plugin.explain(
+                                    prediction.input_text
+                                )
+                                prediction.explanation = explanation
+                            except Exception as e:
+                                self.logger.warning(f"Failed to generate explanation: {e}")
+                                prediction.explanation = "Explanation not available"
+
+                all_predictions.extend(batch_predictions)
+                successful_count += len(batch_predictions)
+
+            except Exception as e:
+                self.logger.error(f"Batch prediction failed: {e}")
+                failed_count += len(batch)
+
+                # Create error predictions for failed samples
+                for j, sample in enumerate(batch):
+                    error_prediction = Prediction(
+                        sample_id=f"error_{i + j}",
+                        input_text=sample,
+                        prediction="ERROR",
+                        confidence=0.0,
+                        attack_type=None,
+                        explanation=f"Prediction failed: {str(e)}",
+                        inference_time_ms=0.0,
+                        metadata={"error": str(e)},
+                        model_version=None,
+                    )
+                    all_predictions.append(error_prediction)
+
+        total_time_ms = (time.time() - start_time) * 1000
+
+        # Update performance metrics
+        if self.enable_performance_monitoring:
+            await self.performance_monitor.track_batch_inference(
+                model_id, len(samples), total_time_ms, successful_count
+            )
+
+        response = BatchInferenceResponse(
+            request_id=request_id,
+            model_id=model_id,
+            predictions=all_predictions,
+            total_samples=len(samples),
+            successful_predictions=successful_count,
+            failed_predictions=failed_count,
+            total_inference_time_ms=total_time_ms,
+            average_inference_time_ms=total_time_ms / len(samples) if samples else 0.0,
+            metadata={
+                "batch_size": batch_size,
+                "include_explanations": include_explanations,
+                "apple_silicon_optimized": False,
+            },
+        )
+
+        self.logger.info(
+            f"Legacy batch inference completed: {successful_count}/{len(samples)} successful"
+        )
+        return response
 
     async def explain_prediction(self, model_id: str, sample: str) -> str:
         """
@@ -1492,6 +1782,280 @@ class ModelService(BaseService):
         recommendations.append("⚡ Use larger batch sizes when possible to improve efficiency")
 
         return recommendations
+
+    async def get_apple_silicon_status(self) -> dict[str, Any]:
+        """
+        Get Apple Silicon optimization status and performance metrics.
+
+        Returns:
+            Dictionary containing optimization status, hardware info, and performance metrics
+        """
+        if not self.apple_silicon_optimizer:
+            return {"enabled": False, "message": "Apple Silicon optimization is disabled"}
+
+        try:
+            status: dict[str, Any] = {
+                "enabled": True,
+                "hardware_info": None,
+                "queue_status": None,
+                "performance_history": {},
+                "batch_configs": {},
+            }
+
+            # Get hardware information
+            if self.apple_silicon_optimizer.hardware_info:
+                status["hardware_info"] = {
+                    "type": self.apple_silicon_optimizer.hardware_info.type.value,
+                    "model_name": self.apple_silicon_optimizer.hardware_info.model_name,
+                    "core_count": self.apple_silicon_optimizer.hardware_info.core_count,
+                    "performance_cores": self.apple_silicon_optimizer.hardware_info.performance_cores,
+                    "efficiency_cores": self.apple_silicon_optimizer.hardware_info.efficiency_cores,
+                    "gpu_cores": self.apple_silicon_optimizer.hardware_info.gpu_cores,
+                    "neural_engine_cores": self.apple_silicon_optimizer.hardware_info.neural_engine_cores,
+                    "unified_memory_gb": self.apple_silicon_optimizer.hardware_info.unified_memory_gb,
+                    "metal_support": self.apple_silicon_optimizer.hardware_info.metal_support,
+                    "neural_engine_support": self.apple_silicon_optimizer.hardware_info.neural_engine_support,
+                }
+
+            # Get inference queue status
+            if self.inference_queue:
+                status["queue_status"] = self.inference_queue.get_queue_status()
+
+            # Get performance history summary
+            for model_id, history in self.apple_silicon_optimizer.performance_history.items():
+                if history:
+                    recent_metrics = history[-5:]  # Last 5 measurements
+                    avg_latency = sum(m.average_latency_ms for m in recent_metrics) / len(
+                        recent_metrics
+                    )
+                    avg_throughput = sum(m.requests_per_second for m in recent_metrics) / len(
+                        recent_metrics
+                    )
+
+                    status["performance_history"][model_id] = {
+                        "measurements_count": len(history),
+                        "recent_avg_latency_ms": avg_latency,
+                        "recent_avg_throughput": avg_throughput,
+                        "recent_batch_efficiency": sum(m.batch_efficiency for m in recent_metrics)
+                        / len(recent_metrics),
+                    }
+
+            # Get batch configurations
+            for model_id, config in self.apple_silicon_optimizer.batch_configs.items():
+                status["batch_configs"][model_id] = {
+                    "batch_size": config.batch_size,
+                    "max_batch_size": config.max_batch_size,
+                    "dynamic_sizing": config.dynamic_sizing,
+                    "timeout_ms": config.timeout_ms,
+                    "memory_limit_gb": config.memory_limit_gb,
+                }
+
+            return status
+
+        except Exception as e:
+            self.logger.error(f"Error getting Apple Silicon status: {e}")
+            return {
+                "enabled": True,
+                "error": str(e),
+                "message": "Failed to retrieve optimization status",
+            }
+
+    async def optimize_model_batch_size(
+        self, model_id: str, target_latency_ms: float = 1000.0
+    ) -> dict[str, Any]:
+        """
+        Dynamically optimize batch size for a specific model based on performance targets.
+
+        Args:
+            model_id: ID of the model to optimize
+            target_latency_ms: Target latency in milliseconds
+
+        Returns:
+            Dictionary with optimization results
+        """
+        if not self.apple_silicon_optimizer:
+            return {"error": "Apple Silicon optimization not available"}
+
+        if model_id not in self.loaded_models:
+            return {"error": f"Model {model_id} not found"}
+
+        try:
+            # Get current batch configuration
+            current_config = self.apple_silicon_optimizer.get_optimal_batch_size(model_id)
+
+            # Get performance history
+            history = self.apple_silicon_optimizer.performance_history.get(model_id, [])
+
+            if len(history) < 3:
+                return {
+                    "message": "Insufficient performance data for optimization",
+                    "current_config": {
+                        "batch_size": current_config.batch_size,
+                        "max_batch_size": current_config.max_batch_size,
+                    },
+                    "recommendation": "Run more inference requests to collect performance data",
+                }
+
+            recent_metrics = history[-10:]  # Last 10 measurements
+            avg_latency = sum(m.average_latency_ms for m in recent_metrics) / len(recent_metrics)
+            avg_batch_efficiency = sum(m.batch_efficiency for m in recent_metrics) / len(
+                recent_metrics
+            )
+
+            # Optimization logic
+            optimization_result = {
+                "model_id": model_id,
+                "current_config": {
+                    "batch_size": current_config.batch_size,
+                    "max_batch_size": current_config.max_batch_size,
+                    "avg_latency_ms": avg_latency,
+                    "avg_batch_efficiency": avg_batch_efficiency,
+                },
+                "target_latency_ms": target_latency_ms,
+                "optimization_applied": False,
+                "recommendation": "",
+            }
+
+            if avg_latency > target_latency_ms * 1.2:  # 20% tolerance
+                # Latency too high, reduce batch size
+                new_batch_size = max(1, current_config.batch_size - 1)
+                if new_batch_size != current_config.batch_size:
+                    current_config.batch_size = new_batch_size
+                    optimization_result["optimization_applied"] = True
+                    optimization_result["recommendation"] = (
+                        f"Reduced batch size to {new_batch_size} to improve latency"
+                    )
+                else:
+                    optimization_result["recommendation"] = "Batch size already at minimum"
+
+            elif avg_latency < target_latency_ms * 0.7 and avg_batch_efficiency > 0.8:
+                # Latency good and efficiency high, try larger batch
+                new_batch_size = min(current_config.max_batch_size, current_config.batch_size + 1)
+                if new_batch_size != current_config.batch_size:
+                    current_config.batch_size = new_batch_size
+                    optimization_result["optimization_applied"] = True
+                    optimization_result["recommendation"] = (
+                        f"Increased batch size to {new_batch_size} to improve throughput"
+                    )
+                else:
+                    optimization_result["recommendation"] = "Batch size already at maximum"
+
+            else:
+                optimization_result["recommendation"] = "Current batch size is optimal"
+
+            if optimization_result["optimization_applied"]:
+                optimization_result["new_config"] = {
+                    "batch_size": current_config.batch_size,
+                    "max_batch_size": current_config.max_batch_size,
+                }
+                self.logger.info(
+                    f"Optimized batch size for {model_id}: {optimization_result['recommendation']}"
+                )
+
+            return optimization_result
+
+        except Exception as e:
+            self.logger.error(f"Error optimizing batch size for {model_id}: {e}")
+            return {"error": str(e)}
+
+    async def get_optimization_recommendations(self) -> dict[str, Any]:
+        """
+        Get optimization recommendations for all loaded models.
+
+        Returns:
+            Dictionary with recommendations for each model and overall system
+        """
+        recommendations: dict[str, Any] = {
+            "system": [],
+            "models": {},
+            "apple_silicon_enabled": self.enable_apple_silicon_optimization,
+        }
+
+        if not self.apple_silicon_optimizer:
+            recommendations["system"].append(
+                "Enable Apple Silicon optimization for better performance"
+            )
+            return recommendations
+
+        try:
+            # System-level recommendations
+            if self.apple_silicon_optimizer.hardware_info:
+                hw_info = self.apple_silicon_optimizer.hardware_info
+
+                if hw_info.unified_memory_gb < 16:
+                    recommendations["system"].append(
+                        "Consider upgrading to higher memory configuration for larger models"
+                    )
+
+                if not hw_info.metal_support:
+                    recommendations["system"].append("Metal GPU acceleration not available")
+
+                if not hw_info.neural_engine_support:
+                    recommendations["system"].append("Neural Engine acceleration not available")
+
+                # Check current memory usage
+                if len(self.loaded_models) > hw_info.performance_cores:
+                    recommendations["system"].append(
+                        f"Consider reducing concurrent models (currently {len(self.loaded_models)}, optimal: {hw_info.performance_cores})"
+                    )
+
+            # Model-specific recommendations
+            for model_id, _loaded_model in self.loaded_models.items():
+                model_recommendations = []
+
+                # Check if model has optimization data
+                if model_id not in self.apple_silicon_optimizer.batch_configs:
+                    model_recommendations.append("Run inference to collect optimization data")
+                else:
+                    # Check batch efficiency
+                    history = self.apple_silicon_optimizer.performance_history.get(model_id, [])
+                    if history:
+                        recent_metrics = history[-5:]
+                        avg_efficiency = sum(m.batch_efficiency for m in recent_metrics) / len(
+                            recent_metrics
+                        )
+
+                        if avg_efficiency < 0.6:
+                            model_recommendations.append(
+                                "Low batch efficiency - consider adjusting batch size"
+                            )
+
+                        avg_latency = sum(m.average_latency_ms for m in recent_metrics) / len(
+                            recent_metrics
+                        )
+                        if avg_latency > 2000:  # 2 seconds
+                            model_recommendations.append(
+                                "High latency detected - consider reducing batch size or using acceleration"
+                            )
+
+                        # Check GPU utilization
+                        avg_gpu_util = sum(m.gpu_utilization for m in recent_metrics) / len(
+                            recent_metrics
+                        )
+                        if avg_gpu_util < 0.3 and hw_info.metal_support:
+                            model_recommendations.append(
+                                "Low GPU utilization - ensure Metal acceleration is enabled"
+                            )
+
+                if model_recommendations:
+                    recommendations["models"][model_id] = model_recommendations
+
+            # Queue recommendations
+            if self.inference_queue:
+                queue_status = self.inference_queue.get_queue_status()
+                total_queued = sum(queue_status["queue_depths"].values())
+
+                if total_queued > self.max_concurrent_requests * 2:
+                    recommendations["system"].append(
+                        "High queue depth - consider increasing max_concurrent_requests"
+                    )
+
+            return recommendations
+
+        except Exception as e:
+            self.logger.error(f"Error getting optimization recommendations: {e}")
+            recommendations["error"] = str(e)
+            return recommendations
 
     async def _background_cleanup(self) -> None:
         """Background task for periodic cleanup."""

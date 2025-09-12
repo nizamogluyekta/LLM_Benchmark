@@ -191,7 +191,7 @@ class TestMLXIntegration:
             assert isinstance(parsed["iocs"], list)
 
             print(
-                f"Response {i+1} parsed successfully: {parsed['classification']} ({parsed['confidence']:.2f})"
+                f"Response {i + 1} parsed successfully: {parsed['classification']} ({parsed['confidence']:.2f})"
             )
 
     @pytest.mark.integration
@@ -443,8 +443,8 @@ class TestMLXIntegration:
                 if not response.success:
                     assert isinstance(response.error, str)
                     assert len(response.error) > 0
-                    print(f"Scenario {i+1}: {response.error}")
+                    print(f"Scenario {i + 1}: {response.error}")
 
             except Exception as e:
                 # Should not raise unhandled exceptions
-                pytest.fail(f"Unhandled exception in error scenario {i+1}: {e}")
+                pytest.fail(f"Unhandled exception in error scenario {i + 1}: {e}")

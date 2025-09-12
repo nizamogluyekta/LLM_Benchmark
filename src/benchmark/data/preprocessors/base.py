@@ -281,7 +281,7 @@ class DataPreprocessor(ABC):
                     progress.update(len(batch_processed))
 
                     self.logger.debug(
-                        f"Processed batch {i//batch_size + 1}/{(len(samples) + batch_size - 1)//batch_size}"
+                        f"Processed batch {i // batch_size + 1}/{(len(samples) + batch_size - 1) // batch_size}"
                         f" ({len(batch_processed)}/{len(batch)} samples)"
                     )
 

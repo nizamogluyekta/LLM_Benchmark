@@ -256,7 +256,9 @@ class TestOllamaIntegration:
             assert isinstance(parsed["explanation"], str)
             assert isinstance(parsed["iocs"], list)
 
-            print(f"Response {i+1} parsed: {parsed['classification']} ({parsed['confidence']:.2f})")
+            print(
+                f"Response {i + 1} parsed: {parsed['classification']} ({parsed['confidence']:.2f})"
+            )
 
     @pytest.mark.integration
     async def test_performance_characteristics(self, plugin: OllamaModelPlugin) -> None:

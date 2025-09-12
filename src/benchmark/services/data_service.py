@@ -163,7 +163,7 @@ class MemoryManager:
         cleaned_count = initial_count - final_count
 
         self.logger.info(
-            f"Cleaned up {cleaned_count} datasets, " f"collected {collected} objects via GC"
+            f"Cleaned up {cleaned_count} datasets, collected {collected} objects via GC"
         )
 
         return cleaned_count
@@ -544,7 +544,7 @@ class DataServiceOptimizer:
         }
 
         self.logger.info(
-            f"Optimized batch settings: size={optimal_batch_size}, " f"concurrent={cpu_count}"
+            f"Optimized batch settings: size={optimal_batch_size}, concurrent={cpu_count}"
         )
 
     async def _setup_memory_management(self) -> None:

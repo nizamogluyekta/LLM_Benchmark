@@ -74,7 +74,7 @@ def demo_model_predictions():
     accuracies = [0.95, 0.85, 0.70]
 
     for accuracy in accuracies:
-        print(f"\n📈 Model with {accuracy*100}% accuracy:")
+        print(f"\n📈 Model with {accuracy * 100}% accuracy:")
 
         # Generate multiple predictions to show distribution
         correct_count = 0
@@ -86,7 +86,9 @@ def demo_model_predictions():
                 correct_count += 1
 
         actual_accuracy = correct_count / total_predictions
-        print(f"  Generated accuracy: {actual_accuracy*100}% ({correct_count}/{total_predictions})")
+        print(
+            f"  Generated accuracy: {actual_accuracy * 100}% ({correct_count}/{total_predictions})"
+        )
 
         # Show sample prediction
         sample_pred = generator.generate_model_prediction("ATTACK", accuracy=accuracy)
@@ -162,7 +164,7 @@ def demo_batch_generation():
     print("\n📈 Batch Statistics (20 samples):")
     print(f"  Attack samples: {attack_count}")
     print(f"  Benign samples: {benign_count}")
-    print(f"  Attack ratio: {attack_count/len(samples)*100:.1f}%")
+    print(f"  Attack ratio: {attack_count / len(samples) * 100:.1f}%")
 
     print("\n🎯 Attack Type Distribution:")
     for attack_type, count in attack_type_counts.items():

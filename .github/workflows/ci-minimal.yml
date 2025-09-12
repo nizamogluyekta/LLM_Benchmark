@@ -43,14 +43,14 @@ jobs:
           key: poetry-ubuntu-${{ env.POETRY_VERSION }}
 
       - name: Install Poetry
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          if [ ! -f "$HOME/.local/bin/poetry" ]; then
+            curl -sSL https://install.python-poetry.org | python3 -
+          fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry config virtualenvs.create true
           $HOME/.local/bin/poetry config virtualenvs.in-project true
           $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
@@ -143,14 +143,14 @@ jobs:
           key: poetry-macos-${{ env.POETRY_VERSION }}
 
       - name: Install Poetry
-        if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          if [ ! -f "$HOME/.local/bin/poetry" ]; then
+            curl -sSL https://install.python-poetry.org | python3 -
+          fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry config virtualenvs.create true
           $HOME/.local/bin/poetry config virtualenvs.in-project true
 

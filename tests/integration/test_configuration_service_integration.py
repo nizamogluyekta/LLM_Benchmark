@@ -15,6 +15,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import pytest_asyncio
 import yaml
 
 from benchmark.core.config import ExperimentConfig
@@ -24,7 +25,7 @@ from benchmark.services.configuration_service import ConfigurationService
 class TestConfigurationServiceIntegration:
     """Integration tests for Configuration Service with real scenarios."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def config_service(self):
         """Create and initialize a ConfigurationService for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:

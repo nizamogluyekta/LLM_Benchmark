@@ -70,6 +70,7 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
@@ -112,6 +113,7 @@ jobs:
             -v
         env:
           DATABASE_URL: sqlite+aiosqlite:///test-data/test.db
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Test MLX model loading (Apple Silicon only)
         if: matrix.python-version == '3.11'
@@ -148,6 +150,8 @@ jobs:
             --cov-report=xml:coverage-reports/coverage-integration-config.xml \
             --junitxml=test-results/integration/config-tests.xml \
             -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Test data generator integration
         run: |
@@ -185,6 +189,8 @@ jobs:
           print(f'✓ Configuration validation works: {config.name}')
           print('Integration test completed successfully!')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload integration test results
         if: always()
@@ -243,6 +249,7 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
@@ -344,6 +351,8 @@ jobs:
 
           print(f'Generated {len(samples)} E2E test samples')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Test CLI help and validation
         run: |
@@ -362,6 +371,8 @@ jobs:
           config = ExperimentConfig(**config_data)
           print(f'✓ Configuration validation passed: {config.experiment.name}')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Run mock benchmark experiment
         run: |
@@ -436,6 +447,8 @@ jobs:
           assert 0 <= accuracy <= 1, f'Invalid accuracy: {accuracy}'
           print(f'E2E test completed successfully with {accuracy:.1%} accuracy')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Validate E2E outputs
         run: |
@@ -465,6 +478,8 @@ jobs:
           else:
               print('⚠ Database file not found (expected for some test scenarios)')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload E2E test results
         if: always()
@@ -513,6 +528,7 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
 
@@ -572,6 +588,8 @@ jobs:
 
           print('✓ All performance benchmarks passed')
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Performance test - Database operations
         run: |
@@ -606,6 +624,8 @@ jobs:
 
           asyncio.run(test_db_performance())
           "
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload performance test results
         if: always()

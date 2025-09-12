@@ -50,6 +50,7 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
@@ -149,6 +150,7 @@ jobs:
 
       - name: Configure Poetry
         run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
 

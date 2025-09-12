@@ -66,12 +66,9 @@ jobs:
           restore-keys: |
             poetry-deps-ubuntu-3.11-
 
-      - name: Install dependencies
+      - name: Install dependencies and project
         run: |
-          poetry install --with dev --no-root
-
-      - name: Install project
-        run: poetry install --only-root
+          poetry install --with dev
 
       - name: Run ruff linting
         run: |
@@ -165,12 +162,9 @@ jobs:
           restore-keys: |
             poetry-deps-macos-3.11-
 
-      - name: Install dependencies
+      - name: Install dependencies and project
         run: |
-          poetry install --with dev --no-root
-
-      - name: Install project
-        run: poetry install --only-root
+          poetry install --with dev
 
       - name: Run resource management tests
         run: |

@@ -48,10 +48,10 @@ jobs:
       - name: Verify Poetry installation and configure
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry --version
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry --version
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -131,10 +131,10 @@ jobs:
       - name: Verify Poetry installation and configure
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry --version
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry --version
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -228,10 +228,10 @@ jobs:
       - name: Verify Poetry installation and configure
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry --version
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry --version
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -367,9 +367,9 @@ jobs:
       - name: Configure Poetry
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -467,10 +467,10 @@ jobs:
       - name: Verify Poetry installation and configure
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry --version
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry --version
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps

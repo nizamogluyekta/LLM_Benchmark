@@ -71,9 +71,9 @@ jobs:
       - name: Configure Poetry
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -143,12 +143,53 @@ jobs:
 
       - name: Run configuration tests
         run: |
-          poetry run pytest tests/integration/ \
-            -k "config" \
+          poetry run pytest tests/integration/test_configuration_service_integration.py \
+            tests/integration/test_sample_configs.py \
             --cov=src/benchmark/core \
             --cov-append \
             --cov-report=xml:coverage-reports/coverage-integration-config.xml \
             --junitxml=test-results/integration/config-tests.xml \
+            -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Run other integration tests (excluding MLX)
+        run: |
+          poetry run pytest \
+            tests/integration/test_data_cache_integration.py \
+            tests/integration/test_data_service_integration.py \
+            tests/integration/test_database_integration.py \
+            tests/integration/test_huggingface_integration.py \
+            --cov=src/benchmark \
+            --cov-append \
+            --cov-report=xml:coverage-reports/coverage-integration-other.xml \
+            --junitxml=test-results/integration/other-tests.xml \
+            -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Run MLX integration tests (macOS only)
+        if: matrix.python-version == '3.11'
+        continue-on-error: true  # Allow failure if MLX not available
+        run: |
+          poetry run pytest \
+            tests/integration/test_mlx_integration.py \
+            --junitxml=test-results/integration/mlx-tests.xml \
+            -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Run model service integration tests
+        run: |
+          poetry run pytest \
+            tests/integration/test_model_service_integration.py \
+            tests/integration/test_ollama_integration.py \
+            tests/integration/test_resource_integration.py \
+            --cov=src/benchmark/services \
+            --cov=src/benchmark/models \
+            --cov-append \
+            --cov-report=xml:coverage-reports/coverage-integration-models.xml \
+            --junitxml=test-results/integration/model-tests.xml \
             -v
         env:
           PYTHONPATH: ${{ github.workspace }}/src
@@ -250,9 +291,9 @@ jobs:
       - name: Configure Poetry
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
-          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -529,8 +570,8 @@ jobs:
       - name: Configure Poetry
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          poetry config virtualenvs.create true
-          poetry config virtualenvs.in-project true
+          $HOME/.local/bin/poetry config virtualenvs.create true
+          $HOME/.local/bin/poetry config virtualenvs.in-project true
 
       - name: Cache Poetry dependencies
         id: cache-deps

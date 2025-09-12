@@ -51,7 +51,9 @@ jobs:
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Add Poetry to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |
@@ -140,7 +142,9 @@ jobs:
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Add Poetry to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |
@@ -243,7 +247,9 @@ jobs:
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Add Poetry to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |
@@ -386,6 +392,7 @@ jobs:
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
+          poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
 
       - name: Cache Poetry dependencies
         id: cache-deps
@@ -486,7 +493,9 @@ jobs:
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Add Poetry to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure Poetry
         run: |

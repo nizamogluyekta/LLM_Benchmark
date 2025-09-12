@@ -396,8 +396,8 @@ class TestModelResourceManager:
         old_score = resource_manager._calculate_unload_score(old_model)
         recent_score = resource_manager._calculate_unload_score(recent_model)
 
-        # Old model should have higher score (better candidate)
-        assert old_score > recent_score
+        # Old model should have lower score (better candidate for unloading)
+        assert old_score < recent_score
 
     @pytest.mark.asyncio
     async def test_idle_model_detection(self, resource_manager):

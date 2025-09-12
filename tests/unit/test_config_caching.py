@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 import yaml
 
 from benchmark.core.config import DatasetConfig, EvaluationConfig, ExperimentConfig, ModelConfig
@@ -20,7 +21,7 @@ from benchmark.services.cache import ConfigDiffTracker, ConfigurationCache, Lazy
 class TestConfigurationCache:
     """Test the ConfigurationCache component."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def cache(self):
         """Fixture for configuration cache."""
         cache = ConfigurationCache(max_size=5, ttl_seconds=10, max_memory_mb=1)
@@ -217,7 +218,7 @@ class TestConfigurationCache:
 class TestLazyConfigLoader:
     """Test the LazyConfigLoader component."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def lazy_loader(self):
         """Fixture for lazy config loader."""
         loader = LazyConfigLoader(cache_size=10)

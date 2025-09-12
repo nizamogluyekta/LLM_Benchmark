@@ -349,6 +349,7 @@ class ModelResourceManager:
             optimized = sorted(
                 model_estimates,
                 key=lambda x: (x[2], -x[1].total_estimated_gb),  # High priority, low memory first
+                reverse=True,  # Sort in descending order by priority score
             )
 
             return [config for config, _, _ in optimized]

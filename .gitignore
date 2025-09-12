@@ -175,8 +175,9 @@ reports/
 exports/
 
 # Model directories (downloaded models can be very large)
-models/
-model_cache/
+# Note: src/benchmark/models/ should NOT be ignored (it contains source code)
+/models/
+/model_cache/
 .cache/
 mlx_cache/
 

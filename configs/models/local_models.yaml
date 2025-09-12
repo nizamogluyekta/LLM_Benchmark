@@ -1,0 +1,261 @@
+# Local MLX Models Configuration
+# Reusable configuration for local models using Apple's MLX framework
+#
+# This file demonstrates:
+# - MLX-optimized model configurations
+# - Apple Silicon performance tuning
+# - Various model sizes and specializations
+# - Memory and performance optimization
+#
+# Usage:
+#   Use as base configuration with inheritance:
+#   base_config_path: configs/models/local_models.yaml
+
+# Base configuration for local MLX models
+name: "local-mlx-models"
+description: "Local MLX model configurations for privacy-focused evaluation"
+version: "1.0"
+
+# Default output location for local model experiments
+output_dir: "${RESULTS_DIR:./results}/local_models"
+
+# Common dataset configuration for local model testing
+datasets:
+  - name: "cybersec-local-test"
+    description: "Small test dataset for local model validation"
+    source: "local"
+    path: "${DATA_DIR:./data}/test_dataset.csv"
+    max_samples: 500  # Keep small for local testing
+    test_split: 0.2
+    validation_split: 0.1
+    preprocessing:
+      - "normalize_text"
+      - "remove_duplicates"
+
+# MLX Model Configurations
+models:
+  # Llama 2 7B - Good balance of performance and resource usage
+  - name: "llama-2-7b-cybersec"
+    description: "Llama 2 7B model fine-tuned for cybersecurity tasks"
+    type: "mlx_local"
+    path: "${MODEL_DIR:./models}/llama-2-7b-cybersec-mlx"
+
+    # Generation parameters
+    max_tokens: 512
+    temperature: 0.1
+    top_k: 40
+    top_p: 0.9
+    repetition_penalty: 1.1
+
+    # MLX-specific configuration
+    config:
+      # Hardware optimization for Apple Silicon
+      device: "${MLX_DEVICE:mps}"          # mps for Apple Silicon, cpu fallback
+      precision: "float16"                 # Use float16 for memory efficiency
+      batch_size: 1                       # Start with batch size 1
+      max_memory_gb: 8                    # Limit memory usage
+
+      # Model loading options
+      lazy_loading: true                  # Load model weights on demand
+      quantization: "4bit"                # 4-bit quantization for efficiency
+
+      # Context and sequence handling
+      context_length: 2048
+      sliding_window: true                # Enable sliding window attention
+      chunk_size: 512                     # Process in chunks for long sequences
+
+      # Performance tuning
+      compile_model: true                 # Compile model for MLX optimization
+      cache_weights: true                 # Cache model weights in memory
+      prefill_cache: 256                  # Prefill KV cache size
+
+    # Cybersecurity-focused system prompt
+    system_prompt: |
+      You are a cybersecurity expert AI assistant running locally to ensure privacy.
+      Analyze the provided data for security threats, malware, or suspicious activity.
+      Provide clear, actionable insights based on cybersecurity best practices.
+      Always prioritize accuracy and explain your reasoning.
+
+  # Llama 2 13B - Higher capability model for more complex tasks
+  - name: "llama-2-13b-cybersec"
+    description: "Llama 2 13B model for advanced cybersecurity analysis"
+    type: "mlx_local"
+    path: "${MODEL_DIR:./models}/llama-2-13b-cybersec-mlx"
+
+    max_tokens: 1024
+    temperature: 0.05                   # Lower temperature for more deterministic output
+    top_k: 50
+    top_p: 0.95
+    repetition_penalty: 1.05
+
+    config:
+      device: "${MLX_DEVICE:mps}"
+      precision: "float16"
+      batch_size: 1
+      max_memory_gb: 16                 # Larger model needs more memory
+
+      lazy_loading: true
+      quantization: "4bit"              # Essential for 13B model
+
+      context_length: 4096              # Larger context window
+      sliding_window: true
+      chunk_size: 1024
+
+      compile_model: true
+      cache_weights: true
+      prefill_cache: 512
+
+      # Additional optimization for larger model
+      gradient_checkpointing: true      # Reduce memory during inference
+      attention_implementation: "flash" # Use Flash Attention if available
+
+    system_prompt: |
+      You are an advanced cybersecurity AI analyst with deep expertise in threat detection,
+      malware analysis, and network security. Your local deployment ensures complete data
+      privacy while providing sophisticated security analysis.
+
+      Analyze the provided information thoroughly and provide:
+      1. Clear threat assessment
+      2. Detailed reasoning
+      3. Recommended actions
+      4. Confidence level in your analysis
+
+  # Code Llama - Specialized for security code analysis
+  - name: "code-llama-7b-security"
+    description: "Code Llama 7B specialized for security code analysis"
+    type: "mlx_local"
+    path: "${MODEL_DIR:./models}/code-llama-7b-security-mlx"
+
+    max_tokens: 2048                    # Longer output for code analysis
+    temperature: 0.0                    # Deterministic for code analysis
+    top_k: 30
+    top_p: 0.8
+    repetition_penalty: 1.0
+
+    config:
+      device: "${MLX_DEVICE:mps}"
+      precision: "float16"
+      batch_size: 1
+      max_memory_gb: 10
+
+      lazy_loading: true
+      quantization: "8bit"              # 8-bit for better code understanding
+
+      context_length: 8192              # Large context for code files
+      sliding_window: true
+      chunk_size: 2048
+
+      compile_model: true
+      cache_weights: true
+      prefill_cache: 1024
+
+      # Code-specific optimizations
+      enable_code_highlighting: true
+      preserve_formatting: true
+
+    system_prompt: |
+      You are a security-focused code analysis AI. Your expertise includes:
+      - Vulnerability detection in source code
+      - Security best practices review
+      - Malware and exploit identification
+      - Secure coding recommendations
+
+      When analyzing code, provide:
+      1. Security vulnerability assessment
+      2. Line-by-line analysis of suspicious patterns
+      3. Severity ratings (Critical/High/Medium/Low)
+      4. Remediation suggestions
+      5. Code examples for fixes when appropriate
+
+  # Mistral 7B - Alternative architecture for comparison
+  - name: "mistral-7b-cybersec"
+    description: "Mistral 7B model fine-tuned for cybersecurity"
+    type: "mlx_local"
+    path: "${MODEL_DIR:./models}/mistral-7b-cybersec-mlx"
+
+    max_tokens: 1024
+    temperature: 0.1
+    top_k: 40
+    top_p: 0.9
+    repetition_penalty: 1.1
+
+    config:
+      device: "${MLX_DEVICE:mps}"
+      precision: "float16"
+      batch_size: 2                     # Mistral can handle larger batch
+      max_memory_gb: 8
+
+      lazy_loading: true
+      quantization: "4bit"
+
+      context_length: 4096              # Mistral's extended context
+      sliding_window: true
+      chunk_size: 1024
+
+      compile_model: true
+      cache_weights: true
+      prefill_cache: 512
+
+      # Mistral-specific optimizations
+      use_sliding_window_attention: true
+      window_size: 4096
+
+    system_prompt: |
+      You are a cybersecurity specialist AI running on local infrastructure for maximum
+      security and privacy. Your role is to analyze potential threats and provide
+      expert-level cybersecurity guidance.
+
+# Common evaluation settings for local models
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "response_time"         # Important for local models
+
+  batch_size: 1               # Local models typically work better with smaller batches
+  parallel_jobs: 1            # Single job to avoid resource conflicts
+  timeout_minutes: 120        # Longer timeout for local inference
+
+  # Local model specific settings
+  warm_up_iterations: 3       # Warm up the model before timing
+  measure_latency: true       # Detailed latency measurements
+  profile_memory: true        # Memory profiling
+
+# Resource monitoring for local models
+monitoring:
+  track_memory: true
+  track_time: true
+  track_cpu_usage: true
+  track_gpu_usage: true       # If using GPU
+  save_metrics: true
+
+  # Performance thresholds
+  memory_threshold_gb: 20     # Alert if memory usage exceeds threshold
+  cpu_threshold_percent: 90   # Alert if CPU usage too high
+
+# Local model optimization tips (documentation)
+optimization_notes: |
+  Tips for optimizing local MLX models:
+
+  1. Memory Management:
+     - Use 4-bit quantization for models >7B parameters
+     - Enable lazy loading for multiple models
+     - Set appropriate max_memory_gb limits
+
+  2. Performance Tuning:
+     - Enable model compilation for MLX optimization
+     - Use appropriate batch sizes (usually 1-4 for local)
+     - Consider sliding window attention for long contexts
+
+  3. Apple Silicon Specific:
+     - Use 'mps' device for GPU acceleration
+     - float16 precision works well on Apple Silicon
+     - Take advantage of unified memory architecture
+
+  4. Model Selection:
+     - 7B models: Good balance for most tasks
+     - 13B models: Better quality, needs more memory
+     - Code models: Specialized for code analysis
+     - Quantized models: Faster inference, slightly lower quality

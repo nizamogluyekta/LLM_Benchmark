@@ -83,43 +83,6 @@ jobs:
         run: |
           poetry run mypy src/ tests/ --show-error-codes --ignore-missing-imports || true
 
-      - name: Debug Python path and module structure
-        run: |
-          echo "=== Current working directory ==="
-          pwd
-          echo "=== Python path ==="
-          poetry run python -c "import sys; print('\n'.join(sys.path))"
-          echo "=== PYTHONPATH environment variable ==="
-          echo "PYTHONPATH: $PYTHONPATH"
-          echo "=== Source directory structure ==="
-          ls -la src/
-          echo "=== Benchmark module structure ==="
-          ls -la src/benchmark/
-          echo "=== Models directory structure ==="
-          ls -la src/benchmark/models/
-          echo "=== Test import attempt ==="
-          poetry run python -c "
-          import sys
-          print('Python executable:', sys.executable)
-          print('PYTHONPATH from env:', '${{ github.workspace }}/src')
-          sys.path.insert(0, '${{ github.workspace }}/src')
-          print('Updated sys.path:')
-          for p in sys.path:
-              print(f'  {p}')
-          try:
-              import benchmark
-              print('✅ benchmark module imported successfully')
-              print('benchmark location:', benchmark.__file__)
-          except Exception as e:
-              print('❌ Failed to import benchmark:', e)
-          try:
-              from benchmark.models import resource_manager
-              print('✅ resource_manager imported successfully')
-          except Exception as e:
-              print('❌ Failed to import resource_manager:', e)
-          "
-        env:
-          PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Run core unit tests
         run: |

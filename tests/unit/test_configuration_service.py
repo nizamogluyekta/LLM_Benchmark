@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import pytest_asyncio
 import yaml
 
 from benchmark.core.base import ServiceStatus
@@ -24,7 +25,7 @@ from benchmark.services.configuration_service import ConfigurationService
 class TestConfigurationService:
     """Test the Configuration Service functionality."""
 
-    @pytest.fixture
+    @pytest_asyncio.fixture
     async def config_service(self):
         """Create a ConfigurationService instance for testing."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -250,11 +251,11 @@ class TestConfigurationService:
     @pytest.mark.asyncio
     async def test_cache_expiration(self, config_service, temp_config_file):
         """Test cache expiration functionality."""
-        # Create service with very short cache TTL
+        # Create service with very short cache TTL for fast testing
         with tempfile.TemporaryDirectory() as temp_dir:
             short_cache_service = ConfigurationService(
                 config_dir=Path(temp_dir),
-                cache_ttl=1,  # 1 second TTL
+                cache_ttl=0.05,  # 50ms TTL for fast testing
             )
             await short_cache_service.initialize()
 
@@ -268,7 +269,7 @@ class TestConfigurationService:
                 assert cached_config is not None
 
                 # Wait for cache to expire
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.1)
 
                 # Should no longer be cached
                 expired_config = short_cache_service.get_cached_config(config_id)

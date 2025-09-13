@@ -92,15 +92,15 @@ class TestMemoryDataCache:
     @pytest.mark.asyncio
     async def test_cache_ttl_expiration(self, cache):
         """Test TTL expiration."""
-        # Set item with short TTL
-        await cache.set("key1", "value1", ttl=1)
+        # Set item with very short TTL for fast testing
+        await cache.set("key1", "value1", ttl=0.05)
 
         # Should be available immediately
         result = await cache.get("key1")
         assert result == "value1"
 
         # Wait for expiration
-        await asyncio.sleep(1.1)
+        await asyncio.sleep(0.1)
 
         # Should be expired
         result = await cache.get("key1")

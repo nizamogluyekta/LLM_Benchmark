@@ -104,8 +104,8 @@ class TestConfigurationCache:
     @pytest.mark.asyncio
     async def test_ttl_expiration(self, sample_config):
         """Test TTL-based expiration."""
-        # Create cache with short TTL
-        cache = ConfigurationCache(max_size=10, ttl_seconds=1, max_memory_mb=1)
+        # Create cache with very short TTL for fast testing
+        cache = ConfigurationCache(max_size=10, ttl_seconds=0.05, max_memory_mb=1)
         await cache.initialize()
 
         try:
@@ -118,8 +118,8 @@ class TestConfigurationCache:
             result = await cache.get_config(config_id)
             assert result is not None
 
-            # Wait for expiration
-            await asyncio.sleep(1.5)
+            # Wait for expiration - reduced for CI performance
+            await asyncio.sleep(0.1)
 
             # Should be expired
             result = await cache.get_config(config_id)

@@ -84,7 +84,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
-addopts = "-v --tb=short --strict-markers"
+addopts = "-v --tb=short --strict-markers --timeout=60"
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",

@@ -307,8 +307,7 @@ jobs:
             --junitxml=test-results/apple-silicon-performance.xml \
             --maxfail=3 \
             -v \
-            --tb=short \
-            --timeout=300
+            --tb=short
         env:
           PYTEST_CURRENT_TEST: true
           PYTHONPATH: ${{ github.workspace }}/src
@@ -530,8 +529,7 @@ jobs:
             --junitxml=test-results/mlx-integration.xml \
             --maxfail=3 \
             -v \
-            --tb=short \
-            --timeout=600
+            --tb=short
         env:
           PYTEST_CURRENT_TEST: true
           PYTHONPATH: ${{ github.workspace }}/src

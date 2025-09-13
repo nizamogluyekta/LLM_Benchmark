@@ -40,6 +40,7 @@ class TestMLXIntegration:
 
     @pytest.mark.integration
     @pytest.mark.slow
+    @pytest.mark.asyncio
     async def test_plugin_initialization_real_system(self, plugin: MLXModelPlugin) -> None:
         """Test plugin initialization on real Apple Silicon system."""
         # Test system detection
@@ -56,6 +57,7 @@ class TestMLXIntegration:
         assert plugin.mlx is not None
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_initialize_with_dummy_model(self, plugin: MLXModelPlugin) -> None:
         """Test initialization with a dummy model structure."""
         with TemporaryDirectory() as temp_dir:
@@ -90,6 +92,7 @@ class TestMLXIntegration:
                 assert plugin.performance_metrics is not None
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_health_check_real_system(self, plugin: MLXModelPlugin) -> None:
         """Test health check on real system."""
         health = await plugin.health_check()
@@ -101,6 +104,7 @@ class TestMLXIntegration:
         assert health["cached_models"] == 0  # No models loaded yet
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_prompt_formatting_integration(self, plugin: MLXModelPlugin) -> None:
         """Test prompt formatting integration."""
         test_samples = [
@@ -127,6 +131,7 @@ class TestMLXIntegration:
                 assert field in prompt
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_response_parsing_integration(self, plugin: MLXModelPlugin) -> None:
         """Test response parsing with various response formats."""
         test_responses = [
@@ -195,6 +200,7 @@ class TestMLXIntegration:
             )
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_cybersecurity_prompt_quality(self, plugin: MLXModelPlugin) -> None:
         """Test that cybersecurity prompts contain appropriate security context."""
         security_samples = [
@@ -245,6 +251,7 @@ class TestMLXIntegration:
             assert "IOCs:" in prompt
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_performance_characteristics(self, plugin: MLXModelPlugin) -> None:
         """Test performance characteristics of the plugin."""
         import time
@@ -267,6 +274,7 @@ class TestMLXIntegration:
         assert avg_time_ms < 10.0, f"Prompt processing too slow: {avg_time_ms:.2f}ms"
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_memory_estimation_integration(self, plugin: MLXModelPlugin) -> None:
         """Test memory estimation integration."""
         # Test with no model loaded
@@ -279,6 +287,7 @@ class TestMLXIntegration:
         print(f"System memory: {system_info['memory_gb']:.2f}GB")
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_cleanup_integration(self, plugin: MLXModelPlugin) -> None:
         """Test cleanup integration."""
         # Set some state
@@ -297,6 +306,7 @@ class TestMLXIntegration:
         assert "test" in plugin._model_cache
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_configuration_validation_integration(self, plugin: MLXModelPlugin) -> None:
         """Test configuration validation integration."""
         test_configs = [
@@ -342,6 +352,7 @@ class TestMLXIntegration:
                 print(f"Config {i} handled with error: {e}")
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_format_variants_integration(self, plugin: MLXModelPlugin) -> None:
         """Test that plugin can handle various input formats."""
         format_samples = [
@@ -382,6 +393,7 @@ class TestMLXIntegration:
         platform.system() != "Darwin" or "arm64" not in platform.machine().lower(),
         reason="Requires Apple Silicon for realistic performance testing",
     )
+    @pytest.mark.asyncio
     async def test_apple_silicon_specific_features(self, plugin: MLXModelPlugin) -> None:
         """Test Apple Silicon specific features."""
         # Test system detection
@@ -402,6 +414,7 @@ class TestMLXIntegration:
             pytest.skip("MLX libraries not available despite Apple Silicon hardware")
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_cache_behavior_integration(self, plugin: MLXModelPlugin) -> None:
         """Test model caching behavior."""
         # Test cache initialization
@@ -420,6 +433,7 @@ class TestMLXIntegration:
             assert "4bit" in cache_key
 
     @pytest.mark.integration
+    @pytest.mark.asyncio
     async def test_error_handling_integration(self, plugin: MLXModelPlugin) -> None:
         """Test comprehensive error handling."""
         error_scenarios = [

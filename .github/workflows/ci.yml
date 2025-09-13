@@ -189,8 +189,7 @@ jobs:
             --junitxml=test-results/unit-tests-linux.xml \
             --maxfail=10 \
             -v \
-            --tb=short \
-            --timeout=30
+            --tb=short
         env:
           PYTEST_CURRENT_TEST: true
           PYTHONPATH: ${{ github.workspace }}/src

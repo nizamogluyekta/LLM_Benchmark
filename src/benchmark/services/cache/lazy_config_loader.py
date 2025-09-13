@@ -9,12 +9,11 @@ for better performance.
 import asyncio
 import hashlib
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
-
-from benchmark.core.logging import get_logger
 
 
 class LazyConfigLoader:
@@ -37,7 +36,7 @@ class LazyConfigLoader:
             cache_size: Maximum number of section caches to maintain
         """
         self.cache_size = cache_size
-        self.logger = get_logger("lazy_config_loader")
+        self.logger = logging.getLogger("lazy_config_loader")
 
         # Section cache: {file_hash -> {section_name -> section_data}}
         self._section_cache: dict[str, dict[str, Any]] = {}
@@ -143,38 +142,38 @@ class LazyConfigLoader:
         config_path_obj = Path(config_path).resolve()
 
         try:
+            # Load minimal sections for outline (without holding lock for entire operation)
+            outline_sections = ["name", "description", "output_dir"]
+            outline: dict[str, Any] = {}
+
+            for section in outline_sections:
+                try:
+                    section_data = await self.load_section(str(config_path_obj), section)
+                    outline[section] = section_data
+                except KeyError:
+                    # Section doesn't exist, skip
+                    pass
+
+            # Add metadata about available sections (quickly check cache)
+            file_key = str(config_path_obj)
             async with self._lock:
-                # Load minimal sections for outline
-                outline_sections = ["name", "description", "output_dir"]
-                outline: dict[str, Any] = {}
-
-                for section in outline_sections:
-                    try:
-                        section_data = await self.load_section(str(config_path_obj), section)
-                        outline[section] = section_data
-                    except KeyError:
-                        # Section doesn't exist, skip
-                        pass
-
-                # Add metadata about available sections
-                file_key = str(config_path_obj)
                 if file_key in self._section_cache:
                     outline["_available_sections"] = list(self._section_cache[file_key].keys())
 
-                # Add counts for major sections
-                try:
-                    models = await self.load_section(str(config_path_obj), "models")
-                    outline["_models_count"] = len(models) if isinstance(models, list) else 1
-                except KeyError:
-                    outline["_models_count"] = 0
+            # Add counts for major sections (load separately to avoid lock conflicts)
+            try:
+                models = await self.load_section(str(config_path_obj), "models")
+                outline["_models_count"] = len(models) if isinstance(models, list) else 1
+            except KeyError:
+                outline["_models_count"] = 0
 
-                try:
-                    datasets = await self.load_section(str(config_path_obj), "datasets")
-                    outline["_datasets_count"] = len(datasets) if isinstance(datasets, list) else 1
-                except KeyError:
-                    outline["_datasets_count"] = 0
+            try:
+                datasets = await self.load_section(str(config_path_obj), "datasets")
+                outline["_datasets_count"] = len(datasets) if isinstance(datasets, list) else 1
+            except KeyError:
+                outline["_datasets_count"] = 0
 
-                return outline
+            return outline
 
         except Exception as e:
             self.logger.error(f"Failed to get config outline for {config_path}: {e}")
@@ -333,7 +332,7 @@ class ConfigDiffTracker:
 
     def __init__(self) -> None:
         """Initialize the diff tracker."""
-        self.logger = get_logger("config_diff_tracker")
+        self.logger = logging.getLogger("config_diff_tracker")
         self._previous_configs: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
 

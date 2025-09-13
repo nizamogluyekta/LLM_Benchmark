@@ -655,4 +655,4 @@ def log_evaluation_metrics(
 
 
 # Initialize logging system on import
-configure_logging()
+# configure_logging()  # Disabled to prevent CI hanging - call manually when needed

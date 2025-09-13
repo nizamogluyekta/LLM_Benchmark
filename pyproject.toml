@@ -90,7 +90,8 @@ markers = [
     "integration: Integration tests",
     "performance: Performance tests",
     "e2e: End-to-end tests",
-    "slow: Slow running tests"
+    "slow: Slow running tests",
+    "benchmark: Benchmark tests"
 ]
 
 [tool.ruff]

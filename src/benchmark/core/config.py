@@ -154,11 +154,10 @@ class ExperimentConfig(BaseModel):
             raise ValueError("Output directory cannot be empty")
 
         try:
-            path = Path(v)
-            # Convert to absolute path to avoid issues
-            if not path.is_absolute():
-                path = Path.cwd() / path
-            return str(path)
+            # Validate the path without converting to absolute
+            # This preserves relative paths as expected by users
+            Path(v)  # Just validate that it's a valid path
+            return v.strip()  # Return original path, just stripped
         except Exception as e:
             raise ValueError(f"Invalid output directory path '{v}': {e}") from e
 

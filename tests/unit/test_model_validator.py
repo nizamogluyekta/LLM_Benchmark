@@ -265,10 +265,14 @@ class TestModelValidator:
     @pytest.mark.asyncio
     async def test_api_validation_with_mock_response(self, validator: ModelValidator) -> None:
         """Test API validation with mocked HTTP responses."""
-        # Test missing API key
+        # Test missing API key (ensure no env var fallback)
+        import os
+        from unittest.mock import patch
+
         config_no_key = {"provider": "openai"}
-        result = await validator._validate_api_config(config_no_key)
-        assert result is False
+        with patch.dict(os.environ, {}, clear=True):  # Clear environment to ensure no API key
+            result = await validator._validate_api_config(config_no_key)
+            assert result is False
 
         # Test invalid provider (no default endpoint)
         config_invalid = {"provider": "unknown_provider", "api_key": "test-key"}
@@ -282,13 +286,13 @@ class TestModelValidator:
             "endpoint": "https://api.openai.com/v1/models",
         }
 
-        # For now, we'll test that the method handles network errors gracefully
+        # For now, we'll test that the method handles network calls gracefully
         # In a real environment, this would make actual HTTP calls
-        # The method should return False on any network error
+        # The result can be True or False depending on network conditions and API availability
         result = await validator._validate_api_config(config_with_endpoint)
         assert isinstance(
             result, bool
-        )  # Should return a boolean, success or failure depends on network
+        )  # Should return a boolean, success or failure depends on network availability
 
     @pytest.mark.asyncio
     async def test_memory_estimation(self, validator: ModelValidator) -> None:

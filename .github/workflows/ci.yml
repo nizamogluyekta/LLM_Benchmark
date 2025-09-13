@@ -250,10 +250,26 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Configure Poetry
+      - name: Ensure Poetry is available
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry --version
+          # If Poetry was cached but not in PATH, install it
+          if [ ! -f "$HOME/.local/bin/poetry" ]; then
+            echo "Poetry not found in cache, installing..."
+            curl -sSL https://install.python-poetry.org | python3 -
+          fi
+          # Verify Poetry is now available
+          if [ -f "$HOME/.local/bin/poetry" ]; then
+            echo "Poetry found at $HOME/.local/bin/poetry"
+            $HOME/.local/bin/poetry --version
+          else
+            echo "ERROR: Poetry installation failed"
+            ls -la $HOME/.local/bin/ || echo "Directory $HOME/.local/bin/ does not exist"
+            exit 1
+          fi
+
+      - name: Configure Poetry
+        run: |
           $HOME/.local/bin/poetry config virtualenvs.create true
           $HOME/.local/bin/poetry config virtualenvs.in-project true
           $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}
@@ -499,10 +515,26 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Configure Poetry
+      - name: Ensure Poetry is available
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry --version
+          # If Poetry was cached but not in PATH, install it
+          if [ ! -f "$HOME/.local/bin/poetry" ]; then
+            echo "Poetry not found in cache, installing..."
+            curl -sSL https://install.python-poetry.org | python3 -
+          fi
+          # Verify Poetry is now available
+          if [ -f "$HOME/.local/bin/poetry" ]; then
+            echo "Poetry found at $HOME/.local/bin/poetry"
+            $HOME/.local/bin/poetry --version
+          else
+            echo "ERROR: Poetry installation failed"
+            ls -la $HOME/.local/bin/ || echo "Directory $HOME/.local/bin/ does not exist"
+            exit 1
+          fi
+
+      - name: Configure Poetry
+        run: |
           $HOME/.local/bin/poetry config virtualenvs.create true
           $HOME/.local/bin/poetry config virtualenvs.in-project true
           $HOME/.local/bin/poetry config cache-dir ${{ env.POETRY_CACHE_DIR }}

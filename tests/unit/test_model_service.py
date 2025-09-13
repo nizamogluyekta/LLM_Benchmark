@@ -12,7 +12,7 @@ import pytest
 import pytest_asyncio
 
 from benchmark.core.base import ServiceResponse, ServiceStatus
-from benchmark.core.exceptions import BenchmarkError, ConfigurationError
+from benchmark.core.exceptions import BenchmarkError, ConfigurationError, ErrorCode
 from benchmark.interfaces.model_interfaces import (
     ModelInfo,
     ModelPlugin,
@@ -141,8 +141,8 @@ class TestModelService:
         """Test service initialization."""
         assert model_service.status == ServiceStatus.HEALTHY
         assert model_service.is_initialized()
-        assert len(model_service.plugins) == 0
-        assert len(model_service.loaded_models) == 0
+        assert len(model_service.plugins) == 4  # Default plugins are automatically registered
+        assert len(model_service.loaded_models) == 0  # No models loaded yet
         assert model_service.max_models == 3
         assert model_service.max_memory_mb == 1024
 
@@ -272,11 +272,11 @@ class TestModelService:
         """Test batch prediction with nonexistent model."""
         samples = ["test message"]
 
-        response = await model_service.predict_batch("nonexistent", samples)
+        with pytest.raises(BenchmarkError) as exc_info:
+            await model_service.predict_batch("nonexistent", samples)
 
-        assert response.successful_predictions == 0
-        assert response.failed_predictions == len(samples)
-        assert "error" in response.metadata
+        assert "Model nonexistent not found" in str(exc_info.value)
+        assert exc_info.value.error_code == ErrorCode.MODEL_NOT_FOUND
 
     @pytest.mark.asyncio
     async def test_batch_prediction_plugin_failure(self, model_service, mock_plugin_class):

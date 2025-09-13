@@ -284,6 +284,7 @@ class TestTimingDecorators:
             assert hasattr(error_record, "success")
             assert error_record.success is False
 
+    @pytest.mark.asyncio
     async def test_timed_operation_async(self, caplog):
         """Test timed operation decorator with async function."""
         with caplog.at_level(logging.INFO):

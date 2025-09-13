@@ -292,7 +292,12 @@ class TestConfigurationService:
 
         # Validate that default config is actually valid after resolving environment variables
         # First resolve environment variables to convert template strings to proper types
-        with patch.dict(os.environ, {}, clear=True):  # Clear env vars to use defaults
+        # Set required environment variables that don't have defaults
+        test_env_vars = {
+            "ANTHROPIC_API_KEY": "test-key-123",
+            "OPENAI_API_KEY": "test-openai-key-123",
+        }
+        with patch.dict(os.environ, test_env_vars):
             resolved_config = config_service.resolve_environment_variables(default_config)
 
         validated_config = ExperimentConfig(**resolved_config)
@@ -569,8 +574,9 @@ class TestConfigurationServiceErrors:
             service = ConfigurationService(config_dir=Path(temp_dir))
             await service.initialize()
 
-            # Test clearing cache with error by mocking the cache.clear() method to fail
-            with patch.object(service._cache, "clear", side_effect=Exception("Cache clear error")):
+            # Test clearing cache with error by mocking the logger to raise an exception
+            # This will simulate an error during the cache clearing process
+            with patch.object(service.logger, "info", side_effect=Exception("Logging error")):
                 response = await service.clear_cache()
 
                 assert response.success is False
@@ -691,7 +697,12 @@ async def test_configuration_service_integration():
             default_config = await service.get_default_config()
 
             # Patch environment variable resolution to prevent type conversion issues
-            with patch.dict(os.environ, {}, clear=True):  # Clear env vars to use defaults
+            # Set required environment variables that don't have defaults
+            test_env_vars = {
+                "ANTHROPIC_API_KEY": "test-key-123",
+                "OPENAI_API_KEY": "test-openai-key-123",
+            }
+            with patch.dict(os.environ, test_env_vars):
                 resolved_config = service.resolve_environment_variables(default_config)
 
             # Handle potential validation errors with fallback

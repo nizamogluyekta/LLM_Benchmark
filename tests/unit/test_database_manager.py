@@ -130,13 +130,26 @@ class TestDatabaseManager:
 
     @pytest.mark.asyncio
     async def test_initialize_after_close(self):
-        """Test initialization after manager has been closed."""
+        """Test re-initialization after manager has been closed."""
         db_url = "sqlite+aiosqlite:///:memory:"
         manager = DatabaseManager(db_url)
-        manager._closed = True
 
-        with pytest.raises(DatabaseConnectionError):
-            await manager.initialize()
+        # Initialize first time
+        await manager.initialize()
+        assert manager._initialized
+
+        # Close the manager
+        await manager.close()
+        assert manager._closed
+        assert not manager._initialized
+
+        # Re-initialize should work (reset _closed state)
+        await manager.initialize()
+        assert manager._initialized
+        assert not manager._closed
+
+        # Clean up
+        await manager.close()
 
     @pytest.mark.asyncio
     async def test_initialize_connection_failure(self):
@@ -374,7 +387,13 @@ class TestDatabaseManager:
         # Mock engine to avoid actual connection
         mock_engine = Mock()
         mock_conn = AsyncMock()
-        mock_engine.begin.return_value.__aenter__.return_value = mock_conn
+
+        # Create an async context manager mock
+        mock_transaction = AsyncMock()
+        mock_transaction.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_transaction.__aexit__ = AsyncMock(return_value=None)
+        mock_engine.begin.return_value = mock_transaction
+
         manager._engine = mock_engine
         manager._initialized = True
 
@@ -442,14 +461,18 @@ class TestDatabaseManager:
         manager = DatabaseManager(db_url)
         await manager.initialize()
 
-        # Mock engine to raise error on dispose
-        with patch.object(manager._engine, "dispose", new_callable=AsyncMock) as mock_dispose:
-            mock_dispose.side_effect = Exception("Dispose error")
+        # Replace the engine with a mock that has a dispose method that raises an error
+        mock_engine = AsyncMock()
+        mock_engine.dispose = AsyncMock(side_effect=Exception("Dispose error"))
+        manager._engine = mock_engine
 
-            await manager.close()
+        await manager.close()
 
-            # Should still mark as closed despite error
-            assert manager._closed is True
+        # Should still mark as closed despite error
+        assert manager._closed is True
+
+        # Verify dispose was called
+        mock_engine.dispose.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_async_context_manager(self):

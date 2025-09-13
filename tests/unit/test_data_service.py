@@ -564,10 +564,11 @@ class TestDataService:
 
         # Should be equal (content-wise, not necessarily same object reference)
         assert splits1 == splits2
-        assert len(splits1) == len(splits2)
+        assert splits1.dataset_id == splits2.dataset_id
         if splits1 and splits2:
-            assert len(splits1["train"]) == len(splits2["train"])
-            assert len(splits1["test"]) == len(splits2["test"])
+            assert splits1.train_size == splits2.train_size
+            assert splits1.test_size == splits2.test_size
+            assert splits1.validation_size == splits2.validation_size
 
     @pytest.mark.asyncio
     async def test_get_batch(self, service, sample_config):

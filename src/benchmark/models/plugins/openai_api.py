@@ -9,11 +9,11 @@ import asyncio
 import os
 import re
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
 from openai import AsyncOpenAI, OpenAI
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from benchmark.core.base import ServiceResponse
 from benchmark.core.exceptions import BenchmarkError, ErrorCode
@@ -24,6 +24,50 @@ from benchmark.interfaces.model_interfaces import (
     PerformanceMetrics,
     Prediction,
 )
+
+# Lazy import for tenacity to handle missing dependency gracefully
+_tenacity_retry: dict[str, Any] | None = None
+_tenacity_checked: bool = False
+
+
+def _get_tenacity_retry() -> dict[str, Any] | None:
+    """Get tenacity retry decorator if available, with lazy loading."""
+    global _tenacity_retry, _tenacity_checked
+    if not _tenacity_checked:
+        try:
+            from tenacity import (
+                retry,
+                retry_if_exception_type,
+                stop_after_attempt,
+                wait_exponential,
+            )
+
+            _tenacity_retry = {
+                "retry": retry,
+                "retry_if_exception_type": retry_if_exception_type,
+                "stop_after_attempt": stop_after_attempt,
+                "wait_exponential": wait_exponential,
+            }
+        except ImportError:
+            _tenacity_retry = None
+        _tenacity_checked = True
+    return _tenacity_retry
+
+
+def _with_retry_if_available(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Apply retry decorator if tenacity is available, otherwise return function as-is."""
+    tenacity_funcs = _get_tenacity_retry()
+    if tenacity_funcs is None:
+        # If tenacity is not available, return the function without retry
+        return func
+
+    # Apply retry decorator with the same parameters as before
+    return tenacity_funcs["retry"](
+        stop=tenacity_funcs["stop_after_attempt"](3),
+        wait=tenacity_funcs["wait_exponential"](multiplier=1, min=4, max=10),
+        retry=tenacity_funcs["retry_if_exception_type"]((Exception,)),
+        reraise=True,
+    )(func)
 
 
 class APIRateLimiter:
@@ -431,12 +475,7 @@ class OpenAIModelPlugin(ModelPlugin):
         except Exception as e:
             raise Exception(f"API access test failed: {str(e)}") from e
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type((Exception,)),
-        reraise=True,
-    )
+    @_with_retry_if_available
     async def _make_api_request(
         self, messages: list[dict[str, str]], estimated_tokens: int = 1000
     ) -> dict[str, Any]:

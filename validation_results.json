@@ -1,0 +1,53 @@
+{
+  "code_blocks_found": 58,
+  "code_blocks_validated": 57,
+  "errors": [
+    "YAML syntax error in integration_guide.md:yaml:3: expected a single document in the stream\n  in \"<unicode string>\", line 2, column 1:\n    apiVersion: apps/v1\n    ^\nbut found another document\n  in \"<unicode string>\", line 72, column 1:\n    ---\n    ^",
+    "Documented method missing: ModelService.discover_models",
+    "Documented method missing: ModelService.unload_model",
+    "Documented method missing: ModelService.predict",
+    "Documented method missing: ModelService.batch_predict",
+    "Documented method missing: ModelService.get_loaded_models",
+    "Documented method missing: ModelService.get_resource_usage",
+    "Configuration validation error in integration_guide.md: expected a single document in the stream\n  in \"<unicode string>\", line 2, column 1:\n    apiVersion: apps/v1\n    ^\nbut found another document\n  in \"<unicode string>\", line 72, column 1:\n    ---\n    ^"
+  ],
+  "files_checked": 4,
+  "summary": {
+    "code_blocks_found": 58,
+    "code_blocks_validated": 57,
+    "files_checked": 4,
+    "overall_status": "failed",
+    "success_rate": 98.27586206896551,
+    "total_errors": 8,
+    "total_warnings": 27
+  },
+  "warnings": [
+    "Python code block may be missing imports: model_service_api.md:python:1",
+    "Python code block may be missing imports: model_service_api.md:python:2",
+    "Python code block may be missing imports: model_service_api.md:python:3",
+    "Python code block may be missing imports: model_service_api.md:python:4",
+    "Python code block may be missing imports: model_service_api.md:python:5",
+    "Python code block may be missing imports: model_service_api.md:python:6",
+    "Python code block may be missing imports: model_service_api.md:python:8",
+    "Python code block may be missing imports: model_service_api.md:python:9",
+    "Python code block may be missing imports: model_service_api.md:python:10",
+    "Python code block may be missing imports: model_service_api.md:python:12",
+    "Python code block may be missing imports: model_service_api.md:python:16",
+    "Python code block may be missing imports: model_service_api.md:python:17",
+    "Python code block may be missing imports: model_service_api.md:python:18",
+    "Python code block may be missing imports: model_service_api.md:python:20",
+    "Python code block may be missing imports: model_service_api.md:python:21",
+    "Python code block may be missing imports: model_service_api.md:python:22",
+    "Python code block may be missing imports: evaluation_service_api.md:python:1",
+    "Python code block may be missing imports: evaluation_service_api.md:python:3",
+    "Python code block may be missing imports: evaluation_service_api.md:python:6",
+    "Python code block may be missing imports: evaluation_service_api.md:python:7",
+    "Python code block may be missing imports: evaluation_service_api.md:python:8",
+    "Python code block may be missing imports: evaluation_service_api.md:python:10",
+    "Python code block may be missing imports: evaluation_service_api.md:python:11",
+    "Python code block may be missing imports: integration_guide.md:python:8",
+    "Python code block may be missing imports: performance_results.md:python:2",
+    "Python code block may be missing imports: performance_results.md:python:3",
+    "Python code block may be missing imports: performance_results.md:python:4"
+  ]
+}

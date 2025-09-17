@@ -236,7 +236,7 @@ class OrchestrationService(BaseService, OrchestrationInterface):
 
     def _create_workflow_steps(self, config: dict[str, Any]) -> list[WorkflowStep]:
         """Create workflow steps based on configuration."""
-        from benchmark.workflow.workflow_steps import (
+        from benchmark.workflow.steps import (
             DataLoadingStep,
             EvaluationExecutionStep,
             ModelLoadingStep,

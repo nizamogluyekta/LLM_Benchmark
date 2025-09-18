@@ -25,6 +25,44 @@ from benchmark.interfaces.evaluation_interfaces import (
 )
 
 
+class ExplainabilityConfig:
+    """Configuration for explainability evaluation."""
+
+    def __init__(self, config_dict: dict[str, Any] | None = None) -> None:
+        """
+        Initialize explainability configuration.
+
+        Args:
+            config_dict: Configuration dictionary with explainability settings
+        """
+        config = config_dict or {}
+
+        # LLM judge configuration
+        self.judge_model = config.get("judge_model", "gpt-4o-mini")
+        self.judge_temperature = config.get("judge_temperature", 0.1)
+        self.judge_max_tokens = config.get("judge_max_tokens", 500)
+        self.rate_limit_concurrent_calls = config.get("rate_limit_concurrent_calls", 10)
+
+        # Automated metrics configuration
+        self.enable_bleu = config.get("enable_bleu", True)
+        self.enable_rouge = config.get("enable_rouge", True)
+        self.enable_bert_score = config.get("enable_bert_score", True)
+
+        # Domain-specific configuration
+        self.enable_ioc_analysis = config.get("enable_ioc_analysis", True)
+        self.enable_mitre_analysis = config.get("enable_mitre_analysis", True)
+        self.enable_consistency_check = config.get("enable_consistency_check", True)
+
+        # Processing configuration
+        self.batch_size = config.get("batch_size", 10)
+        self.timeout_seconds = config.get("timeout_seconds", 60.0)
+        self.fail_on_missing_explanation = config.get("fail_on_missing_explanation", False)
+
+        # Thresholds
+        self.min_explanation_length = config.get("min_explanation_length", 10)
+        self.max_explanation_length = config.get("max_explanation_length", 1000)
+
+
 class EvaluationService(BaseService):
     """Service for evaluating model predictions using various metrics."""
 
@@ -51,6 +89,9 @@ class EvaluationService(BaseService):
         self.evaluation_timeout_seconds = 300.0
         self.max_history_size = 1000
 
+        # Metric-specific configurations
+        self.explainability_config: ExplainabilityConfig | None = None
+
     async def initialize(self, config: dict[str, Any] | None = None) -> ServiceResponse:
         """
         Initialize evaluation service and register default evaluators.
@@ -73,6 +114,11 @@ class EvaluationService(BaseService):
                     "evaluation_timeout_seconds", self.evaluation_timeout_seconds
                 )
                 self.max_history_size = config.get("max_history_size", self.max_history_size)
+
+                # Initialize explainability configuration
+                explainability_config = config.get("explainability", {})
+                if explainability_config:
+                    self.explainability_config = ExplainabilityConfig(explainability_config)
 
             # Register default evaluators
             await self._register_default_evaluators()
@@ -103,9 +149,25 @@ class EvaluationService(BaseService):
         """Register all available metric evaluators."""
         try:
             # Import evaluators here to avoid circular imports
-            # For now, we'll create a placeholder that can be expanded later
-            self.logger.info("Default evaluators registration placeholder")
-            # TODO: Import and register actual evaluators when they are implemented
+            self.logger.info("Registering default metric evaluators")
+
+            # Register explainability evaluator
+            try:
+                from benchmark.evaluation.metrics.explainability import ExplainabilityEvaluator
+
+                # Use configured judge model if available
+                judge_model = "gpt-4o-mini"
+                if self.explainability_config:
+                    judge_model = self.explainability_config.judge_model
+
+                self.evaluators[MetricType.EXPLAINABILITY] = ExplainabilityEvaluator(judge_model)
+                self.logger.info(
+                    f"Registered explainability evaluator with judge model: {judge_model}"
+                )
+            except ImportError as e:
+                self.logger.warning(f"Failed to register explainability evaluator: {e}")
+
+            # TODO: Register other evaluators when they are implemented
             # from benchmark.evaluation.metrics.accuracy import AccuracyEvaluator
             # self.evaluators[MetricType.ACCURACY] = AccuracyEvaluator()
 
@@ -386,7 +448,191 @@ class EvaluationService(BaseService):
                         error=f"Data incompatible with {metric_type.value} evaluator",
                     )
 
+                # Additional validation for explainability metrics
+                if metric_type == MetricType.EXPLAINABILITY:
+                    validation_result = self._validate_explainability_data(request)
+                    if not validation_result.success:
+                        return validation_result
+
             return ServiceResponse(success=True, message="Data validation successful")
+
+        except Exception as e:
+            return ServiceResponse(success=False, message="Operation failed", error=str(e))
+
+    def _validate_explainability_data(self, request: EvaluationRequest) -> ServiceResponse:
+        """
+        Validate data for explainability evaluation.
+
+        Args:
+            request: Evaluation request to validate
+
+        Returns:
+            ServiceResponse indicating validation success or failure
+        """
+        try:
+            # Check for explanations in predictions
+            explanations_found = 0
+            for pred in request.predictions:
+                explanation = pred.get("explanation", "")
+                if not explanation:
+                    # Try alternative field names
+                    explanation = pred.get("reasoning", pred.get("rationale", ""))
+
+                if explanation and explanation.strip():
+                    explanations_found += 1
+
+            if explanations_found == 0:
+                if (
+                    self.explainability_config
+                    and self.explainability_config.fail_on_missing_explanation
+                ):
+                    return ServiceResponse(
+                        success=False,
+                        message="Explainability validation failed",
+                        error="No explanations found in predictions",
+                    )
+                else:
+                    # Warning but allow evaluation to continue
+                    self.logger.warning(
+                        "No explanations found in predictions for explainability evaluation"
+                    )
+
+            # Check explanation length constraints if configured
+            if self.explainability_config:
+                invalid_lengths = 0
+                for pred in request.predictions:
+                    explanation = (
+                        pred.get("explanation", "")
+                        or pred.get("reasoning", "")
+                        or pred.get("rationale", "")
+                    )
+                    if explanation:
+                        word_count = len(explanation.split())
+                        if (
+                            word_count < self.explainability_config.min_explanation_length
+                            or word_count > self.explainability_config.max_explanation_length
+                        ):
+                            invalid_lengths += 1
+
+                if invalid_lengths > 0:
+                    self.logger.warning(f"{invalid_lengths} explanations have invalid lengths")
+
+            return ServiceResponse(success=True, message="Explainability validation successful")
+
+        except Exception as e:
+            return ServiceResponse(success=False, message="Validation failed", error=str(e))
+
+    async def evaluate_explainability(
+        self,
+        predictions: list[dict[str, Any]],
+        ground_truth: list[dict[str, Any]],
+        config_override: dict[str, Any] | None = None,
+    ) -> ServiceResponse:
+        """
+        Specialized method for explainability evaluation.
+
+        Args:
+            predictions: List of prediction dictionaries with explanations
+            ground_truth: List of ground truth dictionaries
+            config_override: Optional configuration override for this evaluation
+
+        Returns:
+            ServiceResponse with explainability evaluation results
+        """
+        try:
+            # Check if explainability evaluator is available
+            if MetricType.EXPLAINABILITY not in self.evaluators:
+                return ServiceResponse(
+                    success=False,
+                    message="Explainability evaluation failed",
+                    error="Explainability evaluator not registered",
+                )
+
+            evaluator = self.evaluators[MetricType.EXPLAINABILITY]
+
+            # Apply configuration override if provided
+            original_config = self.explainability_config
+            if config_override:
+                temp_config = ExplainabilityConfig(config_override)
+                # Update evaluator with new configuration if needed
+                if hasattr(evaluator, "llm_judge") and temp_config.judge_model != (
+                    original_config.judge_model if original_config else "gpt-4o-mini"
+                ):
+                    # Re-initialize LLM judge with new model
+                    from benchmark.evaluation.explainability.llm_judge import LLMJudgeEvaluator
+
+                    evaluator.llm_judge = LLMJudgeEvaluator(temp_config.judge_model)
+
+            # Validate data compatibility
+            if not evaluator.validate_data_compatibility(predictions, ground_truth):
+                return ServiceResponse(
+                    success=False,
+                    message="Explainability evaluation failed",
+                    error="Data not compatible with explainability evaluator",
+                )
+
+            # Run evaluation
+            self.logger.info("Starting explainability evaluation")
+            start_time = time.time()
+
+            metrics = await evaluator.evaluate(predictions, ground_truth)
+
+            execution_time = time.time() - start_time
+            self.logger.info(f"Explainability evaluation completed in {execution_time:.2f}s")
+
+            return ServiceResponse(
+                success=True,
+                message="Explainability evaluation completed successfully",
+                data={
+                    "metrics": metrics,
+                    "execution_time_seconds": execution_time,
+                    "predictions_evaluated": len(predictions),
+                    "evaluator_info": evaluator.get_evaluator_info(),
+                },
+            )
+
+        except Exception as e:
+            self.logger.error(f"Explainability evaluation failed: {e}")
+            return ServiceResponse(
+                success=False,
+                message="Explainability evaluation failed",
+                error=str(e),
+            )
+
+    async def get_explainability_config(self) -> ServiceResponse:
+        """
+        Get current explainability configuration.
+
+        Returns:
+            ServiceResponse with configuration details
+        """
+        try:
+            if self.explainability_config:
+                config_dict = {
+                    "judge_model": self.explainability_config.judge_model,
+                    "judge_temperature": self.explainability_config.judge_temperature,
+                    "judge_max_tokens": self.explainability_config.judge_max_tokens,
+                    "rate_limit_concurrent_calls": self.explainability_config.rate_limit_concurrent_calls,
+                    "enable_bleu": self.explainability_config.enable_bleu,
+                    "enable_rouge": self.explainability_config.enable_rouge,
+                    "enable_bert_score": self.explainability_config.enable_bert_score,
+                    "enable_ioc_analysis": self.explainability_config.enable_ioc_analysis,
+                    "enable_mitre_analysis": self.explainability_config.enable_mitre_analysis,
+                    "enable_consistency_check": self.explainability_config.enable_consistency_check,
+                    "batch_size": self.explainability_config.batch_size,
+                    "timeout_seconds": self.explainability_config.timeout_seconds,
+                    "fail_on_missing_explanation": self.explainability_config.fail_on_missing_explanation,
+                    "min_explanation_length": self.explainability_config.min_explanation_length,
+                    "max_explanation_length": self.explainability_config.max_explanation_length,
+                }
+            else:
+                config_dict = {"message": "No explainability configuration set, using defaults"}
+
+            return ServiceResponse(
+                success=True,
+                message="Explainability configuration retrieved",
+                data=config_dict,
+            )
 
         except Exception as e:
             return ServiceResponse(success=False, message="Operation failed", error=str(e))

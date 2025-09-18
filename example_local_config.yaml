@@ -1,0 +1,74 @@
+name: "Local LLM Cybersecurity Benchmark"
+description: "Benchmarking local LLMs running on LM Studio for cybersecurity analysis"
+output_dir: "./results"
+
+# Models running on LM Studio
+models:
+  - name: "llama3-8b-instruct"
+    model_name: "meta-llama/Meta-Llama-3-8B-Instruct"  # Adjust to your actual model name in LM Studio
+    type: "openai_api"
+    max_tokens: 512
+    temperature: 0.1
+
+  - name: "mistral-7b-instruct"
+    model_name: "mistralai/Mistral-7B-Instruct-v0.3"   # Adjust to your actual model name in LM Studio
+    type: "openai_api"
+    max_tokens: 512
+    temperature: 0.1
+
+# Datasets for cybersecurity analysis
+datasets:
+  - name: "network_intrusion_samples"
+    source: "memory"
+    samples:
+      - text: "192.168.1.100 attempted SQL injection: ' OR '1'='1' -- on login form"
+        label: "ATTACK"
+      - text: "Multiple failed login attempts from 203.0.113.42: admin/password123, admin/admin, root/toor"
+        label: "ATTACK"
+      - text: "User john.doe successfully logged in from 192.168.1.55 at 09:15 AM"
+        label: "BENIGN"
+      - text: "Scheduled backup completed successfully: 2.5GB backed up to network storage"
+        label: "BENIGN"
+      - text: "DDoS attack detected: 10,000 requests/second from botnet IPs targeting server 192.168.1.50"
+        label: "ATTACK"
+      - text: "Normal web traffic: GET /index.html HTTP/1.1 from legitimate user browser"
+        label: "BENIGN"
+    max_samples: 100
+    test_split: 0.2
+    validation_split: 0.1
+
+  - name: "malware_detection_samples"
+    source: "memory"
+    samples:
+      - text: "Suspicious file hash detected: 5d41402abc4b2a76b9719d911017c592 - known malware signature"
+        label: "ATTACK"
+      - text: "Phishing email detected: fake PayPal login page at http://paypal-secure.malicious.com"
+        label: "ATTACK"
+      - text: "Email sent successfully: Weekly report from accounting@company.com to management team"
+        label: "BENIGN"
+      - text: "Software update installed: Security patch KB4052623 applied to Windows servers"
+        label: "BENIGN"
+      - text: "Buffer overflow exploit attempt in HTTP request: AAAA...AAAA (1024 characters)"
+        label: "ATTACK"
+      - text: "System health check: All services running normally, CPU usage 25%, Memory 60%"
+        label: "BENIGN"
+    max_samples: 50
+    test_split: 0.2
+    validation_split: 0.1
+
+# Evaluation configuration
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1_score"]
+  explainability_analysis: true
+  template_evaluation: true
+  pattern_analysis: true
+  parallel_jobs: 2
+  timeout_minutes: 30
+  batch_size: 8
+
+# LM Studio specific settings
+lm_studio:
+  base_url: "http://localhost:1234"  # Default LM Studio URL
+  api_endpoint: "/v1"                # OpenAI-compatible endpoint
+  timeout: 60                        # Request timeout in seconds
+  max_retries: 3                     # Maximum retry attempts

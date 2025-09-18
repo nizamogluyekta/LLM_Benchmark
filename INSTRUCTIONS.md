@@ -1268,6 +1268,149 @@ EOF
 PYTHONPATH=src python custom_metrics.py
 ```
 
+### Advanced Explainability Analysis
+
+```bash
+# Test advanced explainability features
+cat > test_explainability.py << 'EOF'
+import asyncio
+from benchmark.evaluation.explainability.advanced_analysis import AdvancedExplainabilityAnalyzer
+from benchmark.evaluation.explainability.explanation_templates import ExplanationTemplateGenerator
+
+async def test_advanced_explainability():
+    """Test advanced explainability analysis features."""
+
+    print("🔍 Testing Advanced Explainability Analysis")
+
+    # Initialize analyzers
+    analyzer = AdvancedExplainabilityAnalyzer()
+    template_generator = ExplanationTemplateGenerator()
+
+    # Sample cybersecurity predictions with explanations
+    predictions = [
+        {
+            "prediction": "attack",
+            "explanation": "Detected malware based on suspicious file hash. The process shows network communication indicating threat.",
+            "attack_type": "malware",
+            "confidence": 0.95
+        },
+        {
+            "prediction": "attack",
+            "explanation": "SQL injection attempt in login form using UNION technique. The payload contains malicious statements.",
+            "attack_type": "sql_injection",
+            "confidence": 0.88
+        },
+        {
+            "prediction": "attack",
+            "explanation": "DDoS attack detected via traffic flooding. Analysis shows high volume requests from multiple sources.",
+            "attack_type": "dos",
+            "confidence": 0.87
+        },
+        {
+            "prediction": "benign",
+            "explanation": "Normal user login showing expected patterns. The access time is consistent with work hours.",
+            "attack_type": "benign",
+            "confidence": 0.92
+        }
+    ]
+
+    ground_truth = [
+        {"label": "attack", "attack_type": "malware"},
+        {"label": "attack", "attack_type": "sql_injection"},
+        {"label": "attack", "attack_type": "dos"},
+        {"label": "benign", "attack_type": "benign"}
+    ]
+
+    # 1. Advanced Pattern Analysis
+    print("\n🧪 Running Advanced Pattern Analysis...")
+    results = analyzer.analyze_explanation_patterns(predictions, ground_truth)
+
+    print("📊 Pattern Analysis Results:")
+    print(f"   Attack Type Patterns: {len(results['attack_type_patterns'])} types analyzed")
+    print(f"   Explanation Clusters: {len(results['explanation_clusters'])} clusters found")
+    print(f"   Quality Issues: {len(results['common_issues'])} issues identified")
+
+    # Statistical analysis
+    stats = results['statistical_analysis']
+    print(f"📈 Statistical Analysis:")
+    print(f"   Vocabulary richness: {stats['vocabulary_analysis']['vocabulary_richness']:.3f}")
+    print(f"   Average word count: {stats['basic_statistics']['average_word_count']:.1f}")
+    print(f"   Consistency ratio: {stats['consistency_analysis']['consistency_ratio']:.3f}")
+
+    # 2. Template-Based Evaluation
+    print("\n🎯 Running Template-Based Evaluation...")
+
+    # Test individual explanation
+    malware_explanation = "Detected trojan malware based on suspicious file hash and network connections. The file shows encrypted communications and registry modifications which indicates high threat."
+
+    result = template_generator.evaluate_explanation_against_template(malware_explanation, "malware")
+
+    print("Template Evaluation Results:")
+    print(f"   Score: {result['score']:.3f}")
+    print(f"   Present elements: {', '.join(result['present_elements'])}")
+    print(f"   Missing elements: {', '.join(result['missing_elements'])}")
+    print(f"   Template used: {result['template_used']}")
+
+    # Batch evaluation
+    batch_results = template_generator.batch_evaluate_explanations(predictions)
+
+    print(f"\n📦 Batch Evaluation Results:")
+    print(f"   Average score: {batch_results['summary_statistics']['average_score']:.3f}")
+    print(f"   High quality explanations: {batch_results['summary_statistics']['high_quality_explanations']}")
+    print(f"   Template usage: {len(batch_results['template_usage'])} templates used")
+
+    # 3. Model Comparison
+    print("\n🏆 Running Model Comparison...")
+
+    # Simulate two different models
+    model_a_predictions = [
+        {"explanation": "Basic malware detection", "prediction": "attack"},
+        {"explanation": "SQL injection found", "prediction": "attack"},
+        {"explanation": "Normal activity", "prediction": "benign"}
+    ]
+
+    model_b_predictions = [
+        {"explanation": "Advanced malware analysis reveals trojan with network communication and persistence mechanisms", "prediction": "attack"},
+        {"explanation": "SQL injection attack using UNION technique targeting user database", "prediction": "attack"},
+        {"explanation": "Legitimate user access during business hours with expected behavioral patterns", "prediction": "benign"}
+    ]
+
+    comparison = analyzer.compare_model_explanations(
+        model_a_predictions,
+        model_b_predictions,
+        ground_truth[:3],
+        "Basic Model",
+        "Advanced Model"
+    )
+
+    print("Model Comparison Results:")
+    print(f"   Better model: {comparison.better_model}")
+    print(f"   Quality difference: {comparison.quality_difference:.3f}")
+    print(f"   Consistency difference: {comparison.consistency_difference:.3f}")
+    print(f"   Technical accuracy difference: {comparison.technical_accuracy_difference:.3f}")
+
+    # 4. Improvement Suggestions
+    suggestions = analyzer.generate_improvement_suggestions(predictions, results)
+    print(f"\n💡 Improvement Suggestions ({len(suggestions)} recommendations):")
+    for suggestion in suggestions[:3]:
+        print(f"   • {suggestion}")
+
+    # 5. Template Statistics
+    template_stats = template_generator.get_template_statistics()
+    print(f"\n📋 Template Statistics:")
+    print(f"   Total templates: {template_stats['total_templates']}")
+    print(f"   Attack types covered: {', '.join(template_stats['attack_types_covered'][:5])}...")
+
+    print("\n✅ Advanced Explainability Analysis completed!")
+
+# Run the test
+asyncio.run(test_advanced_explainability())
+EOF
+
+# Run explainability analysis test
+PYTHONPATH=src python test_explainability.py
+```
+
 ---
 
 ## ❗ Troubleshooting

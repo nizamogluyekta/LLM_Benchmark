@@ -737,3 +737,262 @@ benchmark test datagen --scale large --samples 100000
 #   🔍 Schema compliance: 100% valid
 #   ✅ All generation tests passed
 ```
+
+## 🔍 Advanced Explainability Analysis Integration
+
+### Explainability Analysis Commands
+
+#### `benchmark explain analyze <predictions_file>`
+Run comprehensive explainability analysis on model predictions:
+
+```bash
+# Basic explainability analysis
+benchmark explain analyze predictions.json --ground-truth ground_truth.json
+
+# Advanced pattern analysis
+benchmark explain analyze predictions.json --analysis pattern,clustering,quality
+
+# Template-based evaluation
+benchmark explain analyze predictions.json --templates cybersecurity --strict-mode
+
+# Example output:
+# 🔍 Advanced Explainability Analysis Results:
+#   📊 Pattern Analysis: 4 attack types analyzed
+#   🎯 Clustering: 3 explanation clusters identified
+#   📈 Quality Distribution: 0.856 average quality score
+#   ⚠️ Common Issues: 2 quality issues detected
+#   💡 Improvement Suggestions: 5 recommendations generated
+```
+
+#### `benchmark explain compare <model_predictions>`
+Compare explanation quality across multiple models:
+
+```bash
+# Compare two models
+benchmark explain compare model_a.json model_b.json --ground-truth truth.json
+
+# Multi-model comparison with detailed metrics
+benchmark explain compare model_*.json --detailed --export-report comparison.json
+
+# Model ranking with statistical significance
+benchmark explain compare predictions_*.json --rank-models --significance-test
+
+# Example output:
+# 🏆 Model Explanation Comparison:
+#   Best model: Advanced-Model-B (0.847 weighted score)
+#   Quality difference: +0.123 (significant)
+#   Consistency difference: +0.089 (significant)
+#   Technical accuracy: +0.156 (highly significant)
+#
+# 📊 Detailed Rankings:
+#   1. Advanced-Model-B: 0.847 overall score
+#   2. GPT-4o-Mini: 0.724 overall score
+#   3. Basic-Model-A: 0.691 overall score
+```
+
+#### `benchmark explain templates <action>`
+Manage and evaluate cybersecurity explanation templates:
+
+```bash
+# List available templates
+benchmark explain templates list
+
+# Evaluate explanations against templates
+benchmark explain templates evaluate predictions.json --attack-types malware,dos,phishing
+
+# Generate template statistics
+benchmark explain templates stats --export-csv template_stats.csv
+
+# Add custom template
+benchmark explain templates add custom_template.yaml
+
+# Example output:
+# 📋 Cybersecurity Explanation Templates:
+#   ✅ Malware Analysis (4 required, 3 optional elements)
+#   ✅ SQL Injection (4 required, 3 optional elements)
+#   ✅ DoS Attack (3 required, 3 optional elements)
+#   ✅ Phishing Detection (4 required, 3 optional elements)
+#   ✅ Intrusion Detection (3 required, 3 optional elements)
+#   ✅ Data Exfiltration (4 required, 3 optional elements)
+#
+# 📊 Template Coverage: 10 attack types, 95% cybersecurity domain coverage
+```
+
+#### `benchmark explain quality <predictions_file>`
+Comprehensive explanation quality assessment:
+
+```bash
+# Quality distribution analysis
+benchmark explain quality predictions.json --distribution-stats
+
+# Identify quality issues
+benchmark explain quality predictions.json --issues-analysis --fix-suggestions
+
+# Export quality metrics
+benchmark explain quality predictions.json --export-metrics quality_report.json
+
+# Example output:
+# 📈 Explanation Quality Assessment:
+#   🎯 Overall Quality Score: 0.742/1.0
+#   📊 Length Distribution: μ=18.5 words, σ=8.2
+#   ✅ Completeness Ratio: 67.3% (causal reasoning present)
+#   🔬 Technical Term Usage: 78.9% contain domain terminology
+#   📝 Vocabulary Richness: 0.68 (good diversity)
+#
+# ⚠️ Quality Issues Identified:
+#   • 15% explanations lack technical terminology
+#   • 23% explanations are too vague without specifics
+#   • 8% explanations have low completeness indicators
+#
+# 💡 Improvement Recommendations:
+#   • Include more cybersecurity-specific technical terms
+#   • Replace vague terms with specific details (IPs, ports, protocols)
+#   • Improve causal reasoning with 'because', 'due to', etc.
+```
+
+#### `benchmark explain patterns <predictions_file>`
+Advanced pattern recognition and clustering analysis:
+
+```bash
+# Pattern analysis by attack type
+benchmark explain patterns predictions.json --attack-types --keyword-coverage
+
+# Explanation clustering
+benchmark explain patterns predictions.json --clustering --similarity-threshold 0.6
+
+# Statistical pattern analysis
+benchmark explain patterns predictions.json --statistics --distribution-analysis
+
+# Example output:
+# 🔍 Advanced Pattern Analysis Results:
+#   🎯 Attack Type Patterns:
+#     • Malware: 15 samples, 78% keyword coverage, 0.82 diversity
+#     • SQL Injection: 12 samples, 91% keyword coverage, 0.67 diversity
+#     • DoS: 8 samples, 85% keyword coverage, 0.74 diversity
+#
+#   🔗 Explanation Clusters:
+#     • Cluster 1: "Pattern with phrases: malware detected, file hash" (8 explanations)
+#     • Cluster 2: "Pattern with phrases: sql injection, union technique" (6 explanations)
+#     • Cluster 3: "Pattern: attack-related, network-focused" (4 explanations)
+#
+#   📊 Statistical Analysis:
+#     • Vocabulary Richness: 0.68
+#     • Average Word Count: 18.5
+#     • Consistency Ratio: 0.87
+#     • Skewness: 0.23, Kurtosis: -0.15
+```
+
+### Integration Testing Commands
+
+#### `benchmark test explainability <test_suite>`
+Test advanced explainability analysis functionality:
+
+```bash
+# Run complete explainability test suite
+benchmark test explainability --suite advanced_analysis
+
+# Test specific components
+benchmark test explainability --components analyzer,templates,comparison
+
+# Test with realistic cybersecurity data
+benchmark test explainability --realistic-data --attack-types all
+
+# Example output:
+# 🧪 Advanced Explainability Testing Suite:
+# ✅ Test 1/24: AdvancedExplainabilityAnalyzer initialization (PASSED)
+# ✅ Test 2/24: Pattern analysis functionality (PASSED)
+# ✅ Test 3/24: Explanation clustering (PASSED)
+# ✅ Test 4/24: Quality distribution analysis (PASSED)
+# ✅ Test 5/24: Model comparison framework (PASSED)
+# ✅ Test 6/24: Template-based evaluation (PASSED)
+# ✅ Test 7/24: Batch processing capabilities (PASSED)
+# ✅ Test 8/24: Statistical analysis metrics (PASSED)
+# ...
+# ✅ Test 24/24: Edge case handling (PASSED)
+#
+# 📊 Explainability Test Results:
+#   ✅ All 24 tests passed
+#   🔍 Pattern analysis: Identifies 6+ attack types accurately
+#   🎯 Template evaluation: 10+ cybersecurity templates validated
+#   📈 Statistical metrics: Complete analysis including skewness/kurtosis
+#   🏆 Overall grade: EXCELLENT
+```
+
+### Evaluation Service Integration
+
+#### `benchmark evaluate explainability <evaluation_config>`
+Run explainability evaluation through the evaluation service:
+
+```bash
+# Standard explainability evaluation
+benchmark evaluate explainability eval_config.yaml --predictions predictions.json
+
+# Advanced analysis integration
+benchmark evaluate explainability eval_config.yaml --advanced-analysis --all-features
+
+# Custom configuration override
+benchmark evaluate explainability eval_config.yaml --judge-model gpt-4 --batch-size 5
+
+# Example output:
+# 🔬 Explainability Evaluation Pipeline:
+#   🤖 Judge Model: GPT-4o-mini
+#   📊 Batch Size: 10 predictions per batch
+#   🎯 Advanced Analysis: ENABLED
+#
+# 📈 Evaluation Results:
+#   ✅ LLM Judge Scores: 0.758 average quality
+#   📊 Automated Metrics: BLEU=0.45, ROUGE-L=0.52
+#   🔍 Pattern Analysis: 4 attack types, 3 clusters identified
+#   🎯 Template Evaluation: 0.736 average template score
+#   💡 Improvement Suggestions: 6 actionable recommendations
+#
+# 🏆 Overall Explainability Score: 0.747/1.0 (Good)
+```
+
+### Performance and Monitoring
+
+#### `benchmark explain performance <analysis_config>`
+Monitor explainability analysis performance:
+
+```bash
+# Performance benchmarking
+benchmark explain performance --samples 1000 --iterations 5
+
+# Memory usage analysis
+benchmark explain performance --memory-profile --large-dataset
+
+# Concurrent analysis testing
+benchmark explain performance --concurrent-batches 4 --batch-size 50
+
+# Example output:
+# ⚡ Explainability Analysis Performance:
+#   🚀 Pattern Analysis: 1,234 explanations/second
+#   🎯 Template Evaluation: 2,456 evaluations/second
+#   📊 Statistical Analysis: 5,678 calculations/second
+#   🔍 Clustering: 890 similarity computations/second
+#   💾 Memory Usage: 45.2MB for 1,000 explanations
+#   ⏱️ Total Analysis Time: 0.81 seconds
+#   🏆 Performance Grade: EXCELLENT
+```
+
+### Integration with Existing Workflows
+
+The advanced explainability features integrate seamlessly with existing CLI workflows:
+
+```bash
+# Complete evaluation pipeline with explainability
+benchmark config validate config.yaml && \
+benchmark data load dataset.yaml && \
+benchmark model load model.yaml && \
+benchmark model predict model-id data/samples.json --output predictions.json && \
+benchmark explain analyze predictions.json --ground-truth ground_truth.json && \
+benchmark explain compare predictions_*.json --rank-models
+
+# Automated quality assurance
+benchmark explain quality predictions.json --min-score 0.7 --auto-report
+
+# Template-based validation
+benchmark explain templates evaluate predictions.json --strict-mode --min-coverage 0.8
+```
+
+This advanced explainability analysis provides comprehensive insights into model explanation quality, helping improve cybersecurity model interpretability and trustworthiness.

@@ -1,0 +1,53 @@
+# NSL-KDD Benchmark Configuration Example
+# This configuration file shows how to set up the NSL-KDD benchmark
+
+experiment:
+  name: "NSL-KDD Network Intrusion Detection Benchmark"
+  description: "Evaluate LLM performance on network intrusion detection using NSL-KDD dataset"
+
+# LM Studio Configuration
+lm_studio:
+  url: "http://localhost:1234"
+  model_name: "local-model"  # Change this to your actual model name in LM Studio
+
+# Dataset Configuration
+dataset:
+  name: "NSL-KDD"
+  train_file: "KDDTrain+.txt"
+  test_file: "KDDTest+.txt"
+  train_subset_file: "KDDTrain+_20Percent.txt"
+  test_subset_file: "KDDTest-21.txt"
+
+# Benchmark Settings
+benchmark:
+  max_samples: 100           # Number of samples to test (start small for testing)
+  attack_ratio: 0.3          # Ratio of attack samples vs normal samples
+  balance_dataset: true      # Whether to balance normal/attack samples
+  random_seed: 42           # For reproducible results
+
+# Model Parameters
+model_params:
+  max_tokens: 256
+  temperature: 0.1
+
+# Evaluation Settings
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
+    - false_positive_rate
+    - attack_type_accuracy
+
+  performance_metrics:
+    - response_time
+    - throughput
+    - total_processing_time
+
+# Output Settings
+output:
+  save_predictions: true
+  save_explanations: true
+  generate_report: true
+  report_format: "json"     # json, csv, or both

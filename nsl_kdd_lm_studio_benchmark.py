@@ -517,14 +517,41 @@ class NSLKDDBenchmark:
             if p == "NORMAL" and t == "NORMAL"
         )
 
-        # Calculate metrics
-        accuracy = (tp + tn) / (tp + fp + fn + tn) if (tp + fp + fn + tn) > 0 else 0
+        # Calculate basic metrics
+        total_samples = tp + fp + fn + tn
+        accuracy = (tp + tn) / total_samples if total_samples > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0  # Also known as sensitivity
         f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
 
-        # False positive rate
-        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+        # Additional metrics
+        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0  # True Negative Rate
+        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  # False Positive Rate
+        fnr = fn / (fn + tp) if (fn + tp) > 0 else 0  # False Negative Rate
+
+        # Matthews Correlation Coefficient (MCC)
+        mcc_denominator = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+        mcc = ((tp * tn) - (fp * fn)) / mcc_denominator if mcc_denominator > 0 else 0
+
+        # R-squared (coefficient of determination) - for binary classification
+        # Calculate predicted probabilities based on binary predictions
+        y_true_binary = [1 if t == "ATTACK" else 0 for t in true_labels]
+        y_pred_binary = [1 if p == "ATTACK" else 0 for p in pred_labels]
+
+        # Mean of actual values
+        y_mean = sum(y_true_binary) / len(y_true_binary) if len(y_true_binary) > 0 else 0
+
+        # Total sum of squares and residual sum of squares
+        ss_tot = sum((y - y_mean) ** 2 for y in y_true_binary)
+        ss_res = sum(
+            (y_true - y_pred) ** 2
+            for y_true, y_pred in zip(y_true_binary, y_pred_binary, strict=False)
+        )
+
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+
+        # Balanced accuracy
+        balanced_accuracy = (recall + specificity) / 2
 
         # Attack type breakdown
         attack_type_performance: dict[str, dict[str, Any]] = {}
@@ -550,15 +577,26 @@ class NSLKDDBenchmark:
             )
 
         return {
+            # Basic metrics
             "accuracy": accuracy,
             "precision": precision,
             "recall": recall,
             "f1_score": f1_score,
+            "specificity": specificity,
+            "balanced_accuracy": balanced_accuracy,
+            # Advanced metrics
+            "matthews_correlation_coefficient": mcc,
+            "r_squared": r_squared,
+            # Error rates
             "false_positive_rate": fpr,
+            "false_negative_rate": fnr,
+            # Confusion matrix
             "true_positives": int(tp),
             "false_positives": int(fp),
             "false_negatives": int(fn),
             "true_negatives": int(tn),
+            "total_samples": int(total_samples),
+            # Additional info
             "total_predictions": len(valid_predictions),
             "error_predictions": len(predictions) - len(valid_predictions),
             "attack_type_performance": attack_type_performance,
@@ -619,37 +657,64 @@ class NSLKDDBenchmark:
         # Performance metrics
         metrics = self.results.get("metrics", {})
         if isinstance(metrics, dict) and "error" not in metrics:
-            print("\nACCURACY METRICS:")
-            print(f"Overall Accuracy: {metrics.get('accuracy', 0):.3f}")
-            print(f"Precision: {metrics.get('precision', 0):.3f}")
-            print(f"Recall: {metrics.get('recall', 0):.3f}")
-            print(f"F1-Score: {metrics.get('f1_score', 0):.3f}")
-            print(f"False Positive Rate: {metrics.get('false_positive_rate', 0):.3f}")
+            print("\n" + "=" * 50)
+            print("CLASSIFICATION METRICS")
+            print("=" * 50)
+            print(f"Overall Accuracy:        {metrics.get('accuracy', 0):.3f}")
+            print(f"Balanced Accuracy:       {metrics.get('balanced_accuracy', 0):.3f}")
+            print(f"Precision:               {metrics.get('precision', 0):.3f}")
+            print(f"Recall (Sensitivity):    {metrics.get('recall', 0):.3f}")
+            print(f"Specificity:             {metrics.get('specificity', 0):.3f}")
+            print(f"F1-Score:                {metrics.get('f1_score', 0):.3f}")
 
-            print("\nCONFUSION MATRIX:")
-            print(f"True Positives: {metrics.get('true_positives', 0)}")
-            print(f"False Positives: {metrics.get('false_positives', 0)}")
-            print(f"False Negatives: {metrics.get('false_negatives', 0)}")
-            print(f"True Negatives: {metrics.get('true_negatives', 0)}")
+            print("\n" + "=" * 50)
+            print("ADVANCED METRICS")
+            print("=" * 50)
+            print(
+                f"Matthews Correlation:    {metrics.get('matthews_correlation_coefficient', 0):.3f}"
+            )
+            print(f"R-Squared:               {metrics.get('r_squared', 0):.3f}")
+
+            print("\n" + "=" * 50)
+            print("ERROR RATES")
+            print("=" * 50)
+            print(f"False Positive Rate:     {metrics.get('false_positive_rate', 0):.3f}")
+            print(f"False Negative Rate:     {metrics.get('false_negative_rate', 0):.3f}")
+
+            print("\n" + "=" * 50)
+            print("CONFUSION MATRIX")
+            print("=" * 50)
+            print(f"True Positives:          {metrics.get('true_positives', 0)}")
+            print(f"False Positives:         {metrics.get('false_positives', 0)}")
+            print(f"False Negatives:         {metrics.get('false_negatives', 0)}")
+            print(f"True Negatives:          {metrics.get('true_negatives', 0)}")
+            print(f"Total Samples:           {metrics.get('total_samples', 0)}")
 
             # Attack type performance
             attack_type_perf = metrics.get("attack_type_performance", {})
             if isinstance(attack_type_perf, dict) and attack_type_perf:
-                print("\nATTACK TYPE DETECTION:")
+                print("\n" + "=" * 50)
+                print("ATTACK TYPE DETECTION PERFORMANCE")
+                print("=" * 50)
                 for attack_type, stats in attack_type_perf.items():
                     if isinstance(stats, dict):
                         correct = stats.get("correct", 0)
                         total = stats.get("total", 0)
                         accuracy = stats.get("accuracy", 0)
-                        print(f"  {attack_type}: {correct}/{total} ({accuracy:.3f})")
+                        print(f"{attack_type:15}: {correct:3}/{total:3} ({accuracy:.3f})")
 
         # Performance stats
         perf = self.results.get("performance", {})
         if isinstance(perf, dict) and "error" not in perf:
-            print("\nPERFORMANCE METRICS:")
-            print(f"Average response time: {perf.get('avg_response_time', 0):.3f}s")
-            print(f"Predictions per second: {perf.get('predictions_per_second', 0):.2f}")
-            print(f"Total processing time: {perf.get('total_time', 0):.2f}s")
+            print("\n" + "=" * 50)
+            print("PERFORMANCE METRICS")
+            print("=" * 50)
+            print(f"Average Response Time:   {perf.get('avg_response_time', 0):.3f}s")
+            print(f"Median Response Time:    {perf.get('median_response_time', 0):.3f}s")
+            print(f"Min Response Time:       {perf.get('min_response_time', 0):.3f}s")
+            print(f"Max Response Time:       {perf.get('max_response_time', 0):.3f}s")
+            print(f"Predictions per Second:  {perf.get('predictions_per_second', 0):.2f}")
+            print(f"Total Processing Time:   {perf.get('total_time', 0):.2f}s")
 
         print(f"\nModel URL: {self.results.get('model_url', 'Unknown')}")
         print(

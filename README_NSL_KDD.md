@@ -127,10 +127,30 @@ Please respond with your classification (NORMAL or ATTACK) followed by detailed 
 
 The benchmark evaluates:
 - **Classification accuracy** (Normal vs Attack)
+- **Advanced metrics** (R², Matthews Correlation, Balanced Accuracy)
 - **Attack type detection** (per attack category)
-- **Performance metrics** (response time, throughput)
+- **Performance metrics** (response time, throughput, statistics)
 - **Confusion matrix** (TP, FP, TN, FN)
+- **Error rates** (FPR, FNR, Specificity)
 - **Explainability quality** (reasoning analysis)
+
+## Evaluation Metrics
+
+### Classification Metrics
+- **Overall Accuracy**: Percentage of correct predictions (TP+TN)/(TP+FP+FN+TN)
+- **Balanced Accuracy**: Average of sensitivity and specificity - better for imbalanced datasets
+- **Precision**: True positive rate among positive predictions TP/(TP+FP)
+- **Recall (Sensitivity)**: True positive rate among actual positives TP/(TP+FN)
+- **Specificity**: True negative rate among actual negatives TN/(TN+FP)
+- **F1-Score**: Harmonic mean of precision and recall
+
+### Advanced Metrics
+- **Matthews Correlation Coefficient (MCC)**: Correlation between observed and predicted binary classifications (-1 to +1, where +1 = perfect prediction)
+- **R-Squared**: Coefficient of determination indicating how well predictions explain the variance in actual values
+
+### Error Rates
+- **False Positive Rate (FPR)**: Rate of incorrectly classifying normal traffic as attacks
+- **False Negative Rate (FNR)**: Rate of incorrectly classifying attacks as normal traffic
 
 ## Output
 
@@ -145,28 +165,53 @@ Normal connections: 70
 Attack connections: 30
 Attack types: neptune, satan, ipsweep, portsweep, smurf
 
-ACCURACY METRICS:
-Overall Accuracy: 0.850
-Precision: 0.833
-Recall: 0.800
-F1-Score: 0.816
-False Positive Rate: 0.071
+==================================================
+CLASSIFICATION METRICS
+==================================================
+Overall Accuracy:        0.850
+Balanced Accuracy:       0.825
+Precision:               0.833
+Recall (Sensitivity):    0.800
+Specificity:             0.850
+F1-Score:                0.816
 
-CONFUSION MATRIX:
-True Positives: 24
-False Positives: 5
-False Negatives: 6
-True Negatives: 65
+==================================================
+ADVANCED METRICS
+==================================================
+Matthews Correlation:    0.652
+R-Squared:               0.445
 
-ATTACK TYPE DETECTION:
-  neptune: 12/15 (0.800)
-  satan: 8/10 (0.800)
-  ipsweep: 4/5 (0.800)
+==================================================
+ERROR RATES
+==================================================
+False Positive Rate:     0.150
+False Negative Rate:     0.200
 
-PERFORMANCE METRICS:
-Average response time: 1.250s
-Predictions per second: 0.80
-Total processing time: 125.00s
+==================================================
+CONFUSION MATRIX
+==================================================
+True Positives:          24
+False Positives:         5
+False Negatives:         6
+True Negatives:          65
+Total Samples:           100
+
+==================================================
+ATTACK TYPE DETECTION PERFORMANCE
+==================================================
+neptune        :  12/ 15 (0.800)
+satan          :   8/ 10 (0.800)
+ipsweep        :   4/  5 (0.800)
+
+==================================================
+PERFORMANCE METRICS
+==================================================
+Average Response Time:   1.250s
+Median Response Time:    1.100s
+Min Response Time:       0.850s
+Max Response Time:       2.100s
+Predictions per Second:  0.80
+Total Processing Time:   125.00s
 ```
 
 ### JSON Results File

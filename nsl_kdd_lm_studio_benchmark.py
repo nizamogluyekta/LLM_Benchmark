@@ -724,7 +724,8 @@ class NSLKDDBenchmark:
             print(f"Predictions per Second:  {perf.get('predictions_per_second', 0):.2f}")
             print(f"Total Processing Time:   {perf.get('total_time', 0):.2f}s")
 
-        print(f"\nModel URL: {self.results.get('model_url', 'Unknown')}")
+        print(f"\nModel Name: {self.results.get('model_name', 'Unknown')}")
+        print(f"Model URL: {self.results.get('model_url', 'Unknown')}")
         print(
             f"Benchmark duration: {self.results.get('benchmark_start', 'Unknown')} to {self.results.get('benchmark_end', 'Unknown')}"
         )
@@ -782,7 +783,9 @@ async def main() -> int | None:
 
     try:
         # Run benchmark
-        print(f"Starting NSL-KDD benchmark with LM Studio at {args.lm_studio_url}")
+        print(
+            f"Starting NSL-KDD benchmark with model '{args.model_name}' on LM Studio at {args.lm_studio_url}"
+        )
         await benchmark.run_benchmark(
             filename=args.dataset_file, max_samples=max_samples, attack_ratio=attack_ratio
         )

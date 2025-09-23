@@ -216,11 +216,16 @@ Total Processing Time:   125.00s
 
 ### JSON Results File
 
-Detailed results saved to timestamped JSON file containing:
+Detailed results automatically saved with model name and timestamp:
+- **Filename format**: `nsl_kdd_benchmark_{model_name}_{timestamp}.json`
+- **Example**: `nsl_kdd_benchmark_meta_llama_3_1_8b_instruct_20250115_143022.json`
+
+Contents include:
 - Complete predictions and explanations
 - Detailed metrics breakdown
 - Performance statistics
-- Model and dataset configuration
+- Model name and configuration
+- Dataset information
 
 ## Troubleshooting
 

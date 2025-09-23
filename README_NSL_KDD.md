@@ -236,12 +236,17 @@ Contents include:
    - Check the URL (default: http://localhost:1234)
    - Verify a model is loaded in LM Studio
 
-2. **"Dataset file not found"**
+2. **"Only user and assistant roles are supported" error**
+   - ✅ **Auto-fixed**: Script automatically detects and handles models that don't support system role
+   - Works with models like `lily-cybersecurity-7b-v0.2`, `deepseek-r1`, etc.
+   - No action needed - the script will automatically use user-only format
+
+3. **"Dataset file not found"**
    - Ensure NSL-KDD folder exists
    - Download NSL-KDD dataset files
    - Check file permissions
 
-3. **Poor model performance**
+4. **Poor model performance**
    - Try different models in LM Studio
    - Adjust temperature (lower = more consistent)
    - Increase max_tokens for longer explanations

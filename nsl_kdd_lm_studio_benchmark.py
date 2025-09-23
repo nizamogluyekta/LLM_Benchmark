@@ -324,18 +324,44 @@ class LMStudioClient:
         try:
             start_time = time.time()
 
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a cybersecurity expert analyzing network traffic for intrusion detection. Respond with NORMAL or ATTACK followed by a detailed explanation.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                max_tokens=256,
-                temperature=0.1,
-            )
+            # Try with system role first
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a cybersecurity expert analyzing network traffic for intrusion detection. Respond with NORMAL or ATTACK followed by a detailed explanation.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=256,
+                    temperature=0.1,
+                )
+            except Exception as e:
+                # If system role fails, try with user role only (common for some models)
+                if "role" in str(e).lower() or "system" in str(e).lower():
+                    logger.info(
+                        f"Model {self.model_name} doesn't support system role, using user-only format"
+                    )
+                    combined_prompt = (
+                        """You are a cybersecurity expert analyzing network traffic for intrusion detection. Respond with NORMAL or ATTACK followed by a detailed explanation.
+
+"""
+                        + prompt
+                    )
+
+                    response = self.client.chat.completions.create(
+                        model=self.model_name,
+                        messages=[
+                            {"role": "user", "content": combined_prompt},
+                        ],
+                        max_tokens=256,
+                        temperature=0.1,
+                    )
+                else:
+                    # Re-raise if it's a different error
+                    raise e
 
             end_time = time.time()
 

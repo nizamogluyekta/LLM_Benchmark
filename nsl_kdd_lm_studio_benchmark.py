@@ -307,12 +307,13 @@ class NSLKDDLoader:
 class LMStudioClient:
     """Client for interacting with LM Studio API."""
 
-    def __init__(self, base_url: str = "http://localhost:1234"):
+    def __init__(self, base_url: str = "http://localhost:1234", model_name: str = "local-model"):
         self.client = OpenAI(
             base_url=f"{base_url}/v1",
             api_key="lm-studio",  # LM Studio doesn't require real API key
         )
         self.base_url = base_url
+        self.model_name = model_name
 
     async def predict_intrusion(self, connection: NetworkConnection) -> dict[str, Any]:
         """Predict if a network connection is an intrusion."""
@@ -324,7 +325,7 @@ class LMStudioClient:
             start_time = time.time()
 
             response = self.client.chat.completions.create(
-                model="local-model",  # LM Studio uses this as default
+                model=self.model_name,
                 messages=[
                     {
                         "role": "system",
@@ -407,13 +408,16 @@ Response format: [NORMAL/ATTACK] - [Your detailed explanation]"""
 class NSLKDDBenchmark:
     """Main benchmark class for NSL-KDD intrusion detection evaluation."""
 
-    def __init__(self, lm_studio_url: str = "http://localhost:1234"):
-        self.lm_studio_client = LMStudioClient(lm_studio_url)
+    def __init__(
+        self, lm_studio_url: str = "http://localhost:1234", model_name: str = "local-model"
+    ):
+        self.lm_studio_client = LMStudioClient(lm_studio_url, model_name)
         self.data_loader = NSLKDDLoader("NSL-KDD")
         self.results: dict[str, Any] = {
             "benchmark_start": None,
             "benchmark_end": None,
             "model_url": lm_studio_url,
+            "model_name": model_name,
             "dataset_info": {},
             "predictions": [],
             "metrics": {},
@@ -628,7 +632,11 @@ class NSLKDDBenchmark:
 
         if output_file is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_file = f"nsl_kdd_benchmark_results_{timestamp}.json"
+            # Clean model name for filename (replace problematic characters)
+            model_name_clean = (
+                self.results["model_name"].replace("/", "_").replace("-", "_").replace(".", "_")
+            )
+            output_file = f"nsl_kdd_benchmark_{model_name_clean}_{timestamp}.json"
 
         with open(output_file, "w") as f:
             json.dump(self.results, f, indent=2, default=str)
@@ -770,7 +778,7 @@ async def main() -> int | None:
         return 1
 
     # Initialize benchmark
-    benchmark = NSLKDDBenchmark(args.lm_studio_url)
+    benchmark = NSLKDDBenchmark(args.lm_studio_url, args.model_name)
 
     try:
         # Run benchmark

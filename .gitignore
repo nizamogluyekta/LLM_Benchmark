@@ -272,3 +272,5 @@ benchmark_cache/
 experiment_outputs/
 evaluation_cache/
 preprocessing_cache/
+
+NSL-KDD/*

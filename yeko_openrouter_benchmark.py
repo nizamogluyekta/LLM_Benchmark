@@ -850,7 +850,7 @@ async def main() -> int:
     args = parser.parse_args()
 
     # Hardcoded API key - replace with your actual key
-    HARDCODED_API_KEY = "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"  # Replace this with your actual OpenRouter API key
+    HARDCODED_API_KEY = "YOUR_KEY_HERE"  # Replace this with your actual OpenRouter API key
 
     api_key = args.api_key if args.api_key else HARDCODED_API_KEY
 

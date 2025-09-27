@@ -92,6 +92,7 @@ class NetworkConnection:
     dst_host_rerror_rate: float
     dst_host_srv_rerror_rate: float
     attack_type: str
+    difficulty: int
 
     def to_readable_text(self) -> str:
         """Convert network connection to human-readable text for LLM analysis."""
@@ -315,8 +316,15 @@ RISK_LEVEL: [Critical/High/Medium/Low]"""
             elif line_upper.startswith("RISK_LEVEL:"):
                 risk_level = line.split(":", 1)[1].strip().lower()
 
-        # Fallback parsing if structured format not found
+        # Enhanced fallback parsing for different model response styles
         if prediction == "UNKNOWN":
+            response_upper = response_text.upper()
+
+            # Debug logging for Tongyi responses
+            if "tongyi" in self.model_name.lower():
+                logger.info(f"🔍 Tongyi response for sample {sample_id}: {response_text[:200]}...")
+
+            # Standard format checking
             if (
                 response_text.upper().startswith("ATTACK")
                 or "ATTACK" in response_text.upper()[:100]
@@ -327,6 +335,23 @@ RISK_LEVEL: [Critical/High/Medium/Low]"""
                 or "NORMAL" in response_text.upper()[:100]
             ):
                 prediction = "NORMAL"
+            # Extended pattern matching for various model styles
+            elif any(
+                word in response_upper
+                for word in ["MALICIOUS", "SUSPICIOUS", "INTRUSION", "THREAT", "ANOMAL"]
+            ):
+                prediction = "ATTACK"
+            elif any(
+                word in response_upper
+                for word in ["LEGITIMATE", "BENIGN", "SAFE", "REGULAR", "CLEAN"]
+            ):
+                prediction = "NORMAL"
+            # Check for attack type indicators
+            elif any(
+                attack in response_upper
+                for attack in ["DOS", "PROBE", "R2L", "U2R", "NEPTUNE", "SMURF", "BACK"]
+            ):
+                prediction = "ATTACK"
 
         # Convert confidence level to score
         if confidence_level == "high":
@@ -411,6 +436,7 @@ class YekoNSLKDDBenchmark:
             "dst_host_rerror_rate",
             "dst_host_srv_rerror_rate",
             "attack_type",
+            "difficulty",
         ]
 
         logger.info("🔬 Initialized Yeko's NSL-KDD Benchmark System")
@@ -442,7 +468,12 @@ class YekoNSLKDDBenchmark:
                     # Parse row data
                     parsed_row: list[Any] = []
                     for i, value in enumerate(row):
-                        if i in [1, 2, 3, 41]:  # String fields
+                        if i in [
+                            1,
+                            2,
+                            3,
+                            41,
+                        ]:  # String fields: protocol_type, service, flag, attack_type
                             parsed_row.append(value.strip())
                         else:
                             if "." in value:
@@ -454,6 +485,8 @@ class YekoNSLKDDBenchmark:
                     attack_type_data[connection.attack_type].append(connection)
 
                 except (ValueError, TypeError) as e:
+                    if row_num < 5:  # Debug first few errors
+                        logger.warning(f"Parse error on row {row_num}: {e}")
                     logger.debug(f"Skipping malformed row {row_num}: {e}")
                     continue
 
@@ -817,7 +850,7 @@ async def main() -> int:
     args = parser.parse_args()
 
     # Hardcoded API key - replace with your actual key
-    HARDCODED_API_KEY = "YOUR_API_KEY_HERE"  # Replace this with your actual OpenRouter API key
+    HARDCODED_API_KEY = "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"  # Replace this with your actual OpenRouter API key
 
     api_key = args.api_key if args.api_key else HARDCODED_API_KEY
 

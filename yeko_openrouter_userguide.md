@@ -51,20 +51,33 @@ python3 yeko_openrouter_benchmark.py --model "meta-llama/llama-3.2-3b-instruct:f
 
 #### Free Models (No Cost)
 ```bash
-# Llama 3.2 3B - Fast and efficient
+# Llama 3.2 3B - Fast and efficient (works with zero data retention)
 python3 yeko_openrouter_benchmark.py --model "meta-llama/llama-3.2-3b-instruct:free"
 
-# X.AI Grok - Very capable for cybersecurity
+# X.AI Grok - Very capable for cybersecurity (works with zero data retention)
 python3 yeko_openrouter_benchmark.py --model "x-ai/grok-4-fast:free"
 
-# OpenAI GPT models
-python3 yeko_openrouter_benchmark.py --model "openai/gpt-oss-120b:free"
-python3 yeko_openrouter_benchmark.py --model "openai/gpt-oss-20b:free"
+# Other models that support strict privacy
+python3 yeko_openrouter_benchmark.py --model "qwen/qwen-2.5-coder-32b-instruct:free"
+python3 yeko_openrouter_benchmark.py --model "microsoft/wizardlm-2-8x22b:free"
 
-# Other excellent options
-python3 yeko_openrouter_benchmark.py --model "z-ai/glm-4.5-air:free"
-python3 yeko_openrouter_benchmark.py --model "qwen/qwen3-coder:free"
-python3 yeko_openrouter_benchmark.py --model "nvidia/nemotron-nano-9b-v2:free"
+# Note: Some models may require data retention settings adjustment
+# If you get 404 errors, try adjusting privacy settings at:
+# https://openrouter.ai/settings/privacy
+```
+
+#### Premium Models (Best for Cybersecurity)
+```bash
+# Top choice - Excellent reasoning and accuracy
+python3 yeko_openrouter_benchmark.py --model "anthropic/claude-3.5-sonnet" --samples 2000
+
+# Alternative premium options
+python3 yeko_openrouter_benchmark.py --model "openai/gpt-4o" --samples 2000
+python3 yeko_openrouter_benchmark.py --model "anthropic/claude-3-opus" --samples 2000
+python3 yeko_openrouter_benchmark.py --model "google/gemini-pro-1.5" --samples 2000
+
+# High-value option
+python3 yeko_openrouter_benchmark.py --model "meta-llama/llama-3.1-70b-instruct" --samples 2000
 ```
 
 ## ⚙️ Advanced Usage
@@ -279,8 +292,17 @@ Unlike random sampling, the script ensures:
 **Problem**: Invalid or missing API key
 **Solution**:
 1. Verify your OpenRouter API key is correct
-2. Check that you edited line 814 in the script properly
+2. Check that you edited line 824 in the script properly
 3. Ensure no extra spaces or quotes around the key
+
+#### ❌ "No endpoints found matching your data policy (Zero data retention)"
+**Problem**: Model doesn't support your privacy settings
+**Solution**:
+1. Go to https://openrouter.ai/settings/privacy
+2. Either:
+   - Change data retention from "Zero" to "1 day" (recommended)
+   - Or use models that support zero data retention (Llama, Grok)
+3. Save settings and retry
 
 #### ❌ "Dataset file not found: NSL-KDD/KDDTrain+.txt"
 **Problem**: Missing NSL-KDD dataset

@@ -444,12 +444,10 @@ class YekoMultiLangBenchmark:
             "nvidia/nemotron-nano-9b-v2:free",
             "deepseek/deepseek-chat-v3.1:free",
             "openai/gpt-oss-20b:free",
-            "z-ai/glm-4.5-air:free",
             "qwen/qwen3-coder:free",
             "meta-llama/llama-3.2-3b-instruct:free",
             "moonshotai/kimi-k2:free",
             "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-            "google/gemma-3n-e2b-it:free",
             "tencent/hunyuan-a13b-instruct:free",
         ]
 

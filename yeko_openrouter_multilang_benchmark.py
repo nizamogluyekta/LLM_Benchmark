@@ -26,6 +26,7 @@ import logging
 import random
 import time
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -266,8 +267,10 @@ REASONING: [Technical explanation of attack characteristics]"""
             try:
                 start_time = time.time()
 
+                # Create completion with asyncio.to_thread for non-blocking execution
+                completion_func: Callable[..., Any] = self.client.chat.completions.create
                 response = await asyncio.to_thread(
-                    self.client.chat.completions.create,
+                    completion_func,
                     model=self.model_name,
                     messages=[
                         {
@@ -437,14 +440,17 @@ class YekoMultiLangBenchmark:
 
         # Hardcoded list of models to test
         self.models_to_test = [
-            "anthropic/claude-3.5-sonnet",
-            "openai/gpt-4o",
-            "meta-llama/llama-3.1-70b-instruct",
-            "google/gemini-pro-1.5",
-            "anthropic/claude-3-opus",
-            "cohere/command-r-plus",
-            "meta-llama/llama-3.2-3b-instruct:free",
             "x-ai/grok-4-fast:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "deepseek/deepseek-chat-v3.1:free",
+            "openai/gpt-oss-20b:free",
+            "z-ai/glm-4.5-air:free",
+            "qwen/qwen3-coder:free",
+            "meta-llama/llama-3.2-3b-instruct:free",
+            "moonshotai/kimi-k2:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "google/gemma-3n-e2b-it:free",
+            "tencent/hunyuan-a13b-instruct:free",
         ]
 
         self.results: dict[str, Any] = {}

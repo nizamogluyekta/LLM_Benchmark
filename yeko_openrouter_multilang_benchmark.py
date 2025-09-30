@@ -440,15 +440,8 @@ class YekoMultiLangBenchmark:
 
         # Hardcoded list of models to test
         self.models_to_test = [
-            "x-ai/grok-4-fast:free",
-            "nvidia/nemotron-nano-9b-v2:free",
-            "deepseek/deepseek-chat-v3.1:free",
-            "openai/gpt-oss-20b:free",
-            "qwen/qwen3-coder:free",
-            "meta-llama/llama-3.2-3b-instruct:free",
-            "moonshotai/kimi-k2:free",
-            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-            "tencent/hunyuan-a13b-instruct:free",
+            "meta-llama/llama-3.3-70b-instruct",
+            "moonshotai/kimi-vl-a3b-thinking",
         ]
 
         self.results: dict[str, Any] = {}
@@ -505,18 +498,18 @@ class YekoMultiLangBenchmark:
         for i, model in enumerate(self.models_to_test, 1):
             logger.info(f"   {i}. {model}")
 
-    def load_homogeneous_dataset(
-        self, filename: str = "KDDTrain+.txt", target_samples: int = 1000
+    def load_realistic_dataset(
+        self, filename: str = "KDDTrain+.txt", target_samples: int = 1000, normal_ratio: float = 0.7
     ) -> list[NetworkConnection]:
-        """Load NSL-KDD data with homogeneous sampling across all attack types."""
+        """Load NSL-KDD data with realistic distribution: 70% normal, 30% attacks (homogeneous)."""
 
         file_path = Path("NSL-KDD") / filename
         if not file_path.exists():
             raise FileNotFoundError(f"Dataset file not found: {file_path}")
 
-        logger.info(f"📊 Loading homogeneous NSL-KDD dataset from {file_path}")
+        logger.info(f"📊 Loading realistic NSL-KDD dataset from {file_path}")
         logger.info(
-            f"🎯 Target samples: {target_samples} with equal representation across attack types"
+            f"🎯 Target samples: {target_samples} ({normal_ratio:.0%} normal, {1-normal_ratio:.0%} attacks)"
         )
 
         # First pass: collect all data by attack type
@@ -563,33 +556,70 @@ class YekoMultiLangBenchmark:
         )
         logger.info(f"   Attack types found: {len(attack_type_data)}")
 
-        # Calculate homogeneous sampling (equal samples per attack type)
-        attack_types = list(attack_type_data.keys())
-        samples_per_type = target_samples // len(attack_types)
-        remainder = target_samples % len(attack_types)
+        # Calculate realistic sampling: normal_ratio% normal, (1-normal_ratio)% attacks
+        normal_samples = int(target_samples * normal_ratio)
+        attack_samples = target_samples - normal_samples
 
-        logger.info("⚖️ Homogeneous Sampling Strategy:")
-        logger.info(f"   Equal samples per type: {samples_per_type}")
-        logger.info(f"   Extra samples for first {remainder} types: 1 each")
+        # Separate normal and attack data
+        normal_data = attack_type_data.get("normal", [])
+        attack_types = [key for key in attack_type_data if key != "normal"]
 
-        # Sample homogeneous data
+        logger.info("📊 Realistic Sampling Strategy:")
+        logger.info(f"   Normal samples: {normal_samples} ({normal_samples/target_samples:.1%})")
+        logger.info(f"   Attack samples: {attack_samples} ({attack_samples/target_samples:.1%})")
+        logger.info(f"   Attack types: {len(attack_types)} (homogeneous distribution)")
+
         selected_connections = []
-        for i, attack_type in enumerate(attack_types):
-            available = len(attack_type_data[attack_type])
-            target_for_type = samples_per_type + 1 if i < remainder else samples_per_type
 
-            actual_samples = min(target_for_type, available)
-            sampled = random.sample(attack_type_data[attack_type], actual_samples)
-            selected_connections.extend(sampled)
+        # Sample normal data
+        if normal_data:
+            actual_normal = min(normal_samples, len(normal_data))
+            normal_sampled = random.sample(normal_data, actual_normal)
+            selected_connections.extend(normal_sampled)
+            logger.info(f"   ✅ normal: selected {actual_normal}/{len(normal_data)} samples")
+        else:
+            logger.warning("   ⚠️ No normal data found in dataset!")
 
-            logger.info(f"   ✅ {attack_type}: selected {actual_samples}/{available} samples")
+        # Sample attack data homogeneously across attack types
+        if attack_types and attack_samples > 0:
+            samples_per_attack_type = attack_samples // len(attack_types)
+            remainder = attack_samples % len(attack_types)
+
+            logger.info(f"   📋 Attack sampling: {samples_per_attack_type} per type, +1 for first {remainder} types")
+
+            total_attack_sampled = 0
+            for i, attack_type in enumerate(attack_types):
+                available = len(attack_type_data[attack_type])
+                target_for_type = samples_per_attack_type + (1 if i < remainder else 0)
+
+                actual_samples = min(target_for_type, available)
+                if actual_samples > 0:
+                    sampled = random.sample(attack_type_data[attack_type], actual_samples)
+                    selected_connections.extend(sampled)
+                    total_attack_sampled += actual_samples
+
+                logger.info(f"   ✅ {attack_type}: selected {actual_samples}/{available} samples")
+
+            logger.info(f"   📊 Total attack samples: {total_attack_sampled}/{attack_samples}")
+        else:
+            logger.warning("   ⚠️ No attack data found or no attack samples requested!")
 
         # Shuffle final dataset
         random.shuffle(selected_connections)
 
+        # Final statistics
+        final_normal = sum(1 for conn in selected_connections if conn.attack_type.lower() == "normal")
+        final_attacks = len(selected_connections) - final_normal
+
         logger.info(
-            f"🎲 Final homogeneous dataset: {len(selected_connections)} samples, ready for multi-model testing"
+            f"🎲 Final realistic dataset: {len(selected_connections)} samples "
+            f"({final_normal} normal, {final_attacks} attacks)"
         )
+        logger.info(
+            f"   📈 Actual distribution: {final_normal/len(selected_connections):.1%} normal, "
+            f"{final_attacks/len(selected_connections):.1%} attacks"
+        )
+
         return selected_connections
 
     async def run_two_part_benchmark(
@@ -758,7 +788,7 @@ class YekoMultiLangBenchmark:
         """Run benchmark on all models and return comparative results."""
 
         logger.info("🌍 Starting Multi-Language Model Benchmark")
-        logger.info(f"📊 Dataset: {len(connections)} homogeneous samples")
+        logger.info(f"📊 Dataset: {len(connections)} realistic samples (70% normal, 30% attacks)")
         logger.info(f"🤖 Models: {len(self.models_to_test)} language models")
         logger.info("=" * 80)
 
@@ -943,7 +973,7 @@ class YekoMultiLangBenchmark:
 
         print("\n🔬 BENCHMARK OVERVIEW")
         print(f"   Timestamp: {info['timestamp']}")
-        print(f"   Total Samples: {info['total_samples']} (homogeneous across attack types)")
+        print(f"   Total Samples: {info['total_samples']} (70% normal, 30% attacks)")
         print(f"   Models Tested: {info['models_tested']}")
         print(f"   Successful: {info['successful_models']}/{info['models_tested']}")
         print("   Two-Part Testing: Attack Detection + Attack Classification")
@@ -992,7 +1022,7 @@ async def main() -> int:
         "--samples",
         type=int,
         default=1000,
-        help="Number of samples for homogeneous testing (default: 1000)",
+        help="Number of samples for realistic testing: 70% normal, 30% attacks (default: 1000)",
     )
     parser.add_argument("--output", help="Output file name for comparative report")
     parser.add_argument(
@@ -1016,7 +1046,7 @@ async def main() -> int:
     print("=" * 80)
     print("🧪 Two-Part Testing: Attack Detection + Attack Classification")
     print(f"📊 Dataset: {args.dataset}")
-    print(f"🎯 Samples: {args.samples} (homogeneous across attack types)")
+    print(f"🎯 Samples: {args.samples} (70% normal, 30% attacks - homogeneous)")
     print("🤖 Multi-Model Comparison with Comprehensive Reporting")
     print("=" * 80)
 
@@ -1024,8 +1054,8 @@ async def main() -> int:
         # Initialize benchmark system
         benchmark = YekoMultiLangBenchmark(api_key)
 
-        # Load homogeneous dataset
-        connections = benchmark.load_homogeneous_dataset(
+        # Load realistic dataset (70% normal, 30% attacks)
+        connections = benchmark.load_realistic_dataset(
             filename=args.dataset, target_samples=args.samples
         )
 

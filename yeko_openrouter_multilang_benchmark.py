@@ -178,7 +178,7 @@ class MultiLangOpenRouterClient:
 
         self.request_count += 1
         logger.debug(
-            f"📡 Part 1 - Attack Detection for sample {sample_id}: {connection.attack_type}"
+            f"📡 Part 1 - Attack Detection for sample {sample_id}"
         )
 
         prompt = self._create_attack_detection_prompt(connection)
@@ -191,7 +191,7 @@ class MultiLangOpenRouterClient:
 
         self.request_count += 1
         logger.debug(
-            f"📡 Part 2 - Attack Classification for sample {sample_id}: {connection.attack_type}"
+            f"📡 Part 2 - Attack Classification for sample {sample_id}"
         )
 
         prompt = self._create_attack_classification_prompt(connection)

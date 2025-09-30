@@ -645,13 +645,23 @@ class YekoMultiLangBenchmark:
             # Progress logging
             if sample_id % 25 == 0 or sample_id <= 5:
                 elapsed = time.time() - start_time
-                rate = i / elapsed if elapsed > 0 else 0
-                eta = (len(connections) * 2 - i * 2) / rate if rate > 0 else 0
+                if elapsed > 0:
+                    # Calculate rate per minute (we do 2 tests per connection)
+                    completed_tests = i * 2  # Each connection = 2 tests (detection + classification)
+                    rate_per_min = (completed_tests / elapsed) * 60
+                    remaining_tests = (len(connections) - i) * 2
+                    eta_minutes = remaining_tests / rate_per_min if rate_per_min > 0 else 0
 
-                logger.info(
-                    f"📊 {model_name} Progress: {sample_id}/{len(connections)} | "
-                    f"Rate: {rate:.1f} tests/min | ETA: {eta / 60:.1f} min"
-                )
+                    logger.info(
+                        f"📊 {model_name} Progress: {sample_id}/{len(connections)} "
+                        f"({sample_id/len(connections)*100:.1f}%) | "
+                        f"Rate: {rate_per_min:.1f} tests/min | ETA: {eta_minutes:.1f} min"
+                    )
+                else:
+                    logger.info(
+                        f"📊 {model_name} Progress: {sample_id}/{len(connections)} "
+                        f"({sample_id/len(connections)*100:.1f}%) | Starting..."
+                    )
 
             # Part 1: Attack Detection
             part1_result = await client.test_attack_detection(connection, sample_id)

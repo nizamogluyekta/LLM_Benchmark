@@ -642,8 +642,8 @@ class YekoMultiLangBenchmark:
         for i, connection in enumerate(connections):
             sample_id = i + 1
 
-            # Progress logging
-            if sample_id % 25 == 0 or sample_id <= 5:
+            # Progress logging - every 10 samples, plus first 5 for early feedback
+            if sample_id % 10 == 0 or sample_id <= 5:
                 elapsed = time.time() - start_time
                 if elapsed > 0:
                     # Calculate rate per minute (we do 2 tests per connection)
